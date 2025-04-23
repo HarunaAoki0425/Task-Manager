@@ -1,0 +1,161 @@
+.issue-create-container {
+  max-width: 800px;
+  margin: 64px auto 2rem; /* ヘッダーの高さ分のマージンを追加 */
+  padding: 0 1rem;
+  min-height: calc(100vh - 64px);
+  background-color: #f9fafb;
+}
+
+.loading-spinner {
+  text-align: center;
+  padding: 2rem;
+}
+
+.error-message {
+  background-color: #fee2e2;
+  border: 1px solid #f87171;
+  color: #dc2626;
+  padding: 1rem;
+  border-radius: 0.375rem;
+  margin-bottom: 1rem;
+}
+
+.issue-form {
+  background-color: white;
+  padding: 2rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 1.5rem;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+label {
+  display: block;
+  font-weight: 500;
+  color: #4b5563;
+  margin-bottom: 0.5rem;
+}
+
+.form-control {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  font-size: 1rem;
+  transition: border-color 0.2s;
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+select.form-control {
+  background-color: white;
+}
+
+.todos-section {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+h3 {
+  font-size: 1.25rem;
+  font-weight: 500;
+  color: #1f2937;
+  margin-bottom: 1rem;
+}
+
+.todo-list {
+  margin-bottom: 1rem;
+}
+
+.todo-item {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.remove-todo {
+  padding: 0.5rem;
+  background-color: #fee2e2;
+  border: none;
+  border-radius: 0.375rem;
+  color: #dc2626;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.remove-todo:hover {
+  background-color: #fecaca;
+}
+
+.add-todo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background-color: #f3f4f6;
+  border: none;
+  border-radius: 0.375rem;
+  color: #4b5563;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.add-todo:hover {
+  background-color: #e5e7eb;
+}
+
+.form-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.submit-button,
+.cancel-button {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 0.375rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.submit-button {
+  background-color: #3b82f6;
+  color: white;
+}
+
+.submit-button:disabled {
+  background-color: #93c5fd;
+  cursor: not-allowed;
+}
+
+.cancel-button {
+  background-color: #f3f4f6;
+  color: #4b5563;
+}
+
+.submit-button:not(:disabled):hover {
+  background-color: #2563eb;
+}
+
+.cancel-button:hover {
+  background-color: #e5e7eb;
+} 

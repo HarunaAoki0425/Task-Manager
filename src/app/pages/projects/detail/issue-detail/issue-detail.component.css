@@ -1,0 +1,388 @@
+.issue-detail-container {
+  max-width: 800px;
+  margin: 64px auto 2rem;
+  padding: 0 1rem;
+  min-height: calc(100vh - 64px);
+  background-color: #f9fafb;
+}
+
+.issue-detail {
+  background-color: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  padding: 1.5rem;
+}
+
+.loading-spinner {
+  text-align: center;
+  padding: 2rem;
+}
+
+.error-message {
+  background-color: #fee;
+  color: #c00;
+  padding: 1rem;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+}
+
+.issue-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.issue-title-section {
+  flex: 1;
+}
+
+.issue-title-section h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 0.5rem;
+}
+
+.issue-badges {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.priority-badge,
+.status-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.priority-high {
+  background-color: #fee2e2;
+  color: #dc2626;
+}
+
+.priority-medium {
+  background-color: #fef3c7;
+  color: #d97706;
+}
+
+.priority-low {
+  background-color: #dbeafe;
+  color: #2563eb;
+}
+
+.status-not_started {
+  background-color: #e5e7eb;
+  color: #4b5563;
+}
+
+.status-in_progress {
+  background-color: #dbeafe;
+  color: #2563eb;
+}
+
+.status-completed {
+  background-color: #d1fae5;
+  color: #059669;
+}
+
+.issue-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.edit-btn,
+.delete-btn {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.edit-btn {
+  background-color: #e8f4ff;
+  color: #0066cc;
+}
+
+.delete-btn {
+  background-color: #fee;
+  color: #c00;
+}
+
+.edit-btn:hover {
+  background-color: #d1e9ff;
+}
+
+.delete-btn:hover {
+  background-color: #fdd;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.info-item {
+  background-color: #f9fafb;
+  padding: 1rem;
+  border-radius: 0.375rem;
+}
+
+.info-item label {
+  display: block;
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin-bottom: 0.25rem;
+}
+
+.info-item span {
+  font-weight: 500;
+  color: #1f2937;
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.tag {
+  background-color: #e5e7eb;
+  color: #4b5563;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+}
+
+.issue-content {
+  margin-top: 2rem;
+}
+
+.issue-solution {
+  margin-bottom: 2rem;
+}
+
+h3 {
+  font-size: 1.25rem;
+  font-weight: 500;
+  color: #1f2937;
+  margin-bottom: 1rem;
+}
+
+.solution-text {
+  color: #4b5563;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.todo-progress {
+  margin-bottom: 1rem;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 0.5rem;
+  background-color: #e5e7eb;
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.progress {
+  height: 100%;
+  background-color: #2563eb;
+  transition: width 0.2s;
+}
+
+.progress-text {
+  display: block;
+  text-align: right;
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin-top: 0.25rem;
+}
+
+.todo-list {
+  list-style: none;
+  padding: 0;
+}
+
+.todo-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.todo-item:last-child {
+  border-bottom: none;
+}
+
+.todo-title {
+  flex: 1;
+  color: #1f2937;
+}
+
+.todo-date {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.completed .todo-title {
+  color: #9ca3af;
+  text-decoration: line-through;
+}
+
+.status-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 0.375rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.start-btn {
+  background-color: #dbeafe;
+  color: #2563eb;
+}
+
+.complete-btn {
+  background-color: #d1fae5;
+  color: #059669;
+}
+
+.restart-btn {
+  background-color: #e5e7eb;
+  color: #4b5563;
+}
+
+.start-btn:hover {
+  background-color: #bfdbfe;
+}
+
+.complete-btn:hover {
+  background-color: #a7f3d0;
+}
+
+.restart-btn:hover {
+  background-color: #d1d5db;
+}
+
+/* 編集フォーム */
+.edit-form {
+  background-color: #fff;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #333;
+  font-weight: 500;
+}
+
+.form-control {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+.form-control:focus {
+  border-color: #0066cc;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.1);
+}
+
+.remove-todo {
+  padding: 0.5rem;
+  border: none;
+  background-color: #fee;
+  color: #c00;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.add-todo {
+  padding: 0.5rem 1rem;
+  border: 1px dashed #999;
+  background-color: transparent;
+  color: #666;
+  border-radius: 4px;
+  cursor: pointer;
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
+.add-todo:hover {
+  background-color: #f8f9fa;
+}
+
+.form-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.submit-button,
+.cancel-button {
+  padding: 0.5rem 2rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.submit-button {
+  background-color: #0066cc;
+  color: #fff;
+}
+
+.submit-button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.cancel-button {
+  background-color: #eee;
+  color: #666;
+}
+
+.submit-button:not(:disabled):hover {
+  background-color: #0052a3;
+}
+
+.cancel-button:hover {
+  background-color: #ddd;
+} 

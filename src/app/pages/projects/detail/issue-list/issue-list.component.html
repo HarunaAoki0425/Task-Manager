@@ -1,0 +1,128 @@
+<div class="issue-list-container">
+  <div class="issue-list-header">
+    <h2>課題一覧</h2>
+    <button class="add-issue-btn" [routerLink]="['/projects', projectId, 'issues', 'create']">
+      <i class="fas fa-plus"></i> 新しい課題を追加
+    </button>
+  </div>
+
+  <!-- ローディング表示 -->
+  <div class="loading-spinner" *ngIf="loading">
+    <span>読み込み中...</span>
+  </div>
+
+  <!-- エラーメッセージ -->
+  <div class="error-message" *ngIf="error">
+    {{ error }}
+  </div>
+
+  <!-- 課題リスト -->
+  <div class="issues-grid" *ngIf="!loading && !error && issues && issues.length >= 0">
+    <!-- 未着手の課題 -->
+    <div class="issue-column">
+      <h3>未着手</h3>
+      <div class="issue-cards">
+        <div class="issue-card" *ngFor="let issue of issues | filterByStatus:'not_started'">
+          <div class="issue-header">
+            <span class="priority-badge" [ngClass]="'priority-' + issue.priority">
+              {{ issue.priority === 'high' ? '高' : issue.priority === 'medium' ? '中' : '低' }}
+            </span>
+            <div class="issue-actions">
+              <a [routerLink]="['/projects', projectId, 'issues', issue.id]" class="info-btn" title="詳細を表示">
+                <i class="fas fa-info-circle"></i>
+              </a>
+              <button class="delete-btn" (click)="deleteIssue(issue.id)">
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
+          </div>
+          <div class="issue-content" [routerLink]="['/projects', projectId, 'issues', issue.id]" style="cursor: pointer;">
+            <h3 class="issue-title">{{ issue.title }}</h3>
+            <div class="issue-meta">
+              <span class="assigned-to">担当: {{ getMemberName(issue.assignedTo) }}</span>
+              <span class="due-date">期限: {{ issue.dueDate | date:'yyyy/MM/dd' }}</span>
+            </div>
+          </div>
+          <div class="issue-footer">
+            <button class="action-btn start-btn" (click)="updateIssueStatus(issue, 'in_progress')">
+              開始する
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 進行中の課題 -->
+    <div class="issue-column">
+      <h3>進行中</h3>
+      <div class="issue-cards">
+        <div class="issue-card" *ngFor="let issue of issues | filterByStatus:'in_progress'">
+          <div class="issue-header">
+            <span class="priority-badge" [ngClass]="'priority-' + issue.priority">
+              {{ issue.priority === 'high' ? '高' : issue.priority === 'medium' ? '中' : '低' }}
+            </span>
+            <div class="issue-actions">
+              <a [routerLink]="['/projects', projectId, 'issues', issue.id]" class="info-btn" title="詳細を表示">
+                <i class="fas fa-info-circle"></i>
+              </a>
+              <button class="delete-btn" (click)="deleteIssue(issue.id)">
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
+          </div>
+          <div class="issue-content" [routerLink]="['/projects', projectId, 'issues', issue.id]" style="cursor: pointer;">
+            <h3 class="issue-title">{{ issue.title }}</h3>
+            <div class="issue-meta">
+              <span class="assigned-to">担当: {{ getMemberName(issue.assignedTo) }}</span>
+              <span class="due-date">期限: {{ issue.dueDate | date:'yyyy/MM/dd' }}</span>
+            </div>
+          </div>
+          <div class="issue-footer">
+            <button class="action-btn complete-btn" (click)="updateIssueStatus(issue, 'completed')">
+              完了する
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 完了した課題 -->
+    <div class="issue-column">
+      <h3>完了</h3>
+      <div class="issue-cards">
+        <div class="issue-card" *ngFor="let issue of issues | filterByStatus:'completed'">
+          <div class="issue-header">
+            <span class="priority-badge" [ngClass]="'priority-' + issue.priority">
+              {{ issue.priority === 'high' ? '高' : issue.priority === 'medium' ? '中' : '低' }}
+            </span>
+            <div class="issue-actions">
+              <a [routerLink]="['/projects', projectId, 'issues', issue.id]" class="info-btn" title="詳細を表示">
+                <i class="fas fa-info-circle"></i>
+              </a>
+              <button class="delete-btn" (click)="deleteIssue(issue.id)">
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
+          </div>
+          <div class="issue-content" [routerLink]="['/projects', projectId, 'issues', issue.id]" style="cursor: pointer;">
+            <h3 class="issue-title">{{ issue.title }}</h3>
+            <div class="issue-meta">
+              <span class="assigned-to">担当: {{ getMemberName(issue.assignedTo) }}</span>
+              <span class="due-date">期限: {{ issue.dueDate | date:'yyyy/MM/dd' }}</span>
+            </div>
+          </div>
+          <div class="issue-footer">
+            <button class="action-btn restart-btn" (click)="updateIssueStatus(issue, 'not_started')">
+              再開する
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 課題がない場合のメッセージ -->
+    <div class="no-issues" *ngIf="!loading && !error && issues && issues.length === 0">
+      <p>課題がありません。新しい課題を追加してください。</p>
+    </div>
+  </div>
+</div> 

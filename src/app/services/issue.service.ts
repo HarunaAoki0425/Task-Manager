@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Firestore, collection, query, where, getDocs, addDoc, doc, updateDoc, deleteDoc, getDoc } from '@angular/fire/firestore';
-import { Issue, Todo } from '../models/project.model';
+import { Issue, Todo, ProjectMember } from '../models/project.model';
 import { ProjectService } from './project.service';
 import { UserService } from './user.service';
 
@@ -14,38 +14,50 @@ export class IssueService {
     private userService: UserService
   ) {}
 
-  async getProjectMembers(projectId: string): Promise<{ uid: string; displayName: string; }[]> {
-    try {
-      const project = await this.projectService.getProject(projectId);
-      if (!project) {
-        throw new Error('プロジェクトが見つかりません。');
-      }
-
-      const memberPromises = project.members.map(async (uid) => {
-        const user = await this.userService.getUser(uid);
-        return {
-          uid,
-          displayName: user?.displayName || 'Unknown User'
-        };
-      });
-
-      return await Promise.all(memberPromises);
-    } catch (error) {
-      console.error('Failed to load project members:', error);
-      throw new Error('プロジェクトメンバーの読み込みに失敗しました。');
+  async getProjectMembers(projectId: string): Promise<ProjectMember[]> {
+    const project = await this.projectService.getProject(projectId);
+    if (!project) {
+      throw new Error('プロジェクトが見つかりません。');
     }
+
+    const memberPromises = project.members.map(async (member) => {
+      if (typeof member === 'string') {
+        const user = await this.userService.getUser(member);
+        return {
+          uid: member,
+          displayName: user?.displayName || '未設定'
+        };
+      }
+      return member;
+    });
+
+    return Promise.all(memberPromises);
   }
 
   async getIssuesByProject(projectId: string): Promise<Issue[]> {
     try {
-      const issuesRef = collection(this.firestore, 'issues');
-      const q = query(issuesRef, where('projectId', '==', projectId));
-      const querySnapshot = await getDocs(q);
+      const issuesRef = collection(this.firestore, `projects/${projectId}/issues`);
+      const querySnapshot = await getDocs(issuesRef);
       
-      return querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      } as Issue));
+      return querySnapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          projectId: projectId,
+          title: data['title'] || '',
+          description: data['description'] || '',
+          solution: data['solution'] || '',
+          status: data['status'] || 'not_started',
+          priority: data['priority'] || 'medium',
+          assignedTo: data['assignedTo'] || '',
+          dueDate: data['dueDate']?.toDate() || new Date(),
+          tags: data['tags'] || [],
+          todos: data['todos'] || [],
+          createdBy: data['createdBy'] || '',
+          createdAt: data['createdAt']?.toDate() || new Date(),
+          comment: data['comment'] || ''
+        };
+      });
     } catch (error) {
       console.error('Failed to fetch issues:', error);
       throw error;
@@ -54,29 +66,70 @@ export class IssueService {
 
   async createIssue(projectId: string, issueData: Partial<Issue>): Promise<void> {
     try {
-      const issuesRef = collection(this.firestore, 'issues');
-      await addDoc(issuesRef, {
+      const issuesRef = collection(this.firestore, `projects/${projectId}/issues`);
+      const newIssue = {
         ...issueData,
         projectId,
         status: issueData.status || 'not_started',
-        updatedAt: new Date()
-      });
+        priority: issueData.priority || 'medium',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        todos: issueData.todos || [],
+        tags: issueData.tags || [],
+        solution: issueData.solution || '',
+        comment: issueData.comment || ''
+      };
+
+      if (!newIssue.createdBy) {
+        const currentUser = await this.userService.getCurrentUser();
+        if (currentUser) {
+          newIssue.createdBy = currentUser.uid;
+        }
+      }
+
+      await addDoc(issuesRef, newIssue);
     } catch (error) {
       console.error('Failed to create issue:', error);
-      throw error;
+      throw new Error('課題の作成に失敗しました。');
     }
   }
 
   async updateIssue(issueId: string, updates: Partial<Issue>): Promise<void> {
     try {
-      const issueRef = doc(this.firestore, 'issues', issueId);
-      await updateDoc(issueRef, {
-        ...updates,
-        updatedAt: new Date()
-      });
+      // まずアーカイブされた課題かどうかを確認
+      const archivedIssueRef = doc(this.firestore, 'archived_issues', issueId);
+      const archivedIssueSnap = await getDoc(archivedIssueRef);
+
+      if (archivedIssueSnap.exists()) {
+        // アーカイブされた課題の場合
+        await updateDoc(archivedIssueRef, {
+          ...updates,
+          updatedAt: new Date()
+        });
+        return;
+      }
+
+      // 通常の課題の場合、プロジェクト内から検索
+      const projectsRef = collection(this.firestore, 'projects');
+      const projectsSnap = await getDocs(projectsRef);
+      
+      for (const projectDoc of projectsSnap.docs) {
+        const issueRef = doc(this.firestore, `projects/${projectDoc.id}/issues`, issueId);
+        const issueSnap = await getDoc(issueRef);
+        
+        if (issueSnap.exists()) {
+          await updateDoc(issueRef, {
+            ...updates,
+            updatedAt: new Date()
+          });
+          return;
+        }
+      }
+
+      throw new Error('課題が見つかりません。');
     } catch (error) {
-      console.error('Failed to update issue:', error);
-      throw error;
+      console.error('課題の更新に失敗しました:', error);
+      throw new Error('課題の更新に失敗しました。');
     }
   }
 
@@ -90,45 +143,113 @@ export class IssueService {
     }
   }
 
-  async getIssue(issueId: string): Promise<Issue> {
+  async getIssue(issueId: string): Promise<Issue | null> {
     try {
-      const docRef = doc(this.firestore, 'issues', issueId);
-      const docSnap = await getDoc(docRef);
+      // まず通常の課題コレクションから検索
+      const projectsRef = collection(this.firestore, 'projects');
+      const projectsSnap = await getDocs(projectsRef);
       
-      if (!docSnap.exists()) {
-        throw new Error('Issue not found');
+      for (const projectDoc of projectsSnap.docs) {
+        const issueRef = doc(this.firestore, `projects/${projectDoc.id}/issues`, issueId);
+        const issueSnap = await getDoc(issueRef);
+        
+        if (issueSnap.exists()) {
+          const data = issueSnap.data();
+          return this.mapIssueData(issueSnap.id, data);
+        }
       }
 
-      const data = docSnap.data();
-      
-      // 日付フィールドを適切に変換
-      const createdAt = data['createdAt']?.toDate() || new Date();
-      const updatedAt = data['updatedAt']?.toDate() || new Date();
-      const dueDate = data['dueDate']?.toDate() || new Date();
+      // 通常の課題が見つからない場合、アーカイブから検索
+      const archivedIssueRef = doc(this.firestore, 'archived_issues', issueId);
+      const archivedIssueSnap = await getDoc(archivedIssueRef);
 
-      // TODOリストの日付も変換
-      const todos = data['todos']?.map((todo: any) => ({
-        ...todo,
-        createdAt: todo.createdAt?.toDate() || new Date()
-      })) || [];
+      if (!archivedIssueSnap.exists()) {
+        return null;
+      }
 
-      return {
-        id: docSnap.id,
-        title: data['title'] || '',
-        solution: data['solution'] || '',
-        status: data['status'] || 'not_started',
-        priority: data['priority'] || 'medium',
-        assignedTo: data['assignedTo'] || '',
-        projectId: data['projectId'] || '',
-        createdBy: data['createdBy'] || '',
-        tags: data['tags'] || [],
-        todos: todos,
-        createdAt: createdAt,
-        updatedAt: updatedAt,
-        dueDate: dueDate
-      } as Issue;
+      const data = archivedIssueSnap.data();
+      return this.mapIssueData(archivedIssueSnap.id, data);
     } catch (error) {
-      console.error('Error getting issue:', error);
+      console.error('課題の読み込みに失敗しました:', error);
+      throw new Error('課題の読み込みに失敗しました。');
+    }
+  }
+
+  private mapIssueData(id: string, data: any): Issue {
+    return {
+      id,
+      projectId: data['projectId'] || '',
+      title: data['title'] || '',
+      description: data['description'] || '',
+      solution: data['solution'] || '',
+      status: data['status'] || 'not_started',
+      priority: data['priority'] || 'medium',
+      assignedTo: data['assignedTo'] || '',
+      dueDate: data['dueDate']?.toDate() || new Date(),
+      tags: data['tags'] || [],
+      todos: data['todos'] || [],
+      createdBy: data['createdBy'] || '',
+      createdAt: data['createdAt']?.toDate() || new Date(),
+      comment: data['comment']
+    };
+  }
+
+  async archiveIssue(projectId: string, issueId: string): Promise<void> {
+    try {
+      // 課題を取得
+      const issueRef = doc(this.firestore, `projects/${projectId}/issues`, issueId);
+      const issueSnap = await getDoc(issueRef);
+
+      if (!issueSnap.exists()) {
+        throw new Error('課題が見つかりません。');
+      }
+
+      const issueData = issueSnap.data();
+
+      // アーカイブコレクションに課題を追加
+      const archiveRef = collection(this.firestore, 'archived_issues');
+      await addDoc(archiveRef, {
+        ...issueData,
+        projectId,
+        originalIssueId: issueId,
+        archivedAt: new Date()
+      });
+
+      // 元の課題を削除
+      await deleteDoc(issueRef);
+    } catch (error) {
+      console.error('Failed to archive issue:', error);
+      throw new Error('課題のアーカイブに失敗しました。');
+    }
+  }
+
+  async getArchivedIssues(): Promise<Issue[]> {
+    try {
+      const archiveRef = collection(this.firestore, 'archived_issues');
+      const querySnapshot = await getDocs(archiveRef);
+      
+      return querySnapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          projectId: data['projectId'] || '',
+          title: data['title'] || '',
+          description: data['description'] || '',
+          solution: data['solution'] || '',
+          status: data['status'] || 'not_started',
+          priority: data['priority'] || 'medium',
+          assignedTo: data['assignedTo'] || '',
+          dueDate: data['dueDate']?.toDate() || new Date(),
+          tags: data['tags'] || [],
+          todos: data['todos'] || [],
+          createdBy: data['createdBy'] || '',
+          createdAt: data['createdAt']?.toDate() || new Date(),
+          comment: data['comment'] || '',
+          archivedAt: data['archivedAt']?.toDate() || new Date()
+        };
+      });
+    } catch (error) {
+      console.error('Failed to fetch archived issues:', error);
       throw error;
     }
   }

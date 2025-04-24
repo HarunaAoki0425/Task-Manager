@@ -1,119 +1,99 @@
-<div class="issue-create-container">
-  <!-- ローディング表示 -->
-  <div class="loading-spinner" *ngIf="loading">
-    <p>処理中...</p>
+<div class="issue-create">
+  <h2>新規課題作成</h2>
+
+  <div *ngIf="errorMessage" class="error-alert">
+    {{ errorMessage }}
   </div>
 
-  <!-- エラーメッセージ -->
-  <div class="error-message" *ngIf="error">
-    {{ error }}
-  </div>
-
-  <!-- 課題作成フォーム -->
-  <div class="issue-form" *ngIf="!loading">
-    <h2>新規課題の作成</h2>
-
+  <form (ngSubmit)="createIssue()" #issueForm="ngForm">
     <div class="form-group">
       <label for="title">タイトル</label>
-      <input
-        type="text"
-        id="title"
-        class="form-control"
-        [(ngModel)]="newIssue.title"
-        placeholder="課題のタイトルを入力"
-        required
-      >
+      <input type="text" 
+             id="title" 
+             name="title" 
+             [(ngModel)]="newIssue.title" 
+             required 
+             #title="ngModel"
+             class="form-control"
+             placeholder="課題のタイトルを入力">
+      <div *ngIf="title.invalid && (title.dirty || title.touched)" class="error-message">
+        タイトルは必須です
+      </div>
     </div>
 
     <div class="form-group">
       <label for="priority">優先度</label>
-      <select
-        id="priority"
-        class="form-control"
-        [(ngModel)]="newIssue.priority"
-        required
-      >
-        <option value="high">高</option>
-        <option value="medium">中</option>
+      <select id="priority" 
+              name="priority" 
+              [(ngModel)]="newIssue.priority" 
+              class="form-control">
         <option value="low">低</option>
+        <option value="medium">中</option>
+        <option value="high">高</option>
       </select>
     </div>
 
     <div class="form-group">
       <label for="assignedTo">担当者</label>
-      <select
-        id="assignedTo"
-        class="form-control"
-        [(ngModel)]="newIssue.assignedTo"
-        required
-      >
+      <select id="assignedTo"
+              name="assignedTo"
+              [(ngModel)]="newIssue.assignedTo"
+              required
+              #assignedTo="ngModel"
+              class="form-control">
         <option value="">担当者を選択</option>
-        <option *ngFor="let member of projectMembers" [value]="member.uid">
-          {{ member.displayName }}
-        </option>
+        <option [value]="member.uid" *ngFor="let member of projectMembers">{{ member.displayName }}</option>
       </select>
+      <div *ngIf="assignedTo.invalid && (assignedTo.dirty || assignedTo.touched)" class="error-message">
+        担当者は必須です
+      </div>
     </div>
 
     <div class="form-group">
-      <label for="dueDate">期限日</label>
-      <input
-        type="date"
-        id="dueDate"
-        class="form-control"
-        [ngModel]="newIssue.dueDate | date:'yyyy-MM-dd'"
-        (ngModelChange)="newIssue.dueDate = $event"
-        [min]="minDate"
-        required
-      >
+      <label for="dueDate">締め切り日時</label>
+      <input type="datetime-local" 
+             id="dueDate" 
+             name="dueDate" 
+             [(ngModel)]="newIssue.dueDate" 
+             [min]="minDate"
+             required 
+             #dueDate="ngModel"
+             class="form-control">
+      <div *ngIf="dueDate.invalid && (dueDate.dirty || dueDate.touched)" class="error-message">
+        締め切り日時は必須です
+      </div>
     </div>
 
     <div class="form-group">
       <label for="solution">解決方法</label>
-      <textarea
-        id="solution"
-        class="form-control"
-        [(ngModel)]="newIssue.solution"
-        placeholder="課題の解決方法を入力"
-        rows="4"
-      ></textarea>
+      <textarea id="solution" 
+                name="solution" 
+                [(ngModel)]="newIssue.solution" 
+                class="form-control"
+                rows="3"
+                placeholder="課題の解決方法を入力"></textarea>
     </div>
 
-    <!-- TODOリスト -->
-    <div class="todos-section">
-      <h3>TODOリスト</h3>
-      <div class="todo-list">
-        <div class="todo-item" *ngFor="let todo of newIssue.todos; let i = index">
-          <input
-            type="text"
-            class="form-control"
-            [(ngModel)]="todo.title"
-            placeholder="TODOを入力"
-          >
-          <button class="remove-todo" (click)="removeTodo(i)">
-            <i class="fas fa-times"></i>
-          </button>
-        </div>
-      </div>
-      <button class="add-todo" (click)="addTodo()">
-        <i class="fas fa-plus"></i> TODOを追加
-      </button>
+    <div class="form-group">
+      <label>ToDoリスト</label>
+      <app-todo-create [(todos)]="newIssue.todos"></app-todo-create>
     </div>
 
-    <!-- フォームアクション -->
     <div class="form-actions">
-      <button
-        class="submit-button"
-        (click)="createIssue()"
-        [disabled]="!isFormValid()"
-      >
-        課題を作成
-      </button>
-      <button
-        class="cancel-button"
-        routerLink="/projects/{{projectId}}"
-      >
-        キャンセル
+      <button type="submit" 
+              class="btn-primary" 
+              [disabled]="!issueForm.form.valid || isSubmitting">
+        {{ isSubmitting ? '作成中...' : '作成' }}
       </button>
     </div>
-  </div>
+
+    <div *ngIf="!issueForm.form.valid" class="form-status">
+      <p>フォームが無効です。以下の項目を確認してください：</p>
+      <ul>
+        <li *ngIf="title.invalid">タイトルを入力してください</li>
+        <li *ngIf="assignedTo.invalid">担当者を選択してください</li>
+        <li *ngIf="dueDate.invalid">締め切り日時を設定してください</li>
+      </ul>
+    </div>
+  </form>
 </div> 

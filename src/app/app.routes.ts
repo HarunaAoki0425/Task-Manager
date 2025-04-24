@@ -6,12 +6,11 @@ import { SettingsComponent } from './pages/settings/settings.component';
 import { ProjectsComponent } from './pages/projects/projects.component';
 import { ProjectListComponent } from './pages/projects/list/project-list.component';
 import { ProjectDetailComponent } from './pages/projects/detail/project-detail.component';
-import { ProjectEditComponent } from './pages/projects/edit/project-edit.component';
-import { CreateProjectComponent } from './pages/projects/create-project/create-project.component';
 import { IssueDetailComponent } from './pages/projects/detail/issue-detail/issue-detail.component';
-import { IssueListComponent } from './pages/projects/detail/issue-list/issue-list.component';
 import { IssueCreateComponent } from './pages/projects/detail/issue-create/issue-create.component';
 import { AuthGuard } from './guards/auth.guard';
+import { TodoListComponent } from './pages/projects/detail/todo-list/todo-list.component';
+import { CreateProjectComponent } from './pages/projects/create-project/create-project.component';
 
 export const routes: Routes = [
   { path: '', redirectTo: '/login', pathMatch: 'full' },
@@ -30,5 +29,6 @@ export const routes: Routes = [
       { path: ':projectId/issues/create', component: IssueCreateComponent },
       { path: ':projectId/issues/:issueId', component: IssueDetailComponent }
     ]
-  }
+  },
+  { path: 'todos', component: TodoListComponent, canActivate: [AuthGuard] },
 ];

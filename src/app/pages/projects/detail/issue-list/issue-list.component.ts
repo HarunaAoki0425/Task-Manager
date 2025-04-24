@@ -32,11 +32,15 @@ export class IssueListComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.loadIssues();
-    this.loadProjectMembers();
+    if (this.projectId) {
+      this.loadIssues();
+      this.loadProjectMembers();
+    }
   }
 
   async loadProjectMembers(): Promise<void> {
+    if (!this.projectId) return;
+
     try {
       const members = await this.issueService.getProjectMembers(this.projectId);
       this.projectMembers = members;
@@ -47,10 +51,16 @@ export class IssueListComponent implements OnInit {
   }
 
   async loadIssues(): Promise<void> {
+    if (!this.projectId) return;
+
     try {
       this.loading = true;
-      this.issues = await this.issueService.getIssuesByProject(this.projectId);
       this.error = null;
+      console.log('Loading issues for project:', this.projectId);
+      
+      this.issues = await this.issueService.getIssuesByProject(this.projectId);
+      console.log('Loaded issues:', this.issues);
+      
     } catch (error) {
       console.error('Failed to load issues:', error);
       this.error = '課題の読み込みに失敗しました。';
@@ -70,16 +80,16 @@ export class IssueListComponent implements OnInit {
   }
 
   async deleteIssue(issueId: string): Promise<void> {
-    if (!confirm('この課題を削除してもよろしいですか？')) {
+    if (!confirm('この課題をアーカイブしてもよろしいですか？')) {
       return;
     }
 
     try {
-      await this.issueService.deleteIssue(issueId);
+      await this.issueService.archiveIssue(this.projectId, issueId);
       await this.loadIssues();
     } catch (error) {
-      console.error('Failed to delete issue:', error);
-      this.error = '課題の削除に失敗しました。';
+      console.error('Failed to archive issue:', error);
+      this.error = '課題のアーカイブに失敗しました。';
     }
   }
 

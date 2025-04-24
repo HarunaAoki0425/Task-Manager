@@ -5,6 +5,9 @@ import { FormsModule } from '@angular/forms';
 import { Issue, Todo } from '../../../../models/project.model';
 import { IssueService } from '../../../../services/issue.service';
 import { UserService } from '../../../../services/user.service';
+import { TodoCreateComponent } from '../todo-create/todo-create.component';
+import { TodoDetailComponent } from '../todo-detail/todo-detail.component';
+import { AuthService } from '../../../../services/auth.service';
 
 interface ProjectMember {
   uid: string;
@@ -14,24 +17,33 @@ interface ProjectMember {
 @Component({
   selector: 'app-issue-detail',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [
+    CommonModule,
+    RouterModule,
+    FormsModule,
+    TodoCreateComponent,
+    TodoDetailComponent
+  ],
   templateUrl: './issue-detail.component.html',
   styleUrls: ['./issue-detail.component.css']
 })
 export class IssueDetailComponent implements OnInit {
   issue: Issue | null = null;
-  projectMembers: ProjectMember[] = [];
-  loading = true;
-  error: string | null = null;
+  editingIssue: Issue | null = null;
   isEditMode = false;
-  editingIssue: Partial<Issue> | null = null;
+  loading = false;
+  error: string | null = null;
+  projectId: string = '';
+  projectMembers: ProjectMember[] = [];
   minDate: string;
+  isAddingComment = false;
+  newComment = '';
 
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private issueService: IssueService,
-    private userService: UserService
+    private authService: AuthService
   ) {
     const today = new Date();
     this.minDate = today.toISOString().split('T')[0];
@@ -62,7 +74,11 @@ export class IssueDetailComponent implements OnInit {
       const members = await this.issueService.getProjectMembers(issueData.projectId);
       
       // データの設定
-      this.issue = issueData;
+      this.issue = {
+        ...issueData,
+        comment: issueData.comment || '',
+        todos: issueData.todos || []
+      };
       this.projectMembers = members || [];
       
     } catch (error) {
@@ -76,55 +92,51 @@ export class IssueDetailComponent implements OnInit {
 
   enterEditMode(): void {
     if (this.issue) {
-      this.editingIssue = { ...this.issue };
+      this.editingIssue = {
+        ...this.issue,
+        dueDate: new Date(this.issue.dueDate),
+        todos: [...this.issue.todos],
+        comment: this.issue.comment || ''
+      };
       this.isEditMode = true;
     }
   }
 
   cancelEdit(): void {
     this.isEditMode = false;
-    this.editingIssue = null;
-  }
-
-  addTodo(): void {
-    if (!this.editingIssue?.todos) {
-      if (this.editingIssue) {
-        this.editingIssue.todos = [];
-      }
+    if (this.issue) {
+      this.editingIssue = { ...this.issue };
     }
-    this.editingIssue?.todos?.push({
-      id: Date.now().toString(),
-      title: '',
-      completed: false,
-      createdAt: new Date()
-    });
-  }
-
-  removeTodo(index: number): void {
-    this.editingIssue?.todos?.splice(index, 1);
   }
 
   isFormValid(): boolean {
     return !!(
       this.editingIssue?.title &&
-      this.editingIssue?.assignedTo &&
-      this.editingIssue?.dueDate &&
-      (!this.editingIssue?.todos || this.editingIssue.todos.every(todo => todo.title.trim()))
+      this.editingIssue.assignedTo &&
+      this.editingIssue.dueDate &&
+      (!this.editingIssue.todos || this.editingIssue.todos.every(todo => todo.title.trim()))
     );
   }
 
-  async saveChanges(): Promise<void> {
-    if (!this.isFormValid() || !this.editingIssue || !this.issue) {
-      return;
-    }
+  async saveChanges() {
+    if (!this.isFormValid() || !this.editingIssue || !this.issue) return;
 
     try {
-      await this.issueService.updateIssue(this.issue.id, this.editingIssue);
+      const updatedIssue = {
+        ...this.editingIssue,
+        dueDate: new Date(this.editingIssue.dueDate),
+        comment: this.editingIssue.comment || '',
+        todos: this.editingIssue.todos || []
+      };
+
+      await this.issueService.updateIssue(this.issue.id, updatedIssue);
+      
+      // 更新後の課題を再取得
       await this.loadIssue(this.issue.id);
       this.isEditMode = false;
       this.editingIssue = null;
     } catch (error) {
-      console.error('Failed to update issue:', error);
+      console.error('課題の更新に失敗しました:', error);
       this.error = '課題の更新に失敗しました。';
     }
   }
@@ -181,18 +193,41 @@ export class IssueDetailComponent implements OnInit {
     }
   }
 
-  getTodoProgress(): number {
-    if (!this.issue?.todos || this.issue.todos.length === 0) {
-      return 0;
+  async addComment() {
+    if (!this.issue || !this.newComment.trim()) return;
+
+    try {
+      const updatedIssue = {
+        ...this.issue,
+        id: this.issue.id,
+        projectId: this.issue.projectId,
+        title: this.issue.title,
+        solution: this.issue.solution,
+        status: this.issue.status,
+        priority: this.issue.priority,
+        assignedTo: this.issue.assignedTo,
+        dueDate: this.issue.dueDate,
+        tags: this.issue.tags,
+        todos: this.issue.todos,
+        createdBy: this.issue.createdBy,
+        createdAt: this.issue.createdAt,
+        comment: this.newComment.trim()
+      };
+
+      await this.issueService.updateIssue(this.issue.id, updatedIssue);
+      
+      // 更新後の課題を再取得
+      await this.loadIssue(this.issue.id);
+      this.isAddingComment = false;
+      this.newComment = '';
+    } catch (error) {
+      console.error('コメントの追加に失敗しました:', error);
+      this.error = 'コメントの追加に失敗しました。';
     }
-    const completedCount = this.getCompletedTodos();
-    return (completedCount / this.issue.todos.length) * 100;
   }
 
-  getCompletedTodos(): number {
-    if (!this.issue?.todos) {
-      return 0;
-    }
-    return this.issue.todos.filter(todo => todo.completed).length;
+  cancelAddComment() {
+    this.isAddingComment = false;
+    this.newComment = '';
   }
 } 

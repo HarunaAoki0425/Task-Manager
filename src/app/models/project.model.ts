@@ -1,35 +1,39 @@
 export interface Project {
-  id?: string;
-  userId: string;
+  id: string;
   title: string;
   description: string;
   status: 'not_started' | 'in_progress' | 'completed';
-  dueDate: Date;
   createdAt: Date;
   updatedAt: Date;
-  members: string[]; // ユーザーIDの配列
+  dueDate: Date;
+  userId: string;
+  members: string[];
+  issues: Issue[];
 }
 
 export interface Issue {
   id: string;
   projectId: string;
   title: string;
-  solution: string; // 解決方法
+  description: string;
+  solution: string;
   status: 'not_started' | 'in_progress' | 'completed';
   priority: 'high' | 'medium' | 'low';
   assignedTo: string;
   dueDate: Date;
   tags: string[];
-  todos: Todo[]; // ToDoリスト
+  todos: Todo[];
   createdBy: string;
   createdAt: Date;
+  comment?: string;
 }
 
 export interface Todo {
   id: string;
   title: string;
   completed: boolean;
-  createdAt: Date;
+  assignedTo?: string;
+  dueDate?: Date;
 }
 
 export interface Task {
@@ -53,4 +57,11 @@ export interface Notification {
   read: boolean;
   createdAt: Date;
   relatedId?: string; // プロジェクト、課題、またはタスクのID
+}
+
+export interface ProjectMember {
+  uid: string;
+  displayName: string;
+  email?: string;
+  photoURL?: string | null;
 } 

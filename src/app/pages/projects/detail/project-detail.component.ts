@@ -6,6 +6,7 @@ import { ProjectService } from '../../../services/project.service';
 import { Router, ActivatedRoute } from '@angular/router';
 import { UserService } from '../../../services/user.service';
 import { IssueListComponent } from './issue-list/issue-list.component';
+import { ProjectMember } from '../../../models/project.model';
 
 @Component({
   selector: 'app-project-detail',
@@ -56,12 +57,15 @@ export class ProjectDetailComponent implements OnInit {
     if (!this.project) return;
     
     try {
-      const memberPromises = this.project.members.map(async (uid) => {
-        const user = await this.userService.getUser(uid);
-        return {
-          uid,
-          displayName: user?.displayName || 'Unknown User'
-        };
+      const memberPromises = this.project.members.map(async (member) => {
+        if (typeof member === 'string') {
+          const user = await this.userService.getUser(member);
+          return {
+            uid: member,
+            displayName: user?.displayName || 'Unknown User'
+          };
+        }
+        return member;
       });
 
       this.projectMembers = await Promise.all(memberPromises);
@@ -86,6 +90,15 @@ export class ProjectDetailComponent implements OnInit {
       await this.router.navigate(['/projects']);
     } catch (error) {
       console.error('Failed to delete project:', error);
+    }
+  }
+
+  async getMemberName(uid: ProjectMember | string): Promise<string> {
+    if (typeof uid === 'string') {
+      const user = await this.userService.getUser(uid);
+      return user?.displayName || '未設定';
+    } else {
+      return uid.displayName || '未設定';
     }
   }
 } 

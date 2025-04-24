@@ -13,9 +13,15 @@
   <div class="issue-detail" *ngIf="!loading && !error && issue">
     <div class="issue-header">
       <div class="issue-title-section">
-        <h2>{{ issue.title }}</h2>
+        <input *ngIf="isEditMode && editingIssue" type="text" [(ngModel)]="editingIssue!.title" class="title-input" required>
+        <h2 *ngIf="!isEditMode">{{ issue.title }}</h2>
         <div class="issue-badges">
-          <span class="priority-badge" [ngClass]="'priority-' + issue.priority">
+          <select *ngIf="isEditMode && editingIssue" [(ngModel)]="editingIssue!.priority" class="priority-select">
+            <option value="high">高</option>
+            <option value="medium">中</option>
+            <option value="low">低</option>
+          </select>
+          <span *ngIf="!isEditMode" class="priority-badge" [ngClass]="'priority-' + issue.priority">
             {{ getPriorityText(issue.priority) }}
           </span>
           <span class="status-badge" [ngClass]="'status-' + issue.status">
@@ -24,12 +30,22 @@
         </div>
       </div>
       <div class="issue-actions">
-        <button class="edit-btn" (click)="enterEditMode()">
-          <i class="fas fa-edit"></i> 編集
-        </button>
-        <button class="delete-btn" (click)="deleteIssue()">
-          <i class="fas fa-trash"></i> 削除
-        </button>
+        <ng-container *ngIf="!isEditMode">
+          <button class="edit-btn" (click)="enterEditMode()">
+            <i class="fas fa-edit"></i> 編集
+          </button>
+          <button class="delete-btn" (click)="deleteIssue()">
+            <i class="fas fa-trash"></i> 削除
+          </button>
+        </ng-container>
+        <ng-container *ngIf="isEditMode">
+          <button class="save-btn" (click)="saveChanges()" [disabled]="!isFormValid()">
+            <i class="fas fa-save"></i> 保存
+          </button>
+          <button class="cancel-btn" (click)="cancelEdit()">
+            <i class="fas fa-times"></i> キャンセル
+          </button>
+        </ng-container>
       </div>
     </div>
 
@@ -37,11 +53,18 @@
       <div class="info-grid">
         <div class="info-item">
           <label>担当者</label>
-          <span>{{ getMemberName(issue.assignedTo) }}</span>
+          <select *ngIf="isEditMode && editingIssue" [(ngModel)]="editingIssue!.assignedTo" class="form-control" required>
+            <option value="">担当者を選択</option>
+            <option *ngFor="let member of projectMembers" [value]="member.uid">
+              {{ member.displayName }}
+            </option>
+          </select>
+          <span *ngIf="!isEditMode">{{ getMemberName(issue.assignedTo) }}</span>
         </div>
         <div class="info-item">
           <label>締切日</label>
-          <span>{{ issue.dueDate | date:'yyyy/MM/dd' }}</span>
+          <input *ngIf="isEditMode && editingIssue" type="date" [(ngModel)]="editingIssue!.dueDate" class="form-control" [min]="minDate" required>
+          <span *ngIf="!isEditMode">{{ issue.dueDate | date:'yyyy/MM/dd' }}</span>
         </div>
         <div class="info-item">
           <label>作成者</label>
@@ -61,39 +84,68 @@
     </div>
 
     <div class="issue-content">
-      <!-- 解決方法 - 条件を緩和 -->
+      <!-- 解決方法セクション -->
       <div class="issue-solution">
         <h3>解決方法</h3>
-        <p class="solution-text">{{ issue.solution || '未設定' }}</p>
+        <textarea *ngIf="isEditMode && editingIssue" 
+                 [(ngModel)]="editingIssue!.solution" 
+                 class="solution-input" 
+                 rows="3" 
+                 placeholder="課題の解決方法をメモしてください"></textarea>
+        <p *ngIf="!isEditMode && issue" class="solution-text">
+          {{ issue.solution || '未設定' }}
+        </p>
       </div>
 
-      <!-- ToDoリスト - 常に表示し、空の場合はメッセージを表示 -->
+      <!-- コメントセクション -->
+      <div class="issue-comment">
+        <div class="comment-header">
+          <h3>コメント</h3>
+          <button *ngIf="!isEditMode && !isAddingComment" 
+                  class="add-comment-btn"
+                  (click)="isAddingComment = true">
+            <i class="fas fa-plus"></i> コメントを追加
+          </button>
+        </div>
+
+        <!-- コメント追加フォーム -->
+        <div *ngIf="!isEditMode && isAddingComment" class="comment-form">
+          <textarea [(ngModel)]="newComment"
+                   class="comment-input"
+                   rows="3"
+                   placeholder="コメントを入力してください"></textarea>
+          <div class="comment-actions">
+            <button class="save-btn" 
+                    (click)="addComment()"
+                    [disabled]="!newComment.trim()">
+              保存
+            </button>
+            <button class="cancel-btn" 
+                    (click)="cancelAddComment()">
+              キャンセル
+            </button>
+          </div>
+        </div>
+
+        <!-- 既存のコメント表示 -->
+        <div *ngIf="!isEditMode && !isAddingComment && issue" class="comment-text">
+          {{ issue.comment || 'コメントはありません' }}
+        </div>
+      </div>
+
       <div class="issue-todos">
         <h3>ToDoリスト</h3>
-        <div *ngIf="issue.todos && issue.todos.length > 0">
-          <div class="todo-progress">
-            <div class="progress-bar">
-              <div class="progress" [style.width.%]="getTodoProgress()"></div>
-            </div>
-            <span class="progress-text">{{ getCompletedTodos() }}/{{ issue.todos.length }}</span>
-          </div>
-          <ul class="todo-list">
-            <li *ngFor="let todo of issue.todos" [class.completed]="todo.completed">
-              <div class="todo-item">
-                <input type="checkbox" [checked]="todo.completed" disabled>
-                <span class="todo-title">{{ todo.title }}</span>
-                <span class="todo-date">{{ todo.createdAt | date:'yyyy/MM/dd' }}</span>
-              </div>
-            </li>
-          </ul>
-        </div>
-        <p *ngIf="!issue.todos || issue.todos.length === 0" class="no-todos">
-          ToDoリストが設定されていません
-        </p>
+        <app-todo-create *ngIf="isEditMode && editingIssue"
+                        [(todos)]="editingIssue!.todos"
+                        [projectMembers]="projectMembers">
+        </app-todo-create>
+        <app-todo-detail *ngIf="!isEditMode && issue"
+                        [(todos)]="issue.todos"
+                        [projectMembers]="projectMembers">
+        </app-todo-detail>
       </div>
     </div>
 
-    <!-- ステータスアクション - 条件を修正 -->
     <div class="status-actions">
       <button *ngIf="issue.status !== 'in_progress' && issue.status !== 'completed'"
               class="action-btn start-btn"
@@ -111,115 +163,5 @@
         <i class="fas fa-redo"></i> 再開する
       </button>
     </div>
-  </div>
-
-  <!-- 編集フォーム -->
-  <div class="edit-form" *ngIf="!loading && !error && isEditMode && editingIssue">
-    <h2>課題を編集</h2>
-    <form (ngSubmit)="saveChanges()">
-      <!-- タイトル -->
-      <div class="form-group">
-        <label for="issueTitle">タイトル</label>
-        <input
-          type="text"
-          id="issueTitle"
-          name="title"
-          [(ngModel)]="editingIssue.title"
-          required
-          class="form-control"
-        >
-      </div>
-
-      <!-- 解決方法 -->
-      <div class="form-group">
-        <label for="issueSolution">解決方法</label>
-        <textarea
-          id="issueSolution"
-          name="solution"
-          [(ngModel)]="editingIssue.solution"
-          rows="3"
-          class="form-control"
-          placeholder="課題の解決方法をメモしてください"
-        ></textarea>
-      </div>
-
-      <!-- 優先度 -->
-      <div class="form-group">
-        <label for="issuePriority">優先度</label>
-        <select
-          id="issuePriority"
-          name="priority"
-          [(ngModel)]="editingIssue.priority"
-          class="form-control"
-        >
-          <option value="high">高</option>
-          <option value="medium">中</option>
-          <option value="low">低</option>
-        </select>
-      </div>
-
-      <!-- 担当者 -->
-      <div class="form-group">
-        <label for="issueAssignee">担当者</label>
-        <select
-          id="issueAssignee"
-          name="assignedTo"
-          [(ngModel)]="editingIssue.assignedTo"
-          class="form-control"
-          required
-        >
-          <option value="">担当者を選択</option>
-          <option *ngFor="let member of projectMembers" [value]="member.uid">
-            {{ member.displayName }}
-          </option>
-        </select>
-      </div>
-
-      <!-- 締切日 -->
-      <div class="form-group">
-        <label for="issueDueDate">締切日</label>
-        <input
-          type="date"
-          id="issueDueDate"
-          name="dueDate"
-          [(ngModel)]="editingIssue.dueDate"
-          class="form-control"
-          [min]="minDate"
-          required
-        >
-      </div>
-
-      <!-- ToDoリスト -->
-      <div class="form-group">
-        <label>ToDoリスト</label>
-        <div class="todo-list">
-          <div *ngFor="let todo of editingIssue.todos; let i = index" class="todo-item">
-            <input
-              type="text"
-              [(ngModel)]="todo.title"
-              [name]="'todo-' + i"
-              class="form-control"
-              placeholder="ToDo項目"
-            >
-            <button type="button" class="remove-todo" (click)="removeTodo(i)">
-              <i class="fas fa-times"></i>
-            </button>
-          </div>
-          <button type="button" class="add-todo" (click)="addTodo()">
-            <i class="fas fa-plus"></i> ToDoを追加
-          </button>
-        </div>
-      </div>
-
-      <!-- 送信ボタン -->
-      <div class="form-actions">
-        <button type="submit" class="submit-button" [disabled]="!isFormValid()">
-          保存
-        </button>
-        <button type="button" class="cancel-button" (click)="cancelEdit()">
-          キャンセル
-        </button>
-      </div>
-    </form>
   </div>
 </div> 

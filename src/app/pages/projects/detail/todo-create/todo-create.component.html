@@ -1,0 +1,33 @@
+<div class="todo-create">
+  <div class="todo-list">
+    <div *ngFor="let todo of todos; let i = index" class="todo-item">
+      <div class="todo-content">
+        <input type="text" 
+               [(ngModel)]="todo.title" 
+               class="todo-input"
+               placeholder="ToDoを入力">
+        <div class="todo-actions">
+          <select [(ngModel)]="todo.assignedTo" 
+                  class="assignee-select">
+            <option value="">担当者を選択</option>
+            <option *ngFor="let member of projectMembers" 
+                    [value]="member.uid">
+              {{ member.displayName }}
+            </option>
+          </select>
+          <input type="datetime-local" 
+                 [(ngModel)]="todo.dueDate" 
+                 class="due-date-input"
+                 [min]="minDate">
+          <button class="remove-btn" 
+                  (click)="removeTodo(i)">
+            <i class="fas fa-trash"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <button class="add-todo-btn" (click)="addTodo()">
+    <i class="fas fa-plus"></i> ToDoを追加
+  </button>
+</div>

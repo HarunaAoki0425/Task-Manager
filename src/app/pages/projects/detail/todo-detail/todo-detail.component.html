@@ -1,0 +1,37 @@
+<div class="todo-detail">
+  <div *ngIf="todos && todos.length > 0">
+    <div class="todo-progress">
+      <div class="progress-bar">
+        <div class="progress" [style.width.%]="getTodoProgress()"></div>
+      </div>
+      <span class="progress-text">{{ getCompletedTodos() }}/{{ todos.length }}</span>
+    </div>
+    
+    <div class="todo-list">
+      <div *ngFor="let todo of todos" class="todo-item">
+        <div class="todo-content">
+          <div class="todo-header">
+            <input type="checkbox" 
+                   [(ngModel)]="todo.completed" 
+                   (change)="onTodoChange()">
+            <span class="todo-title" [class.completed]="todo.completed">
+              {{ todo.title }}
+            </span>
+          </div>
+          <div class="todo-info">
+            <span class="assignee" *ngIf="todo.assignedTo">
+              担当: {{ getMemberName(todo.assignedTo) }}
+            </span>
+            <span class="due-date" *ngIf="todo.dueDate">
+              期限: {{ todo.dueDate | date:'yyyy/MM/dd HH:mm' }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <p *ngIf="!todos || todos.length === 0" class="no-todos">
+    ToDoリストが設定されていません
+  </p>
+</div>

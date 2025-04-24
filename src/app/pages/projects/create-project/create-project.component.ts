@@ -1,9 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { ProjectService } from '../../../services/project.service';
 import { Auth } from '@angular/fire/auth';
+import { Project, ProjectMember, Issue } from '../../../models/project.model';
 
 interface ProjectCreate {
   title: string;
@@ -12,23 +13,25 @@ interface ProjectCreate {
   dueDate: Date;
   members: string[];
   userId: string;
+  issues: Issue[];
 }
 
 @Component({
   selector: 'app-create-project',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './create-project.component.html',
   styleUrls: ['./create-project.component.css']
 })
 export class CreateProjectComponent implements OnInit {
-  project = {
+  project: ProjectCreate = {
     title: '',
     description: '',
-    status: 'not_started' as const,
+    status: 'not_started',
     dueDate: new Date(),
-    members: [] as string[],
-    userId: ''
+    members: [],
+    userId: '',
+    issues: []
   };
 
   isSubmitting = false;
@@ -44,6 +47,8 @@ export class CreateProjectComponent implements OnInit {
     const user = this.auth.currentUser;
     if (user) {
       this.project.userId = user.uid;
+      // 作成者をメンバーとして追加
+      this.project.members = [user.uid];
     }
 
     // 最小日付を今日に設定

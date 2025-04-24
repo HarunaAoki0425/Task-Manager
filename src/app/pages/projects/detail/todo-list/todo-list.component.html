@@ -1,0 +1,75 @@
+<div class="todo-list-container">
+  <div class="todo-header mb-4">
+    <h2 class="text-2xl font-bold">Todo一覧</h2>
+  </div>
+
+  <div *ngIf="loading" class="flex justify-center items-center p-4">
+    <div class="spinner-border text-primary" role="status">
+      <span class="sr-only">Loading...</span>
+    </div>
+  </div>
+
+  <div *ngIf="error" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">
+    <span class="block sm:inline">{{ error }}</span>
+    <ng-container *ngIf="error === 'ログインが必要です。'">
+      <div class="mt-2">
+        <a [routerLink]="['/login']" class="text-blue-600 hover:text-blue-800 underline">
+          ログインページへ移動
+        </a>
+      </div>
+    </ng-container>
+  </div>
+
+  <!-- Todo一覧 -->
+  <div *ngIf="!loading && !error && sortedTodos.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div *ngFor="let todo of sortedTodos" class="todo-card bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow">
+      <!-- Todo状態 -->
+      <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center">
+          <input
+            type="checkbox"
+            [checked]="todo.completed"
+            (change)="onTodoStatusChange(todo)"
+            class="form-checkbox h-5 w-5 text-blue-600 rounded"
+          >
+          <span [class.line-through]="todo.completed" class="ml-2 text-sm text-gray-500">
+            {{ todo.completed ? '完了' : '未完了' }}
+          </span>
+        </div>
+        <span [class]="getDueDateClass(todo)">
+          {{ formatDate(todo.dueDate) }}
+        </span>
+      </div>
+
+      <!-- Todoタイトル -->
+      <h3 [class.line-through]="todo.completed" class="text-lg font-semibold mb-2">{{ todo.title }}</h3>
+
+      <!-- プロジェクトと課題の情報 -->
+      <div class="text-sm text-gray-600 mb-2">
+        <div class="flex items-center mb-1">
+          <i class="fas fa-project-diagram mr-2"></i>
+          <a [routerLink]="['/projects', todo.projectId]" class="hover:text-blue-600">
+            {{ getProjectTitle(todo.projectId) }}
+          </a>
+        </div>
+        <div class="flex items-center">
+          <i class="fas fa-tasks mr-2"></i>
+          <a [routerLink]="['/projects', todo.projectId, 'issues', todo.issueId]" class="hover:text-blue-600">
+            {{ getIssueTitle(todo.projectId, todo.issueId) }}
+          </a>
+        </div>
+      </div>
+
+      <!-- 担当者 -->
+      <div class="flex items-center mt-3">
+        <i class="fas fa-user mr-2"></i>
+        <span class="text-sm text-gray-600">{{ getMemberName(todo.assignedTo) }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- データが存在しない場合 -->
+  <div *ngIf="!loading && !error && sortedTodos.length === 0" class="text-center py-8">
+    <p class="text-gray-500">Todoが登録されていません</p>
+  </div>
+</div> 

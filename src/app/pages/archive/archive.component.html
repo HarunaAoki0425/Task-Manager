@@ -1,0 +1,68 @@
+<div class="archive-container">
+  <h1>アーカイブ</h1>
+
+  <div *ngIf="loading" class="loading">
+    <mat-spinner diameter="40"></mat-spinner>
+    <p>アーカイブされた課題を読み込んでいます...</p>
+  </div>
+
+  <div *ngIf="error" class="error-message">
+    <mat-icon>error</mat-icon>
+    <p>{{ error }}</p>
+  </div>
+
+  <div *ngIf="!loading && !error">
+    <div *ngIf="archivedIssues.length === 0" class="no-issues">
+      <mat-icon>archive</mat-icon>
+      <p>アーカイブされた課題はありません</p>
+    </div>
+
+    <div *ngIf="archivedIssues.length > 0" class="issues-grid">
+      <div *ngFor="let issue of archivedIssues" class="issue-card">
+        <div class="issue-header">
+          <h3>{{ issue.title }}</h3>
+          <div class="header-actions">
+            <span [class]="'status-badge ' + getStatusClass(issue.status)">
+              {{ getStatusText(issue.status) }}
+            </span>
+            <button mat-icon-button [routerLink]="['/projects', issue.projectId, 'issues', issue.id]" class="info-button">
+              <mat-icon>info</mat-icon>
+            </button>
+          </div>
+        </div>
+
+        <p class="description">{{ issue.description }}</p>
+
+        <div class="issue-metadata">
+          <div class="metadata-item">
+            <mat-icon>person</mat-icon>
+            <span>担当: {{ issue.assignedToName }}</span>
+          </div>
+          <div class="metadata-item">
+            <mat-icon>event</mat-icon>
+            <span>期限: {{ formatDate(issue.dueDate) }}</span>
+          </div>
+          <div class="metadata-item">
+            <mat-icon [class]="'priority ' + getPriorityClass(issue.priority)">priority_high</mat-icon>
+            <span>優先度: {{ getPriorityText(issue.priority) }}</span>
+          </div>
+          <div class="metadata-item">
+            <mat-icon>person_outline</mat-icon>
+            <span>作成者: {{ issue.createdByName }}</span>
+          </div>
+        </div>
+
+        <div class="issue-footer">
+          <div class="metadata-item">
+            <mat-icon>archive</mat-icon>
+            <span>アーカイブ日: {{ formatDate(issue.archivedAt) }}</span>
+          </div>
+          <div class="metadata-item">
+            <mat-icon>event_available</mat-icon>
+            <span>作成日: {{ formatDate(issue.createdAt) }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div> 

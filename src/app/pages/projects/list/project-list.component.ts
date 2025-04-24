@@ -21,7 +21,8 @@ export class ProjectListComponent implements OnInit {
     status: 'not_started' as const,
     dueDate: new Date(),
     members: [], // ProjectServiceで自動的に設定される
-    userId: ''  // ProjectServiceで自動的に設定される
+    userId: '',  // ProjectServiceで自動的に設定される
+    issues: []
   };
   isLoading = false;
   errorMessage = '';
@@ -49,17 +50,22 @@ export class ProjectListComponent implements OnInit {
     try {
       await this.projectService.createProject(this.newProject);
       this.showCreateModal = false;
-      this.newProject = {
-        title: '',
-        description: '',
-        status: 'not_started' as const,
-        dueDate: new Date(),
-        members: [], // ProjectServiceで自動的に設定される
-        userId: ''  // ProjectServiceで自動的に設定される
-      };
+      this.resetForm();
       await this.loadProjects();
     } catch (error) {
       console.error('プロジェクトの作成に失敗しました:', error);
     }
+  }
+
+  resetForm() {
+    this.newProject = {
+      title: '',
+      description: '',
+      status: 'not_started' as const,
+      dueDate: new Date(),
+      members: [],
+      userId: '',
+      issues: []
+    };
   }
 } 

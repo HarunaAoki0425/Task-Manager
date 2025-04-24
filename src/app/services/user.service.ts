@@ -1,12 +1,20 @@
 import { Injectable } from '@angular/core';
 import { Firestore, doc, getDoc, setDoc, updateDoc, DocumentData } from '@angular/fire/firestore';
 import { User, UserProfile } from '../models/user.model';
+import { Auth } from '@angular/fire/auth';
 
 @Injectable({
   providedIn: 'root'
 })
 export class UserService {
-  constructor(private firestore: Firestore) {}
+  constructor(
+    private firestore: Firestore,
+    private auth: Auth
+  ) {}
+
+  getCurrentUser() {
+    return this.auth.currentUser;
+  }
 
   async createUser(uid: string, userData: UserProfile): Promise<void> {
     const user: User = {

@@ -1,17 +1,27 @@
 <div class="home-container">
-  <div class="welcome-section">
-    <h1>タスク管理アプリへようこそ</h1>
-    <p>プロジェクトや課題を効率的に管理しましょう</p>
-  </div>
-
-  <div class="action-buttons">
-    <a routerLink="/projects" class="action-button">
-      <i class="fas fa-project-diagram"></i>
+  <h1>Welcome to Task Manager</h1>
+  <div class="button-grid">
+    <a routerLink="/project-list" class="feature-button">
+      <span class="material-icons">folder</span>
       <span>プロジェクト一覧</span>
     </a>
-    <a routerLink="/todos" class="action-button">
-      <i class="fas fa-tasks"></i>
+    <a routerLink="/todo-list" class="feature-button">
+      <span class="material-icons">check_circle</span>
       <span>ToDo一覧</span>
+    </a>
+    <a routerLink="/calendar" class="feature-button">
+      <span class="material-icons">calendar_today</span>
+      <span>カレンダー</span>
+    </a>
+    <a routerLink="/remainder-list" class="feature-button">
+      <span class="material-icons">lightbulb</span>
+      <span>リマインダー</span>
+    </a>
+  </div>
+  <div class="archive-container">
+    <a routerLink="/archive" class="archive-button">
+      <span class="material-icons">archive</span>
+      <span>アーカイブ</span>
     </a>
   </div>
 </div> 

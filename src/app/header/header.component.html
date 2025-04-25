@@ -1,0 +1,28 @@
+<header>
+  <div class="header-content">
+    <h1><a routerLink="/home">Task Manager</a></h1>
+    <nav>
+      <ul>
+        <li><a routerLink="/project-list">Project</a></li>
+        <li><a routerLink="/todo-list">ToDo</a></li>
+        <li><a routerLink="/calendar">Calendar</a></li>
+        <li><a routerLink="/remainder-list">Remainder</a></li>
+      </ul>
+    </nav>
+    <div class="search-box">
+      <span class="material-icons search-icon">search</span>
+      <input type="text" placeholder="検索" class="search-input">
+    </div>
+    <div class="header-actions">
+      <a routerLink="/notification" class="icon-button">
+        <span class="material-icons">notifications</span>
+      </a>
+      <a routerLink="/setting" class="icon-button">
+        <span class="material-icons">settings</span>
+      </a>
+      <button class="icon-button" (click)="logout()">
+        <span class="material-icons">logout</span>
+      </button>
+    </div>
+  </div>
+</header> 

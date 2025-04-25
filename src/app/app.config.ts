@@ -1,28 +1,16 @@
-import { ApplicationConfig } from '@angular/core';
+import { ApplicationConfig, importProvidersFrom } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { routes } from './app.routes';
 import { initializeApp, provideFirebaseApp } from '@angular/fire/app';
 import { getAuth, provideAuth } from '@angular/fire/auth';
-import { getFirestore, provideFirestore } from '@angular/fire/firestore';
-import { getMessaging, provideMessaging } from '@angular/fire/messaging';
-import { provideHttpClient } from '@angular/common/http';
-
-const firebaseConfig = {
-  projectId: "task-manager-f7b3c",
-  appId: "1:888120882480:web:ef29b3af6bed3e001644f5",
-  storageBucket: "task-manager-f7b3c.firebasestorage.app",
-  apiKey: "AIzaSyA4dkYXIplXCCGZhgj4YHeDZKGJ6OZQ4rk",
-  authDomain: "task-manager-f7b3c.firebaseapp.com",
-  messagingSenderId: "888120882480"
-};
+import { environment } from '../environments/environment';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideRouter(routes),
-    provideFirebaseApp(() => initializeApp(firebaseConfig)),
-    provideAuth(() => getAuth()),
-    provideFirestore(() => getFirestore()),
-    provideMessaging(() => getMessaging()),
-    provideHttpClient()
+    importProvidersFrom(
+      provideFirebaseApp(() => initializeApp(environment.firebase)),
+      provideAuth(() => getAuth())
+    )
   ]
-};
+}; 

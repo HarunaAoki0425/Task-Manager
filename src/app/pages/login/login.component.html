@@ -1,42 +1,35 @@
-<div class="form-container">
-  <div class="form-box">
-    <h1>Task Manager</h1>
-    <h2>Login</h2>
-    
-    <form (ngSubmit)="onSubmit()">
-      <div class="form-group">
-        <label for="email" class="sr-only">Email</label>
-        <input 
-          id="email"
+<div class="auth-page">
+  <div class="auth-card">
+    <h2 class="auth-title">ログイン</h2>
+    <form class="auth-form" (ngSubmit)="onSubmit()">
+      <div class="form-field">
+        <label class="form-label" for="email">メールアドレス</label>
+        <input
+          class="form-input"
           type="email"
-          name="email"
+          id="email"
           [(ngModel)]="email"
+          name="email"
+          required
+          placeholder="example@example.com"
+        >
+      </div>
+      <div class="form-field">
+        <label class="form-label" for="password">パスワード</label>
+        <input
           class="form-input"
-          placeholder="Email"
-          required>
-
-        <label for="password" class="sr-only">Password</label>
-        <input 
-          id="password"
           type="password"
-          name="password"
+          id="password"
           [(ngModel)]="password"
-          class="form-input"
-          placeholder="Password"
-          required>
+          name="password"
+          required
+          placeholder="パスワードを入力"
+        >
       </div>
-
-      <button type="submit" class="submit-button">
-        Login
-      </button>
-
-      <div class="register-link">
-        <a routerLink="/register">Don't have an account? Register here</a>
+      <div *ngIf="errorMessage" class="error-message">
+        {{ errorMessage }}
       </div>
+      <button class="submit-button" type="submit">ログイン</button>
     </form>
-
-    <div *ngIf="errorMessage" class="error-message">
-      {{ errorMessage }}
-    </div>
   </div>
-</div> 
+</div>

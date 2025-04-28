@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
-import { Auth } from '@angular/fire/auth';
+import { Auth, createUserWithEmailAndPassword } from '@angular/fire/auth';
 
 @Component({
   selector: 'app-login',
@@ -17,10 +17,20 @@ export class LoginComponent {
   email: string = '';
   password: string = '';
   errorMessage: string = '';
+  showRegisterPopup: boolean = false;
+  registerEmail: string = '';
+  registerPassword: string = '';
+  registerPasswordConfirm: string = '';
+  showRegisterPassword: boolean = false;
+  showRegisterPasswordConfirm: boolean = false;
+  registerErrorMessage: string = '';
+  registerSending: boolean = false;
+  registerSuccessMessage: string = '';
 
   constructor(
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private auth: Auth
   ) {}
 
   async onSubmit(): Promise<void> {
@@ -48,6 +58,24 @@ export class LoginComponent {
         default:
           this.errorMessage = 'ログインに失敗しました。';
       }
+    }
+  }
+
+  async onRegister() {
+    this.registerErrorMessage = '';
+    if (!this.registerEmail || !this.registerPassword || !this.registerPasswordConfirm || this.registerPassword !== this.registerPasswordConfirm) return;
+    this.registerSending = true;
+    try {
+      await createUserWithEmailAndPassword(this.auth, this.registerEmail, this.registerPassword);
+      this.showRegisterPopup = false;
+      this.registerEmail = '';
+      this.registerPassword = '';
+      this.registerPasswordConfirm = '';
+      this.registerSuccessMessage = '登録が成功しました。ログインしてください。';
+    } catch (e: any) {
+      this.registerErrorMessage = e.message || '登録に失敗しました。';
+    } finally {
+      this.registerSending = false;
     }
   }
 }

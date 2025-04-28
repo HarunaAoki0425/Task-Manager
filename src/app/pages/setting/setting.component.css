@@ -1,0 +1,210 @@
+.setting-container {
+  padding: 2rem;
+}
+
+h2 {
+  color: #333;
+  font-size: 1.5rem;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.setting-info {
+  max-width: 400px;
+  margin: 0 auto;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  padding: 2rem;
+}
+
+.displayname-row {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin-top: 1.2rem;
+  flex-wrap: wrap;
+}
+
+.displayname-text {
+  font-size: 1.1rem;
+  color: #333;
+  margin-right: 0.5rem;
+  min-width: 80px;
+}
+
+.displayname-input {
+  flex: 1 1 160px;
+  min-width: 120px;
+  max-width: 220px;
+  padding: 0.5rem 0.8rem;
+  border: 1.5px solid #007bff;
+  border-radius: 4px;
+  font-size: 1rem;
+  background: #f8faff;
+  margin-right: 0.5rem;
+}
+
+.edit-btn, .save-btn, .cancel-btn {
+  padding: 0.4rem 1.1rem;
+  background: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s;
+  margin-left: 0.2rem;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+
+.save-btn {
+  background: #28a745;
+}
+
+.cancel-btn {
+  background: #aaa;
+}
+
+.edit-btn:disabled, .save-btn:disabled, .cancel-btn:disabled {
+  background: #b0c4de;
+  cursor: not-allowed;
+}
+
+.message {
+  margin-top: 1rem;
+  color: #007bff;
+  font-size: 1rem;
+  text-align: center;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+  font-size: 1.2rem;
+  color: #555;
+}
+
+.password-btn {
+  display: block;
+  width: 100%;
+  margin: 2rem auto 0 auto;
+  padding: 0.5rem 0;
+  background: #ff9800;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+
+.password-btn:hover {
+  background: #fb8c00;
+}
+
+.password-change-form {
+  margin-top: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 1rem;
+  background: #fffdfa;
+  border-radius: 8px;
+  padding: 1.2rem 1rem 1rem 1rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+.password-input-row {
+  display: flex;
+  align-items: center;
+  max-width: 340px;
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: 0.2rem;
+}
+
+.eye-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0 0.3rem;
+  margin-left: -2.2rem;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  height: 2.2rem;
+}
+.eye-btn:focus {
+  outline: 2px solid #ff9800;
+}
+
+.password-input {
+  flex: 1 1 auto;
+  width: 100%;
+  max-width: 320px;
+  min-width: 180px;
+  display: block;
+  padding: 0.5rem 2.2rem 0.5rem 0.8rem;
+  border: 1.5px solid #ff9800;
+  border-radius: 4px;
+  font-size: 1rem;
+  background: #fff8f0;
+  transition: border 0.2s;
+}
+.password-input:focus {
+  border: 1.5px solid #fb8c00;
+  outline: none;
+  background: #fff3e0;
+}
+
+.password-message {
+  color: #ff9800;
+  font-size: 0.98rem;
+  text-align: center;
+  margin-top: 0.2rem;
+}
+
+.password-btn-row {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+@media (max-width: 500px) {
+  .setting-info {
+    padding: 1rem;
+  }
+  .displayname-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+  .displayname-input {
+    max-width: 100%;
+    margin-right: 0;
+  }
+  .edit-btn, .save-btn, .cancel-btn {
+    width: 100%;
+    margin-left: 0;
+    margin-top: 0.3rem;
+  }
+  .password-change-form {
+    padding: 1rem 0.5rem;
+    gap: 0.7rem;
+  }
+  .password-input {
+    font-size: 0.98rem;
+  }
+  .password-btn-row {
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: stretch;
+  }
+} 

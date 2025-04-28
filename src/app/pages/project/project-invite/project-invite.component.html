@@ -1,0 +1,7 @@
+<div class="invite-status-message" *ngIf="status === 'loading'">処理中...</div>
+<div class="invite-status-message error" *ngIf="status === 'error'">{{ message }}</div>
+<div class="invite-status-message already" *ngIf="status === 'already'">{{ message }}</div>
+<div class="invite-status-message joined" *ngIf="status === 'joined'">
+  {{ message }}<br />
+  <a [routerLink]="['/project', projectId]">プロジェクト詳細へ</a>
+</div> 

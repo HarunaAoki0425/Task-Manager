@@ -1,5 +1,6 @@
 <div class="auth-page">
   <div class="auth-card">
+    <div *ngIf="registerSuccessMessage" class="register-success-message">{{ registerSuccessMessage }}</div>
     <h2 class="auth-title">ログイン</h2>
     <form class="auth-form" (ngSubmit)="onSubmit()">
       <div class="form-field">
@@ -31,5 +32,43 @@
       </div>
       <button class="submit-button" type="submit">ログイン</button>
     </form>
+    <div class="register-btn-row">
+      <button class="register-btn" type="button" (click)="showRegisterPopup = true">新規登録</button>
+    </div>
   </div>
 </div>
+<div *ngIf="showRegisterPopup" class="register-popup-backdrop">
+  <div class="register-popup">
+    <div class="register-popup-title">新規登録</div>
+    <input type="email" class="register-email-input" [(ngModel)]="registerEmail" placeholder="メールアドレス"
+      [class.input-error]="registerEmail === '' && showRegisterPopup" />
+    <div class="input-error-message" *ngIf="registerEmail === '' && showRegisterPopup">メールアドレスを入力してください</div>
+
+    <div class="password-input-row">
+      <input [type]="showRegisterPassword ? 'text' : 'password'" class="register-password-input" [(ngModel)]="registerPassword" placeholder="パスワード"
+        [class.input-error]="registerPassword === '' && showRegisterPopup" />
+      <button type="button" class="eye-btn" (click)="showRegisterPassword = !showRegisterPassword">
+        <svg *ngIf="!showRegisterPassword" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="12" rx="8" ry="5"/><line x1="2" y1="22" x2="22" y2="2"/></svg>
+        <svg *ngIf="showRegisterPassword" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="12" rx="8" ry="5"/><circle cx="12" cy="12" r="2.5"/></svg>
+      </button>
+    </div>
+    <div class="input-error-message" *ngIf="registerPassword === '' && showRegisterPopup">パスワードを入力してください</div>
+
+    <div class="password-input-row">
+      <input [type]="showRegisterPasswordConfirm ? 'text' : 'password'" class="register-password-input" [(ngModel)]="registerPasswordConfirm" placeholder="パスワード（確認）"
+        [class.input-error]="registerPasswordConfirm === '' && showRegisterPopup || (registerPassword !== registerPasswordConfirm && registerPasswordConfirm !== '')" />
+      <button type="button" class="eye-btn" (click)="showRegisterPasswordConfirm = !showRegisterPasswordConfirm">
+        <svg *ngIf="!showRegisterPasswordConfirm" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="12" rx="8" ry="5"/><line x1="2" y1="22" x2="22" y2="2"/></svg>
+        <svg *ngIf="showRegisterPasswordConfirm" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="12" rx="8" ry="5"/><circle cx="12" cy="12" r="2.5"/></svg>
+      </button>
+    </div>
+    <div class="input-error-message" *ngIf="registerPasswordConfirm === '' && showRegisterPopup">確認用パスワードを入力してください</div>
+    <div class="input-error-message" *ngIf="registerPassword !== registerPasswordConfirm && registerPasswordConfirm !== ''">パスワードが一致しません</div>
+    <div class="register-popup-actions">
+      <button class="register-send-btn" type="button" (click)="onRegister()" [disabled]="!registerEmail || !registerPassword || !registerPasswordConfirm || registerPassword !== registerPasswordConfirm || registerSending">登録</button>
+      <button class="register-cancel-btn" type="button" (click)="showRegisterPopup = false" [disabled]="registerSending">キャンセル</button>
+    </div>
+    <div class="input-error-message" *ngIf="registerErrorMessage">{{ registerErrorMessage }}</div>
+  </div>
+</div>
+

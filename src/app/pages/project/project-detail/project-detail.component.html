@@ -1,0 +1,211 @@
+<div class="project-detail-container">
+  <div *ngIf="isLoading">読み込み中・・・</div>
+  <ng-container *ngIf="!isLoading && project">
+    <div class="project-title-row">
+      <h2 class="project-title">{{ project.name }}</h2>
+      <div class="project-action-btns">
+        <button class="edit-btn" title="編集" (click)="startEdit()" *ngIf="!isEditing"><span>編集</span></button>
+        <button class="delete-btn" title="アーカイブ" (click)="archiveProject()" [disabled]="isArchiving"><span>アーカイブ</span></button>
+      </div>
+    </div>
+    <ng-container *ngIf="isEditing">
+      <div class="detail-row">
+        <strong>説明:</strong>
+        <textarea [(ngModel)]="editDescription" rows="3" class="edit-textarea"></textarea>
+      </div>
+      <div class="detail-row">
+        <strong>締切日時:</strong>
+        <input type="datetime-local" [(ngModel)]="editDueDate" class="edit-due-input" />
+      </div>
+      <div class="edit-btn-row">
+        <button class="save-btn" (click)="saveEdit()" [disabled]="isSaving">保存</button>
+        <button class="cancel-btn" (click)="cancelEdit()" [disabled]="isSaving">キャンセル</button>
+      </div>
+    </ng-container>
+    <ng-container *ngIf="!isEditing">
+      <div class="project-info-card">
+        <div class="project-description-row">
+          <span class="info-label">説明</span>
+          <span class="info-value description-value">{{ project.description || '（なし）' }}</span>
+        </div>
+        <div class="project-meta-row">
+          <div class="meta-item"><span class="meta-label">作成日時</span><span class="meta-value">{{ formatDate(project.createdAt) }}</span></div>
+          <div class="meta-item"><span class="meta-label">更新日時</span><span class="meta-value">{{ project.updatedAt ? formatDate(project.updatedAt) : '' }}</span></div>
+          <div class="meta-item"><span class="meta-label">締切日時</span><span class="meta-value">{{ project.dueDate ? formatDate(project.dueDate) : '' }}</span></div>
+          <div class="meta-item"><span class="meta-label">作成者</span><span class="meta-value">{{ creatorName }}</span></div>
+        </div>
+        <div class="project-member-row">
+          <span class="info-label">メンバー</span>
+          <span class="info-value">
+            <div class="member-list">
+              <span class="member-item" *ngFor="let member of membersUsernames">
+                {{ member.displayName }}<span *ngIf="member.isCreator" class="creator-mark">（作成者）</span>
+              </span>
+            </div>
+          </span>
+        </div>
+        <div *ngIf="pendingInvites.length > 0" class="pending-invites-row">
+          <span class="pending-invites-label">招待中</span>
+          <span class="pending-invites-list">
+            <span class="pending-invite-item" *ngFor="let invite of pendingInvites">{{ invite.email }}</span>
+          </span>
+        </div>
+        <div class="member-btn-row" style="justify-content: flex-end; margin-top: 1.2em;">
+          <button class="invite-member-btn" type="button" (click)="showInviteInput = !showInviteInput">メンバー招待</button>
+          <button class="remove-member-btn" type="button">メンバー削除</button>
+        </div>
+        <div *ngIf="showInviteInput" class="invite-popup-backdrop">
+          <div class="invite-popup">
+            <div class="invite-popup-title">メンバー招待</div>
+            <input type="email" class="invite-email-input" [(ngModel)]="inviteEmail" placeholder="メールアドレスを入力" [disabled]="inviteSending" />
+            <div *ngIf="inviteErrorMessage" class="invite-error-message">{{ inviteErrorMessage }}</div>
+            <div *ngIf="inviteSuccessMessage" class="invite-success-message">{{ inviteSuccessMessage }}</div>
+            <div class="invite-popup-actions">
+              <button class="invite-send-btn" type="button" (click)="onInviteSend()" [disabled]="inviteSending">送信</button>
+              <button class="invite-cancel-btn" type="button" (click)="showInviteInput = false" [disabled]="inviteSending">キャンセル</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </ng-container>
+    <div *ngIf="archiveMessage" class="archive-message">{{ archiveMessage }}</div>
+    <div class="issues-section" id="issues-section">
+      <div class="issues-header">
+        <h3>課題一覧</h3>
+        <button class="add-issue-btn" (click)="goToIssueCreate()">＋課題追加</button>
+      </div>
+      <div class="issues-columns">
+        <div class="issues-column">
+          <div class="issues-column-title not-started">未着手</div>
+          <div class="issues-list">
+            <div *ngFor="let issue of issuesNotStarted" class="issue-card">
+              <div class="issue-card-header">
+                <div class="issue-title">{{ issue.title }}</div>
+                <span class="priority-icon" [ngClass]="{
+                  'priority-high': issue.priority === 'high',
+                  'priority-medium': issue.priority === 'medium',
+                  'priority-low': issue.priority === 'low'
+                }">
+                  <ng-container [ngSwitch]="issue.priority">
+                    <span *ngSwitchCase="'high'">高</span>
+                    <span *ngSwitchCase="'medium'">中</span>
+                    <span *ngSwitchCase="'low'">低</span>
+                    <span *ngSwitchDefault>?</span>
+                  </ng-container>
+                </span>
+              </div>
+              <div class="issue-meta">
+                <span>着手日時: {{ formatDate(issue.startDate) }}</span>
+                <span>締切日時: {{ formatDate(issue.dueDate) }}</span>
+              </div>
+              <div class="issue-meta">
+                <span>担当: {{ issue.assignee }}</span>
+              </div>
+              <div class="issue-actions">
+                <button class="start-btn" (click)="startIssue(issue)">開始▶</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="issues-column">
+          <div class="issues-column-title in-progress">進行中</div>
+          <div class="issues-list">
+            <div *ngFor="let issue of issuesInProgress" class="issue-card">
+              <div class="issue-card-header">
+                <div class="issue-title">{{ issue.title }}</div>
+                <span class="priority-icon" [ngClass]="{
+                  'priority-high': issue.priority === 'high',
+                  'priority-medium': issue.priority === 'medium',
+                  'priority-low': issue.priority === 'low'
+                }">
+                  <ng-container [ngSwitch]="issue.priority">
+                    <span *ngSwitchCase="'high'">高</span>
+                    <span *ngSwitchCase="'medium'">中</span>
+                    <span *ngSwitchCase="'low'">低</span>
+                    <span *ngSwitchDefault>?</span>
+                  </ng-container>
+                </span>
+              </div>
+              <div class="issue-meta">
+                <span>着手日時: {{ formatDate(issue.startDate) }}</span>
+                <span>締切日時: {{ formatDate(issue.dueDate) }}</span>
+              </div>
+              <div class="issue-meta">
+                <span>担当: {{ issue.assignee }}</span>
+              </div>
+              <div class="issue-actions">
+                <button class="hold-btn" (click)="updateIssueStatus(issue, '保留')">保留▶</button>
+                <button class="done-btn" (click)="updateIssueStatus(issue, '完了')">完了▶</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="issues-column">
+          <div class="issues-column-title on-hold">保留</div>
+          <div class="issues-list">
+            <div *ngFor="let issue of issuesOnHold" class="issue-card">
+              <div class="issue-card-header">
+                <div class="issue-title">{{ issue.title }}</div>
+                <span class="priority-icon" [ngClass]="{
+                  'priority-high': issue.priority === 'high',
+                  'priority-medium': issue.priority === 'medium',
+                  'priority-low': issue.priority === 'low'
+                }">
+                  <ng-container [ngSwitch]="issue.priority">
+                    <span *ngSwitchCase="'high'">高</span>
+                    <span *ngSwitchCase="'medium'">中</span>
+                    <span *ngSwitchCase="'low'">低</span>
+                    <span *ngSwitchDefault>?</span>
+                  </ng-container>
+                </span>
+              </div>
+              <div class="issue-meta">
+                <span>着手日時: {{ formatDate(issue.startDate) }}</span>
+                <span>締切日時: {{ formatDate(issue.dueDate) }}</span>
+              </div>
+              <div class="issue-meta">
+                <span>担当: {{ issue.assignee }}</span>
+              </div>
+              <div class="issue-actions">
+                <button class="start-btn" (click)="updateIssueStatus(issue, '進行中')">◀再開</button>
+                <button class="done-btn" (click)="updateIssueStatus(issue, '完了')">完了▶</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="issues-column">
+          <div class="issues-column-title done">完了</div>
+          <div class="issues-list">
+            <div *ngFor="let issue of issuesDone" class="issue-card">
+              <div class="issue-card-header">
+                <div class="issue-title">{{ issue.title }}</div>
+                <span class="priority-icon" [ngClass]="{
+                  'priority-high': issue.priority === 'high',
+                  'priority-medium': issue.priority === 'medium',
+                  'priority-low': issue.priority === 'low'
+                }">
+                  <ng-container [ngSwitch]="issue.priority">
+                    <span *ngSwitchCase="'high'">高</span>
+                    <span *ngSwitchCase="'medium'">中</span>
+                    <span *ngSwitchCase="'low'">低</span>
+                    <span *ngSwitchDefault>?</span>
+                  </ng-container>
+                </span>
+              </div>
+              <div class="issue-meta">
+                <span>着手日時: {{ formatDate(issue.startDate) }}</span>
+                <span>締切日時: {{ formatDate(issue.dueDate) }}</span>
+              </div>
+              <div class="issue-meta">
+                <span>担当: {{ issue.assignee }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+  <div *ngIf="!isLoading && !project">
+    <div>プロジェクトが見つかりません。</div>
+  </div>
+</div> 

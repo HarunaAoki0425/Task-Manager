@@ -1,0 +1,64 @@
+<div class="project-create-container">
+  <h2>プロジェクト作成</h2>
+  <form #projectForm="ngForm" (ngSubmit)="onSubmit(projectForm)">
+    <div class="form-group">
+      <label for="projectName">プロジェクト名 <span class="required">*</span></label>
+      <input
+        id="projectName"
+        name="projectName"
+        type="text"
+        class="form-control"
+        required
+        [(ngModel)]="projectName"
+        #nameCtrl="ngModel"
+      />
+      <div class="error" *ngIf="nameCtrl.invalid && (nameCtrl.dirty || nameCtrl.touched)">
+        プロジェクト名は必須です。
+      </div>
+    </div>
+    <div class="form-group">
+      <label for="description">説明 <span class="required">*</span></label>
+      <textarea
+        id="description"
+        name="description"
+        class="form-control"
+        required
+        [(ngModel)]="description"
+        #descCtrl="ngModel"
+        rows="4"
+      ></textarea>
+      <div class="error" *ngIf="descCtrl.invalid && (descCtrl.dirty || descCtrl.touched)">
+        説明は必須です。
+      </div>
+    </div>
+    <div class="form-group">
+      <label for="dueDate">締切日時 <span class="required" *ngIf="!noDueDate">*</span></label>
+      <input
+        id="dueDate"
+        name="dueDate"
+        type="datetime-local"
+        class="form-control"
+        [required]="!noDueDate"
+        [(ngModel)]="dueDate"
+        #dueDateCtrl="ngModel"
+        [disabled]="noDueDate"
+      />
+      <div class="checkbox-group">
+        <input
+          id="noDueDate"
+          name="noDueDate"
+          type="checkbox"
+          [(ngModel)]="noDueDate"
+        />
+        <label for="noDueDate">締切日時を設定しない</label>
+      </div>
+      <div class="error" *ngIf="dueDateCtrl.invalid && (dueDateCtrl.dirty || dueDateCtrl.touched) && !noDueDate">
+        締切日時は必須です。
+      </div>
+    </div>
+    <div class="error" *ngIf="errorMessage">{{ errorMessage }}</div>
+    <button type="submit" class="submit-btn" [disabled]="projectForm.invalid || isSubmitting || (!noDueDate && !dueDate)">
+      {{ isSubmitting ? '作成中...' : '作成' }}
+    </button>
+  </form>
+</div> 

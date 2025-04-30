@@ -160,26 +160,15 @@ export class ProjectDetailComponent implements OnInit {
 
   async archiveProject() {
     if (!this.project?.id) return;
-    if (!confirm('本当にアーカイブしますか？')) return;
-    this.isArchiving = true;
-    this.archiveMessage = '';
-    try {
-      // 1. プロジェクトデータ取得
-      const projectRef = doc(this.firestore, 'projects', this.project.id);
-      const projectSnap = await getDoc(projectRef);
-      if (!projectSnap.exists()) throw new Error('プロジェクトが見つかりません');
-      // 2. archivesコレクションに保存（削除時間を追加）
-      const archiveRef = doc(this.firestore, 'archives', this.project.id);
-      const archiveData = { ...projectSnap.data(), deletedAt: Timestamp.now() };
-      await setDoc(archiveRef, archiveData);
-      // 3. projectsコレクションから削除
-      await deleteDoc(projectRef);
-      this.archiveMessage = '削除しました。';
-      // 必要なら画面遷移やリロード処理を追加
-    } catch (e) {
-      this.archiveMessage = 'アーカイブに失敗しました。';
-    } finally {
-      this.isArchiving = false;
+
+    if (confirm('このプロジェクトをアーカイブしますか？\n※プロジェクト内のすべての課題とToDoもアーカイブされます。')) {
+      try {
+        await this.projectService.archiveProject(this.project.id);
+        this.router.navigate(['/projects']);
+      } catch (error) {
+        console.error('Error archiving project:', error);
+        this.archiveMessage = 'プロジェクトのアーカイブに失敗しました。';
+      }
     }
   }
 

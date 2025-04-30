@@ -11,6 +11,7 @@ import { IssueCreateComponent } from './pages/issue/issue-create/issue-create.co
 import { IssueDetailComponent } from './pages/issue/issue-detail/issue-detail.component';
 import { FriendsComponent } from './pages/friends/friends.component';
 import { TodoListComponent } from './pages/todo/todo-list/todo-list.component';
+import { CalendarComponent } from './pages/calendar/calendar.component';
 
 export const routes: Routes = [
   {
@@ -65,6 +66,10 @@ export const routes: Routes = [
       {
         path: 'todo-list',
         component: TodoListComponent
+      },
+      {
+        path: 'calendar',
+        loadComponent: () => import('./pages/calendar/calendar.component').then(m => m.CalendarComponent)
       }
     ]
   }

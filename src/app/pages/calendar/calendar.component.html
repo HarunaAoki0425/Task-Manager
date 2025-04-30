@@ -1,0 +1,11 @@
+<div class="calendar-container">
+  <h1 class="page-title">カレンダー</h1>
+  <mat-card class="calendar-card">
+    <mat-card-content>
+      <mat-calendar
+        [(selected)]="selected"
+        (selectedChange)="dateSelected($event)">
+      </mat-calendar>
+    </mat-card-content>
+  </mat-card>
+</div> 

@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Firestore, collection, addDoc, getDocs, Timestamp, doc, getDoc, query, where, updateDoc, deleteDoc, setDoc } from '@angular/fire/firestore';
+import { Firestore, collection, addDoc, getDocs, Timestamp, doc, getDoc, query, where, updateDoc, deleteDoc, setDoc, writeBatch } from '@angular/fire/firestore';
 import { Auth } from '@angular/fire/auth';
 import { Project } from '../models/project.model';
 
@@ -117,5 +117,75 @@ export class ProjectService {
     const updatedMembers = members.filter((id: string) => id !== userId);
     
     await updateDoc(projectRef, { members: updatedMembers });
+  }
+
+  async archiveProject(projectId: string): Promise<void> {
+    try {
+      const batch = writeBatch(this.firestore);
+      
+      // プロジェクトデータを取得
+      const projectRef = doc(this.firestore, 'projects', projectId);
+      const projectSnap = await getDoc(projectRef);
+      
+      if (!projectSnap.exists()) {
+        throw new Error('プロジェクトが見つかりません');
+      }
+
+      const projectData = projectSnap.data();
+
+      // アーカイブにプロジェクトデータを保存
+      const archiveRef = doc(this.firestore, 'archives', projectId);
+      await setDoc(archiveRef, {
+        ...projectData,
+        archivedAt: Timestamp.now(),
+        isArchived: true
+      });
+
+      // 課題とTodoを取得
+      const issuesRef = collection(this.firestore, 'projects', projectId, 'issues');
+      const issuesSnap = await getDocs(issuesRef);
+
+      // 各課題とそのTodoをアーカイブに移動
+      for (const issueDoc of issuesSnap.docs) {
+        const issueData = issueDoc.data();
+        const todosRef = collection(this.firestore, 'projects', projectId, 'issues', issueDoc.id, 'todos');
+        const todosSnap = await getDocs(todosRef);
+
+        // アーカイブ内の課題を保存
+        const archivedIssueRef = doc(collection(this.firestore, 'archives', projectId, 'issues'), issueDoc.id);
+        await setDoc(archivedIssueRef, {
+          ...issueData,
+          archivedAt: Timestamp.now()
+        });
+
+        // 各Todoをアーカイブに移動
+        for (const todoDoc of todosSnap.docs) {
+          const todoData = todoDoc.data();
+          const archivedTodoRef = doc(
+            collection(this.firestore, 'archives', projectId, 'issues', issueDoc.id, 'todos'),
+            todoDoc.id
+          );
+          await setDoc(archivedTodoRef, {
+            ...todoData,
+            archivedAt: Timestamp.now()
+          });
+
+          // 元のTodoを削除
+          const todoRef = doc(this.firestore, 'projects', projectId, 'issues', issueDoc.id, 'todos', todoDoc.id);
+          await deleteDoc(todoRef);
+        }
+
+        // 元の課題を削除
+        const issueRef = doc(this.firestore, 'projects', projectId, 'issues', issueDoc.id);
+        await deleteDoc(issueRef);
+      }
+
+      // 元のプロジェクトを削除
+      await deleteDoc(projectRef);
+
+    } catch (error) {
+      console.error('Error archiving project:', error);
+      throw new Error('プロジェクトのアーカイブに失敗しました');
+    }
   }
 } 

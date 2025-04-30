@@ -1,6 +1,11 @@
 <div class="issue-create-container">
   <h2>課題追加</h2>
   <form class="issue-form" (ngSubmit)="$event.preventDefault()">
+    <!-- プロジェクト名の表示 -->
+    <div class="project-title" *ngIf="projectTitle">
+      <i class="fas fa-folder"></i>
+      <span>{{ projectTitle }}</span>
+    </div>
     <div class="form-row">
       <label for="title">タイトル</label>
       <input id="title" name="title" type="text" class="form-input" [(ngModel)]="title" />

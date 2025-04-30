@@ -123,12 +123,9 @@
 
 .todo-badges {
   display: flex;
-  flex-direction: row;
-  gap: 0.75rem;
-  min-width: auto;
-  border-left: none;
-  padding-left: 0;
-  white-space: nowrap;
+  gap: 1rem;
+  margin: 0.8rem 0;
+  flex-wrap: wrap;
 }
 
 .badge-container {
@@ -143,39 +140,49 @@
   font-weight: 500;
 }
 
-.project-badge,
-.issue-badge {
-  font-size: 0.75rem;
-  padding: 0.25rem 0.75rem;
-  border-radius: 12px;
-  color: #fff;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  text-decoration: none;
+.project-badge::before {
+  content: 'プロジェクト：';
+  font-weight: 500;
+  color: #1565c0;
+}
+
+.issue-badge::before {
+  content: '課題：';
+  font-weight: 500;
+  color: #424242;
+}
+
+.project-badge, .issue-badge {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
-  min-width: 100px;
-  max-width: 140px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  gap: 6px;
+  padding: 0.4rem 0.8rem;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  text-decoration: none;
+  transition: all 0.2s ease;
 }
 
 .project-badge {
-  background-color: #4a90e2;
+  background: #e3f2fd;
+  color: #1976d2;
 }
 
 .project-badge:hover {
-  background-color: #357abd;
+  background: #bbdefb;
 }
 
 .issue-badge {
-  background-color: #7c5cbf;
+  background: #f5f5f5;
+  color: #424242;
 }
 
 .issue-badge:hover {
-  background-color: #6548a3;
+  background: #eeeeee;
+}
+
+.project-badge i, .issue-badge i {
+  display: none;
 }
 
 .todo-details {

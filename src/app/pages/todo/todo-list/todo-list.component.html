@@ -66,8 +66,8 @@
           </a>
         </div>
       </div>
-      <button class="delete-button">
-        <i class="fas fa-trash-alt"></i>
+      <button class="delete-button" *ngIf="todo.id" (click)="confirmDeleteTodo(todo)">
+        <i class="fas fa-trash"></i>
       </button>
     </div>
 

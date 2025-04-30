@@ -17,22 +17,20 @@
         <div class="todo-info">
           <h3 class="todo-title">{{ todo.title }}</h3>
           <div class="todo-details">
-            <span class="project-link">
-              <i class="fas fa-folder"></i>
-              {{ todo.projectTitle }}
-            </span>
-            <span class="issue-link">
-              <i class="fas fa-tasks"></i>
-              {{ todo.issueTitle }}
-            </span>
-            <span class="member-info">
-              <i class="fas fa-user"></i>
-              {{ getMemberName(todo.assignee) }}
-            </span>
             <span class="completion-date">
               <i class="fas fa-check"></i>
               {{ formatDate(todo.completedAt) }}に完了
             </span>
+            <div class="todo-badges">
+              <a class="project-badge" [routerLink]="['/projects', todo.projectId]">
+                <i class="fas fa-folder"></i>
+                {{ todo.projectTitle }}
+              </a>
+              <a class="issue-badge" [routerLink]="['/projects', todo.projectId, 'issues', todo.issueId]">
+                <i class="fas fa-tasks"></i>
+                {{ todo.issueTitle }}
+              </a>
+            </div>
           </div>
         </div>
         <div class="todo-actions">

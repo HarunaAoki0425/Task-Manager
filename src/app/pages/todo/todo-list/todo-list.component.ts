@@ -23,6 +23,7 @@ import { User } from '../../../models/user.model';
 import { Project } from '../../../models/project.model';
 import { ProjectService } from '../../../services/project.service';
 import { AuthService } from '../../../services/auth.service';
+import { TodoService } from '../../../services/todo.service';
 
 @Component({
   selector: 'app-todo-list',
@@ -49,6 +50,7 @@ export class TodoListComponent implements OnInit, OnDestroy {
     private firestore: Firestore,
     private projectService: ProjectService,
     private authService: AuthService,
+    private todoService: TodoService,
     private router: Router,
     private auth: Auth
   ) {}
@@ -313,5 +315,20 @@ export class TodoListComponent implements OnInit, OnDestroy {
     }
     
     return false;
+  }
+
+  async confirmDeleteTodo(todo: Todo) {
+    if (!todo.id || !todo.projectId || !todo.issueId) return;
+
+    if (confirm('このToDoを削除してもよろしいですか？')) {
+      try {
+        await this.todoService.deleteTodo(todo.id, todo.projectId, todo.issueId);
+        // 削除後にTodo一覧を再読み込み
+        await this.loadTodos();
+      } catch (error) {
+        console.error('Error deleting todo:', error);
+        this.error = 'Todoの削除に失敗しました。';
+      }
+    }
   }
 }

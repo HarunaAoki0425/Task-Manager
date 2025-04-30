@@ -71,5 +71,13 @@ service cloud.firestore {
         && (resource.data.user1Id == request.auth.uid 
             || resource.data.user2Id == request.auth.uid);
     }
+
+    // コレクショングループクエリのルール
+    match /{path=**}/todos/{todoId} {
+      allow read: if request.auth != null
+        && (get(/databases/$(database)/documents/projects/$(path[1])).data.createdBy == request.auth.uid
+            || (get(/databases/$(database)/documents/projects/$(path[1])).data.members != null
+                && request.auth.uid in get(/databases/$(database)/documents/projects/$(path[1])).data.members));
+    }
   }
 }

@@ -1,22 +1,41 @@
 import { Injectable } from '@angular/core';
 import { Firestore, collection, addDoc, getDocs, Timestamp, doc, getDoc, query, where, updateDoc, deleteDoc, setDoc } from '@angular/fire/firestore';
-
-export interface Project {
-  id: string;
-  name: string;
-  description: string;
-  dueDate: Date | any; // Timestamp or Date
-  createdBy: string;
-  members: string[];
-  createdAt?: Date | any; // Timestamp or Date
-  updatedAt?: Date | any; // Timestamp or Date
-}
+import { Auth } from '@angular/fire/auth';
+import { Project } from '../models/project.model';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ProjectService {
-  constructor(private firestore: Firestore) {}
+  constructor(
+    private firestore: Firestore,
+    private auth: Auth
+  ) {}
+
+  async getUserProjects(): Promise<Project[]> {
+    const userId = this.auth.currentUser?.uid;
+    if (!userId) {
+      throw new Error('User not authenticated');
+    }
+
+    const projectsRef = collection(this.firestore, 'projects');
+    const q = query(
+      projectsRef,
+      where('members', 'array-contains', userId)
+    );
+    const querySnapshot = await getDocs(q);
+
+    return querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      title: doc.data()['name'] || '',
+      description: doc.data()['description'] || '',
+      members: doc.data()['members'] || [],
+      createdBy: doc.data()['createdBy'] || '',
+      dueDate: doc.data()['dueDate'],
+      createdAt: doc.data()['createdAt'] || Timestamp.now(),
+      updatedAt: doc.data()['updatedAt'] || Timestamp.now()
+    } as Project));
+  }
 
   async getProject(projectId: string): Promise<Project | null> {
     // まずprojectsから取得
@@ -33,13 +52,13 @@ export class ProjectService {
       const data = projectSnap.data();
       return {
         id: projectId,
-        name: data['name'] || '',
+        title: data['name'] || '',
         description: data['description'] || '',
-        dueDate: data['dueDate'],
-        createdBy: data['createdBy'] || '',
         members: data['members'] || [],
-        createdAt: data['createdAt'],
-        updatedAt: data['updatedAt']
+        createdBy: data['createdBy'] || '',
+        dueDate: data['dueDate'],
+        createdAt: data['createdAt'] || Timestamp.now(),
+        updatedAt: data['updatedAt'] || Timestamp.now()
       } as Project;
     }
     
@@ -47,19 +66,24 @@ export class ProjectService {
   }
 
   async getProjectMembers(projectId: string): Promise<{ uid: string; displayName: string; email: string }[]> {
+    console.log('Getting project details for:', projectId);
     const project = await this.getProject(projectId);
     if (!project || !Array.isArray(project.members)) {
+      console.log('No project found or no members array:', project);
       return [];
     }
 
+    console.log('Project members array:', project.members);
     const members = await Promise.all(project.members.map(async (uid: string) => {
       const userDoc = doc(this.firestore, 'users', uid);
       const userSnap = await getDoc(userDoc);
-      return {
+      const result = {
         uid,
         displayName: userSnap.exists() ? userSnap.data()['displayName'] || 'no name' : 'no name',
         email: userSnap.exists() ? userSnap.data()['email'] || '' : ''
       };
+      console.log('Loaded member details:', result);
+      return result;
     }));
 
     return members;

@@ -76,11 +76,11 @@
                 </span>
               </div>
               <div class="issue-meta">
-                <span>着手日時: {{ formatDate(issue.startDate) }}</span>
-                <span>締切日時: {{ formatDate(issue.dueDate) }}</span>
+                <span>開始日: {{ formatDate(issue.startDate) }}</span>
+                <span>期限日: {{ formatDate(issue.dueDate) }}</span>
               </div>
               <div class="issue-meta">
-                <span>担当: {{ issue.assignee }}</span>
+                <span>担当: {{ getMemberDisplayName(issue.assignee) }}</span>
               </div>
               <div class="issue-actions">
                 <button class="start-btn" (click)="startIssue(issue)">開始▶</button>
@@ -108,11 +108,11 @@
                 </span>
               </div>
               <div class="issue-meta">
-                <span>着手日時: {{ formatDate(issue.startDate) }}</span>
-                <span>締切日時: {{ formatDate(issue.dueDate) }}</span>
+                <span>開始日: {{ formatDate(issue.startDate) }}</span>
+                <span>期限日: {{ formatDate(issue.dueDate) }}</span>
               </div>
               <div class="issue-meta">
-                <span>担当: {{ issue.assignee }}</span>
+                <span>担当: {{ getMemberDisplayName(issue.assignee) }}</span>
               </div>
               <div class="issue-actions">
                 <button class="hold-btn" (click)="updateIssueStatus(issue, '保留')">保留▶</button>
@@ -141,11 +141,11 @@
                 </span>
               </div>
               <div class="issue-meta">
-                <span>着手日時: {{ formatDate(issue.startDate) }}</span>
-                <span>締切日時: {{ formatDate(issue.dueDate) }}</span>
+                <span>開始日: {{ formatDate(issue.startDate) }}</span>
+                <span>期限日: {{ formatDate(issue.dueDate) }}</span>
               </div>
               <div class="issue-meta">
-                <span>担当: {{ issue.assignee }}</span>
+                <span>担当: {{ getMemberDisplayName(issue.assignee) }}</span>
               </div>
               <div class="issue-actions">
                 <button class="start-btn" (click)="updateIssueStatus(issue, '進行中')">◀再開</button>
@@ -174,11 +174,11 @@
                 </span>
               </div>
               <div class="issue-meta">
-                <span>着手日時: {{ formatDate(issue.startDate) }}</span>
-                <span>締切日時: {{ formatDate(issue.dueDate) }}</span>
+                <span>開始日: {{ formatDate(issue.startDate) }}</span>
+                <span>期限日: {{ formatDate(issue.dueDate) }}</span>
               </div>
               <div class="issue-meta">
-                <span>担当: {{ issue.assignee }}</span>
+                <span>担当: {{ getMemberDisplayName(issue.assignee) }}</span>
               </div>
             </div>
           </div>

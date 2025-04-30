@@ -1,6 +1,7 @@
 <div class="issue-detail-container" *ngIf="!isLoading && !error && issue">
   <div class="header-row">
     <button class="back-button" (click)="goBack()">← 戻る</button>
+    <button class="edit-button" (click)="togglePopup()">編集</button>
   </div>
 
   <div class="issue-header">
@@ -15,14 +16,23 @@
 
       <div class="meta-item">
         <span class="label">優先度:</span>
-        <span [class]="'priority-badge ' + issue.priority">
+        <span class="form-value priority" [class]="'form-value priority ' + issue.priority">
           {{ getPriorityLabel(issue.priority) }}
         </span>
       </div>
 
       <div class="meta-item">
         <span class="label">担当者:</span>
-        <span>{{ getMemberDisplayName(issue.assignee) }}</span>
+        <span>
+          {{ getMemberDisplayName(issue.assignee) }}
+        </span>
+      </div>
+
+      <div class="meta-item">
+        <span class="label">開始日:</span>
+        <span>
+          {{ issue.startDate ? (issue.startDate.toDate() | date:'yyyy/MM/dd') : '未設定' }}
+        </span>
       </div>
 
       <div class="meta-item">
@@ -38,7 +48,6 @@
     </div>
   </div>
 
-  
 
   <!-- Todo section -->
   <div class="todos-section">
@@ -53,7 +62,7 @@
         class="todo-input"
       >
       <input
-        type="date"
+        type="datetime-local"
         [(ngModel)]="newTodoDueDate"
         class="todo-date"
       >
@@ -92,10 +101,71 @@
           </span>
           <span class="todo-due-date" *ngIf="todo.dueDate">
             <i class="fas fa-calendar"></i>
-            {{ formatDate(todo.dueDate) }}
+            {{ todo.dueDate ? (todo.dueDate.toDate() | date:'yyyy/MM/dd HH:mm') : '未設定' }}
           </span>
         </div>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- ポップアップ -->
+<div class="popup-overlay" *ngIf="isPopupVisible" (click)="togglePopup()">
+  <div class="popup-content" (click)="$event.stopPropagation()">
+    <div class="popup-header">
+      <h2>課題の編集</h2>
+      <button class="close-button" (click)="togglePopup()">×</button>
+    </div>
+    <div class="popup-body">
+      <div class="popup-form">
+        <div class="form-group">
+          <label>タイトル</label>
+          <input type="text" class="form-input" placeholder="タイトルを入力" [(ngModel)]="editingIssue.title">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>優先度</label>
+            <select class="form-input" [(ngModel)]="editingIssue.priority">
+              <option value="">選択してください</option>
+              <option value="high">高</option>
+              <option value="medium">中</option>
+              <option value="low">低</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>担当者</label>
+            <select class="form-input" [(ngModel)]="editingIssue.assignee">
+              <option value="">選択してください</option>
+              <option [value]="member.uid" *ngFor="let member of memberDetails">
+                {{ member.displayName }}
+              </option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>開始日</label>
+            <input type="date" class="form-input" [(ngModel)]="editingIssue.startDate">
+          </div>
+
+          <div class="form-group">
+            <label>期限日</label>
+            <input type="date" class="form-input" [(ngModel)]="editingIssue.dueDate">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>メモ</label>
+          <textarea class="form-input" rows="3" placeholder="メモを入力" [(ngModel)]="editingIssue.memo"></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="save-button" (click)="saveIssue()">保存</button>
+      <button class="cancel-button" (click)="togglePopup()">閉じる</button>
     </div>
   </div>
 </div>

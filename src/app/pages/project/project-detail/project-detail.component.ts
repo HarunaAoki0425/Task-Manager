@@ -5,7 +5,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { Firestore, doc, getDoc, setDoc, deleteDoc, Timestamp, collection, getDocs, updateDoc, query, where } from '@angular/fire/firestore';
 import { ProjectService } from '../../../services/project.service';
 import { AuthService } from '../../../services/auth.service';
-import { Project } from '../../../services/project.service';
+import { Project } from '../../../models/project.model';
 
 interface Issue {
   id: string;
@@ -81,7 +81,7 @@ export class ProjectDetailComponent implements OnInit {
   }
 
   async loadProjectMembers() {
-    if (this.project) {
+    if (this.project?.id) {  // idの存在を明示的にチェック
       try {
         this.projectMembers = await this.projectService.getProjectMembers(this.project.id);
       } catch (error) {
@@ -124,6 +124,13 @@ export class ProjectDetailComponent implements OnInit {
     } catch (error) {
       console.error('Error loading issues:', error);
     }
+  }
+
+  // ユーザーIDからdisplayNameを取得するメソッド
+  getMemberDisplayName(uid: string | undefined): string {
+    if (!uid) return ''; // undefinedの場合は空文字を返す
+    const member = this.projectMembers.find(m => m.uid === uid);
+    return member ? member.displayName : 'Unknown';
   }
 
   formatDate(ts: any): string {

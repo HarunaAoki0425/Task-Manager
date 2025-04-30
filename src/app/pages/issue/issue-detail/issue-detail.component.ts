@@ -5,6 +5,7 @@ import { Firestore, doc, getDoc, collection, query, getDocs, updateDoc, Timestam
 import { User } from '../../../models/user.model';
 import { Todo } from '../../../models/todo.model';
 import { FormsModule } from '@angular/forms';
+import { ProjectService } from '../../../services/project.service';
 
 interface Issue {
   id?: string;
@@ -46,16 +47,36 @@ export class IssueDetailComponent implements OnInit {
   memberDetails: User[] = [];
   isLoading = true;
   error: string | null = null;
+  isPopupVisible = false;
+  editingIssue: {
+    title: string;
+    startDate: string;
+    dueDate: string;
+    assignee: string;
+    priority: string;
+    memo: string;
+  } = {
+    title: '',
+    startDate: '',
+    dueDate: '',
+    assignee: '',
+    priority: '',
+    memo: ''
+  };
 
   // 新しいTodo用のプロパティ
   newTodoTitle = '';
   newTodoDueDate = '';
   newTodoAssignee = '';
 
+  // テンプレートで使用するためにTimestampを追加
+  Timestamp = Timestamp;
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private firestore: Firestore
+    private firestore: Firestore,
+    private projectService: ProjectService
   ) {}
 
   ngOnInit() {
@@ -65,11 +86,27 @@ export class IssueDetailComponent implements OnInit {
       
       if (this.projectId && this.issueId) {
         this.loadIssue();
+        this.loadProjectMembers();
       } else {
         this.error = '課題が見つかりませんでした。';
         this.isLoading = false;
       }
     });
+  }
+
+  // プロジェクトメンバーを読み込む
+  async loadProjectMembers() {
+    if (!this.projectId) {
+      console.log('Project ID is missing');
+      return;
+    }
+    try {
+      console.log('Loading members for project:', this.projectId);
+      this.memberDetails = await this.projectService.getProjectMembers(this.projectId);
+      console.log('Loaded members:', this.memberDetails);
+    } catch (error) {
+      console.error('Error loading project members:', error);
+    }
   }
 
   // Todoの完了状態を切り替え
@@ -119,7 +156,6 @@ export class IssueDetailComponent implements OnInit {
           updatedAt: data.updatedAt
         } as Issue;
         await this.loadTodos();
-        await this.loadMemberDetails();
       } else {
         this.error = '課題が見つかりませんでした。';
       }
@@ -149,78 +185,34 @@ export class IssueDetailComponent implements OnInit {
     }
   }
 
-  // メンバー情報を取得
-  async loadMemberDetails() {
-    if (!this.issue) return;
-
-    try {
-      // issueの担当者情報を取得
-      if (this.issue.assignee) {
-        const userRef = doc(this.firestore, `users/${this.issue.assignee}`);
-        const userDoc = await getDoc(userRef);
-        if (userDoc.exists()) {
-          const userData = userDoc.data() as User;
-          this.memberDetails.push({
-            uid: this.issue.assignee,
-            displayName: userData.displayName,
-            email: userData.email
-          });
-        }
-      }
-
-      // Todoの担当者情報を取得
-      for (const todo of this.todos) {
-        if (todo.assignee && !this.memberDetails.find(m => m.uid === todo.assignee)) {
-          const userRef = doc(this.firestore, `users/${todo.assignee}`);
-          const userDoc = await getDoc(userRef);
-          if (userDoc.exists()) {
-            const userData = userDoc.data() as User;
-            this.memberDetails.push({
-              uid: todo.assignee,
-              displayName: userData.displayName,
-              email: userData.email
-            });
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Error loading member details:', error);
-    }
-  }
-
-  // ユーザーIDからdisplayNameを取得
   getMemberDisplayName(uid: string): string {
     const member = this.memberDetails.find(m => m.uid === uid);
-    return member ? member.displayName : uid;
+    return member ? member.displayName : 'Unknown';
   }
 
-  // 日付をフォーマット
-  formatDate(timestamp: Timestamp | null): string {
-    if (!timestamp) return '未設定';
-    return timestamp.toDate().toLocaleDateString('ja-JP', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit'
-    });
+  formatDate(timestamp: Timestamp | null | undefined): string {
+    if (!timestamp) return '';
+    const date = timestamp.toDate();
+    return date.toLocaleDateString('ja-JP');
   }
 
   getPriorityLabel(priority: string): string {
-    switch (priority) {
-      case 'high': return '高';
-      case 'medium': return '中';
-      case 'low': return '低';
-      default: return '未設定';
-    }
+    const labels: { [key: string]: string } = {
+      high: '高',
+      medium: '中',
+      low: '低'
+    };
+    return labels[priority] || priority;
   }
 
   getStatusLabel(status: string): string {
-    switch (status) {
-      case 'open': return '未対応';
-      case 'in_progress': return '対応中';
-      case 'resolved': return '解決済み';
-      case 'closed': return '完了';
-      default: return '未設定';
-    }
+    const labels: { [key: string]: string } = {
+      open: '未対応',
+      in_progress: '対応中',
+      resolved: '解決済み',
+      closed: '完了'
+    };
+    return labels[status] || status;
   }
 
   // 新しいTodoを追加
@@ -228,28 +220,102 @@ export class IssueDetailComponent implements OnInit {
     if (!this.projectId || !this.issueId || !this.newTodoTitle || !this.newTodoAssignee) return;
 
     try {
-      const todosRef = collection(this.firestore, `projects/${this.projectId}/issues/${this.issueId}/todos`);
+      // プロジェクト情報を取得
+      const projectRef = doc(this.firestore, `projects/${this.projectId}`);
+      const projectSnap = await getDoc(projectRef);
+      const projectTitle = projectSnap.exists() ? projectSnap.data()['title'] : '';
+
       const now = Timestamp.now();
-      const newTodo = {
+      const dueDate = this.newTodoDueDate ? Timestamp.fromDate(new Date(this.newTodoDueDate)) : null;
+      
+      const todoData = {
         title: this.newTodoTitle,
         assignee: this.newTodoAssignee,
-        dueDate: this.newTodoDueDate ? Timestamp.fromDate(new Date(this.newTodoDueDate)) : null,
+        dueDate: dueDate,
         completed: false,
+        projectId: this.projectId,
+        projectTitle: projectTitle,
+        issueId: this.issueId,
+        issueTitle: this.issue?.title || '',
         createdAt: now,
         updatedAt: now
       };
 
-      await addDoc(todosRef, newTodo);
+      const todosRef = collection(this.firestore, `projects/${this.projectId}/issues/${this.issueId}/todos`);
+      const todoRef = await addDoc(todosRef, todoData);
+
+      // UIのTodoリストを更新
+      const newTodo: Todo = {
+        id: todoRef.id,
+        ...todoData
+      };
+      this.todos.push(newTodo);
 
       // フォームをリセット
       this.newTodoTitle = '';
       this.newTodoDueDate = '';
       this.newTodoAssignee = '';
-
-      // Todoリストを再読み込み
-      await this.loadTodos();
     } catch (error) {
       console.error('Error adding todo:', error);
+    }
+  }
+
+  // ポップアップの表示/非表示を切り替え
+  togglePopup() {
+    this.isPopupVisible = !this.isPopupVisible;
+    if (this.isPopupVisible && this.issue) {
+      // ポップアップを開く時に現在の値をフォームに設定
+      this.editingIssue = {
+        title: this.issue.title,
+        startDate: this.formatDateForInput(this.issue.startDate),
+        dueDate: this.formatDateForInput(this.issue.dueDate),
+        assignee: this.issue.assignee,
+        priority: this.issue.priority,
+        memo: this.issue.memo || ''
+      };
+    }
+  }
+
+  // 日付をinput type="date"用にフォーマット
+  formatDateForInput(timestamp: Timestamp | null): string {
+    if (!timestamp) return '';
+    const date = timestamp.toDate();
+    return date.toISOString().split('T')[0];
+  }
+
+  // Firestoreのタイムスタンプに変換
+  convertToTimestamp(dateString: string): Timestamp {
+    if (!dateString) return Timestamp.now();
+    const date = new Date(dateString);
+    return Timestamp.fromDate(date);
+  }
+
+  async saveIssue() {
+    if (!this.projectId || !this.issueId) return;
+
+    try {
+      const issueRef = doc(this.firestore, `projects/${this.projectId}/issues/${this.issueId}`);
+      
+      const updatedData = {
+        title: this.editingIssue.title,
+        startDate: this.convertToTimestamp(this.editingIssue.startDate),
+        dueDate: this.convertToTimestamp(this.editingIssue.dueDate),
+        assignee: this.editingIssue.assignee,
+        priority: this.editingIssue.priority,
+        memo: this.editingIssue.memo,
+        updatedAt: Timestamp.now()
+      };
+
+      await updateDoc(issueRef, updatedData);
+      
+      // 更新後に課題を再読み込み
+      await this.loadIssue();
+      
+      // ポップアップを閉じる
+      this.isPopupVisible = false;
+    } catch (error) {
+      console.error('Error saving issue:', error);
+      this.error = '課題の保存に失敗しました。';
     }
   }
 }

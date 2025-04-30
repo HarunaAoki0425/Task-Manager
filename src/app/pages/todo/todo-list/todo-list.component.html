@@ -1,4 +1,81 @@
 <div class="todo-list-container">
-  <h2>ToDo一覧</h2>
-  <!-- ToDo一覧の実装はここに追加予定 -->
+  <!-- ヘッダー部分 -->
+  <div class="header">
+    <h1>ToDo一覧</h1>
+    <div class="filters">
+      <div class="filter-group">
+        <select class="filter-select" [(ngModel)]="selectedProject" (ngModelChange)="onFilterChange()">
+          <option value="">プロジェクト: すべて</option>
+          <option *ngFor="let project of projects" [value]="project.id">
+            {{ project.title }}
+          </option>
+        </select>
+
+        <select class="filter-select" [(ngModel)]="selectedMember" (ngModelChange)="onFilterChange()">
+          <option value="">担当者: すべて</option>
+          <option *ngFor="let member of members" [value]="member.uid">
+            {{ member.displayName }}
+          </option>
+        </select>
+
+        <select class="filter-select" [(ngModel)]="selectedStatus" (ngModelChange)="onFilterChange()">
+          <option value="all">ステータス: すべて</option>
+          <option value="incomplete">未完了</option>
+          <option value="completed">完了済み</option>
+        </select>
+      </div>
+
+      <div class="sort-group">
+        <select class="filter-select" [(ngModel)]="selectedSort" (ngModelChange)="onFilterChange()">
+          <option value="dueDate">期限日順</option>
+          <option value="createdAt">作成日順</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- ローディング表示 -->
+  <div class="loading" *ngIf="isLoading">
+    <p>読み込み中...</p>
+  </div>
+
+  <!-- エラー表示 -->
+  <div class="error" *ngIf="error">
+    <p>{{ error }}</p>
+  </div>
+
+  <!-- ToDo一覧 -->
+  <div class="todo-list" *ngIf="!isLoading && !error">
+    <div *ngFor="let todo of todos" class="todo-item" [class.completed]="todo.completed">
+      <div class="todo-checkbox">
+        <input type="checkbox" [checked]="todo.completed" (change)="toggleTodo(todo)">
+      </div>
+
+      <div class="todo-content">
+        <div class="todo-main">
+          <span class="todo-title">{{ todo.title }}</span>
+          <div class="todo-badges">
+            <span class="project-badge">{{ todo.projectTitle }}</span>
+            <span class="issue-badge">{{ todo.issueTitle }}</span>
+          </div>
+        </div>
+
+        <div class="todo-details">
+          <span class="todo-assignee">
+            <i class="fas fa-user"></i>
+            {{ getMemberName(todo.assignee) }}
+          </span>
+          <span class="todo-due-date" [class.overdue]="isOverdue(todo.dueDate)">
+            <i class="fas fa-calendar"></i>
+            {{ formatDate(todo.dueDate) }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Todoが存在しない場合 -->
+    <div class="no-todos" *ngIf="todos.length === 0">
+      <p>Todoが見つかりません。</p>
+    </div>
+  </div>
 </div>

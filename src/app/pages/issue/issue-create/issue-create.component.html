@@ -6,16 +6,23 @@
       <input id="title" name="title" type="text" class="form-input" [(ngModel)]="title" />
     </div>
     <div class="form-row">
-      <label for="startDate">着手日時</label>
-      <input id="startDate" name="startDate" type="datetime-local" class="form-input" [(ngModel)]="startDate" />
+      <label for="startDate">開始日</label>
+      <input id="startDate" name="startDate" type="date" class="form-input" [(ngModel)]="startDate" />
     </div>
     <div class="form-row">
-      <label for="dueDate">締切日時</label>
-      <input id="dueDate" name="dueDate" type="datetime-local" class="form-input" [(ngModel)]="dueDate" />
+      <label for="dueDate">期限日</label>
+      <input id="dueDate" name="dueDate" type="date" class="form-input" [(ngModel)]="dueDate" />
     </div>
     <div class="form-row">
       <label for="assignee">担当者</label>
-      <select id="assignee" name="assignee" class="form-input" [(ngModel)]="assignee">
+      <select 
+        id="assignee" 
+        name="assignee" 
+        class="form-input" 
+        [(ngModel)]="assignee" 
+        (focus)="onAssigneeInteraction()"
+        (click)="onAssigneeInteraction()"
+      >
         <option value="">選択してください</option>
         <option *ngFor="let member of memberDetails" [value]="member.uid">{{ member.displayName }}</option>
       </select>
@@ -52,6 +59,8 @@
             [(ngModel)]="newTodo.assignee"
             name="todoAssignee"
             required
+            (focus)="onAssigneeInteraction()"
+            (click)="onAssigneeInteraction()"
           >
             <option value="" disabled>担当者を選択（必須）</option>
             <option *ngFor="let member of memberDetails" [value]="member.uid">{{ member.displayName }}</option>
@@ -77,7 +86,7 @@
               <div class="todo-details">
                 <span *ngIf="todo.dueDate" class="todo-due-date">
                   <span class="material-icons">event</span>
-                  {{ todo.dueDate | date:'yyyy/MM/dd HH:mm' }}
+                  {{ todo.dueDate ? (todo.dueDate.toDate() | date:'yyyy/MM/dd HH:mm') : '未設定' }}
                 </span>
                 <span *ngIf="todo.assignee" class="todo-assignee">
                   <span class="material-icons">person</span>

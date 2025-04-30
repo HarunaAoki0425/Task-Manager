@@ -1,10 +1,11 @@
 import { Component } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Firestore, collection, addDoc, Timestamp, doc, getDoc, updateDoc } from '@angular/fire/firestore';
+import { Firestore, collection, addDoc, Timestamp, doc, getDoc, updateDoc, deleteDoc } from '@angular/fire/firestore';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { Todo } from '../../../models/todo.model';
 import { User } from '../../../models/user.model';
+import { ProjectService } from '../../../services/project.service';
 
 @Component({
   selector: 'app-issue-create',
@@ -16,7 +17,6 @@ import { User } from '../../../models/user.model';
 export class IssueCreateComponent {
   projectId: string | null = null;
   issueId: string | null = null;
-  projectMembers: string[] = [];
   memberDetails: User[] = [];
 
   // フォーム入力値
@@ -35,54 +35,53 @@ export class IssueCreateComponent {
     dueDate: null,
     assignee: '',
     completed: false,
+    projectId: '',
+    projectTitle: '',
+    issueId: '',
+    issueTitle: '',
     createdAt: Timestamp.now(),
     updatedAt: Timestamp.now()
   };
   todos: Todo[] = [];
 
-  constructor(private route: ActivatedRoute, private firestore: Firestore, private router: Router) {
-    this.route.queryParamMap.subscribe(params => {
+  constructor(
+    private route: ActivatedRoute,
+    private firestore: Firestore,
+    private router: Router,
+    private projectService: ProjectService
+  ) {
+    this.route.paramMap.subscribe(params => {
       this.projectId = params.get('projectId');
+      console.log('Constructor - Retrieved projectId:', this.projectId);
       if (this.projectId) {
         this.loadProjectMembers();
+      } else {
+        console.error('No projectId found in route parameters');
       }
     });
   }
 
-  // プロジェクトメンバーを取得
-  async loadProjectMembers() {
-    if (!this.projectId) return;
-    try {
-      const projectRef = doc(this.firestore, `projects/${this.projectId}`);
-      const projectDoc = await getDoc(projectRef);
-      if (projectDoc.exists()) {
-        const data = projectDoc.data();
-        this.projectMembers = data['members'] || [];
-        await this.loadMemberDetails();
-      }
-    } catch (error) {
-      console.error('Error loading project members:', error);
-    }
+  async onAssigneeInteraction() {
+    console.log('Assignee field interacted');
+    console.log('Current projectId:', this.projectId);
+    console.log('Current memberDetails:', this.memberDetails);
+    await this.loadProjectMembers();
+    console.log('Updated memberDetails:', this.memberDetails);
   }
 
-  // メンバーの詳細情報を取得
-  async loadMemberDetails() {
+  // プロジェクトメンバーを取得
+  async loadProjectMembers() {
+    console.log('loadProjectMembers called');
+    if (!this.projectId) {
+      console.log('No projectId available');
+      return;
+    }
     try {
-      this.memberDetails = [];
-      for (const uid of this.projectMembers) {
-        const userRef = doc(this.firestore, `users/${uid}`);
-        const userDoc = await getDoc(userRef);
-        if (userDoc.exists()) {
-          const userData = userDoc.data() as User;
-          this.memberDetails.push({
-            uid: uid,
-            displayName: userData.displayName,
-            email: userData.email
-          });
-        }
-      }
+      console.log('Fetching members for project:', this.projectId);
+      this.memberDetails = await this.projectService.getProjectMembers(this.projectId);
+      console.log('Fetched members:', this.memberDetails);
     } catch (error) {
-      console.error('Error loading member details:', error);
+      console.error('Error loading project members:', error);
     }
   }
 
@@ -90,6 +89,23 @@ export class IssueCreateComponent {
   getMemberDisplayName(uid: string): string {
     const member = this.memberDetails.find(m => m.uid === uid);
     return member ? member.displayName : uid;
+  }
+
+  // Todo入力フォームをリセット
+  resetTodoForm() {
+    const now = Timestamp.now();
+    this.newTodo = {
+      title: '',
+      dueDate: null,
+      assignee: '',
+      completed: false,
+      projectId: this.projectId || '',
+      projectTitle: '',  // プロジェクトのタイトルは後で設定
+      issueId: this.issueId || '',
+      issueTitle: this.title,  // 現在の課題のタイトル
+      createdAt: now,
+      updatedAt: now
+    };
   }
 
   // Todoを追加
@@ -102,7 +118,7 @@ export class IssueCreateComponent {
       // まだissueが作成されていない場合は、先にissueを作成
       if (!this.issueId) {
         const issuesRef = collection(this.firestore, `projects/${this.projectId}/issues`);
-        const issueDoc = await addDoc(issuesRef, {
+        const issueData = {
           title: this.title,
           startDate: this.startDate ? Timestamp.fromDate(new Date(this.startDate)) : null,
           dueDate: this.dueDate ? Timestamp.fromDate(new Date(this.dueDate)) : null,
@@ -112,9 +128,23 @@ export class IssueCreateComponent {
           status: '未着手',
           createdAt: Timestamp.now(),
           updatedAt: Timestamp.now(),
+        };
+        const issueDocRef = await addDoc(issuesRef, issueData);
+        this.issueId = issueDocRef.id;
+
+        // todoコレクションを作成（空のドキュメントを追加して削除することでコレクションを作成）
+        const todosRef = collection(this.firestore, `projects/${this.projectId}/issues/${this.issueId}/todos`);
+        const tempTodoRef = await addDoc(todosRef, {
+          title: 'temp',
+          createdAt: Timestamp.now()
         });
-        this.issueId = issueDoc.id;
+        await deleteDoc(tempTodoRef);
       }
+
+      // プロジェクト情報を取得
+      const projectRef = doc(this.firestore, `projects/${this.projectId}`);
+      const projectSnap = await getDoc(projectRef);
+      const projectTitle = projectSnap.exists() ? projectSnap.data()['title'] : '';
 
       // Todoをサブコレクションとして保存
       const now = Timestamp.now();
@@ -124,19 +154,21 @@ export class IssueCreateComponent {
         assignee: this.newTodo.assignee,
         dueDate: this.newTodo.dueDate,
         completed: false,
+        projectId: this.projectId,
+        projectTitle: projectTitle,
+        issueId: this.issueId,
+        issueTitle: this.title,
         createdAt: now,
         updatedAt: now
       };
-      await addDoc(todosRef, todoData);
+
+      // FirestoreにTodoを保存
+      const todoDocRef = await addDoc(todosRef, todoData);
 
       // UIに表示するTodoリストを更新
       const todo: Todo = {
-        title: this.newTodo.title,
-        assignee: this.newTodo.assignee,
-        dueDate: this.newTodo.dueDate,
-        completed: false,
-        createdAt: now,
-        updatedAt: now
+        id: todoDocRef.id,  // FirestoreのドキュメントIDを保存
+        ...todoData
       };
       this.todos.push(todo);
       this.resetTodoForm();
@@ -147,28 +179,44 @@ export class IssueCreateComponent {
     }
   }
 
-  // Todo入力フォームをリセット
-  resetTodoForm() {
-    const now = Timestamp.now();
-    this.newTodo = {
-      title: '',
-      dueDate: null,
-      assignee: '',
-      completed: false,
-      createdAt: now,
-      updatedAt: now
-    };
-  }
-
   // Todoを削除
   async removeTodo(index: number) {
-    // UIからTodoを削除
-    this.todos.splice(index, 1);
+    if (!this.projectId || !this.issueId || !this.todos[index].id) return;
+
+    try {
+      // FirestoreからTodoを削除
+      const todoRef = doc(this.firestore, `projects/${this.projectId}/issues/${this.issueId}/todos/${this.todos[index].id}`);
+      await deleteDoc(todoRef);
+
+      // UIからTodoを削除
+      this.todos.splice(index, 1);
+    } catch (error) {
+      console.error('Error removing todo:', error);
+      this.message = 'Todoの削除に失敗しました。';
+    }
   }
 
   // Todoの完了状態を切り替え
-  toggleTodo(index: number) {
-    this.todos[index].completed = !this.todos[index].completed;
+  async toggleTodo(index: number) {
+    if (!this.projectId || !this.issueId || !this.todos[index].id) return;
+
+    try {
+      const todo = this.todos[index];
+      const newCompletedState = !todo.completed;
+      
+      // Firestoreのデータを更新
+      const todoRef = doc(this.firestore, `projects/${this.projectId}/issues/${this.issueId}/todos/${todo.id}`);
+      await updateDoc(todoRef, {
+        completed: newCompletedState,
+        updatedAt: Timestamp.now()
+      });
+
+      // UIの状態を更新
+      todo.completed = newCompletedState;
+    } catch (error) {
+      console.error('Error toggling todo:', error);
+      this.message = 'Todoの状態更新に失敗しました。';
+    }
   }
 
   async saveIssue() {
@@ -176,8 +224,8 @@ export class IssueCreateComponent {
     this.isSaving = true;
     this.message = '';
     try {
+      // issueが未作成の場合のみ作成（todoの追加時に既に作成されている可能性がある）
       if (!this.issueId) {
-        // まだissueが作成されていない場合は新規作成
         const issuesRef = collection(this.firestore, `projects/${this.projectId}/issues`);
         const issueData = {
           title: this.title,
@@ -190,10 +238,19 @@ export class IssueCreateComponent {
           createdAt: Timestamp.now(),
           updatedAt: Timestamp.now(),
         };
-        await addDoc(issuesRef, issueData);
-        this.issueId = issueData.title;
+        const issueDocRef = await addDoc(issuesRef, issueData);
+        this.issueId = issueDocRef.id;
+
+        // todoコレクションを作成（空のドキュメントを追加して削除することでコレクションを作成）
+        const todosRef = collection(this.firestore, `projects/${this.projectId}/issues/${this.issueId}/todos`);
+        const tempTodoRef = await addDoc(todosRef, {
+          title: 'temp',
+          createdAt: Timestamp.now()
+        });
+        await deleteDoc(tempTodoRef);
+
       } else {
-        // 既にissueが作成されている場合は更新
+        // issueが既に存在する場合は更新
         const issueRef = doc(this.firestore, `projects/${this.projectId}/issues/${this.issueId}`);
         await updateDoc(issueRef, {
           title: this.title,
@@ -205,8 +262,11 @@ export class IssueCreateComponent {
           updatedAt: Timestamp.now(),
         });
       }
+
+      // 保存完了後、プロジェクト詳細画面に戻る
       this.router.navigate(['/projects', this.projectId]);
-    } catch {
+    } catch (error) {
+      console.error('Error saving issue:', error);
       this.message = '保存に失敗しました。';
     } finally {
       this.isSaving = false;

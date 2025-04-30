@@ -235,6 +235,24 @@ export class TodoListComponent implements OnInit, OnDestroy {
     }
   }
 
+  // ToDo完了状態の切り替え
+  async toggleTodoComplete(todo: Todo) {
+    try {
+      const todoRef = doc(this.firestore, `projects/${todo.projectId}/issues/${todo.issueId}/todos/${todo.id}`);
+      await updateDoc(todoRef, {
+        completed: true,
+        completedAt: Timestamp.now(),
+        updatedAt: Timestamp.now()
+      });
+
+      // UIから完了したTodoを削除
+      this.todos = this.todos.filter(t => t.id !== todo.id);
+    } catch (error) {
+      console.error('Error updating todo:', error);
+      this.error = 'Todoの更新に失敗しました。';
+    }
+  }
+
   // メンバー名の取得
   getMemberName(uid: string): string {
     const member = this.members.find(m => m.uid === uid);

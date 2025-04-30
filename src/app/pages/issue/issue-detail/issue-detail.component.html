@@ -57,17 +57,17 @@
     <div class="todo-form">
       <input
         type="text"
-        [(ngModel)]="newTodoTitle"
-        placeholder="Todoを入力"
+        [(ngModel)]="newTodo.title"
+        placeholder="新しいToDoを入力"
         class="todo-input"
       >
       <input
-        type="datetime-local"
-        [(ngModel)]="newTodoDueDate"
+        type="date"
+        [(ngModel)]="newTodo.dueDate"
         class="todo-date"
       >
       <select
-        [(ngModel)]="newTodoAssignee"
+        [(ngModel)]="newTodo.assignee"
         class="todo-assignee"
       >
         <option value="">担当者を選択</option>
@@ -75,11 +75,8 @@
           {{ member.displayName }}
         </option>
       </select>
-      <button
-        (click)="addTodo()"
-        [disabled]="!newTodoTitle || !newTodoAssignee"
-        class="add-todo-btn"
-      >
+      <button (click)="addTodo()" class="add-todo-button">
+        <i class="fas fa-plus"></i>
         追加
       </button>
     </div>
@@ -101,9 +98,19 @@
           </span>
           <span class="todo-due-date" *ngIf="todo.dueDate">
             <i class="fas fa-calendar"></i>
-            {{ todo.dueDate ? (todo.dueDate.toDate() | date:'yyyy/MM/dd HH:mm') : '未設定' }}
+            {{ todo.dueDate ? (formatDate(todo.dueDate)) : '期限なし' }}
+          </span>
+          <span class="todo-completed-date" *ngIf="todo.completed && todo.completedAt">
+            <i class="fas fa-check"></i>
+            完了: {{ formatDate(todo.completedAt) }}
           </span>
         </div>
+        <button 
+          class="delete-button" 
+          *ngIf="todo.id"
+          (click)="confirmDeleteTodo(todo.id)">
+          削除
+        </button>
       </div>
     </div>
   </div>

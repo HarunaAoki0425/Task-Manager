@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { 
   Firestore, 
@@ -11,11 +11,33 @@ import {
   query, 
   where, 
   DocumentData,
-  QueryDocumentSnapshot
+  QueryDocumentSnapshot,
+  collectionGroup
 } from '@angular/fire/firestore';
 import { RouterLink } from '@angular/router';
 import { RouterModule } from '@angular/router';
 import { Todo } from '../../models/todo.model';
+import { User } from '../../models/user.model';
+import { Timestamp } from '@angular/fire/firestore';
+import { AuthService } from '../../services/auth.service';
+import { Subscription } from 'rxjs';
+import { TodoService } from '../../services/todo.service';
+
+interface ProjectData {
+  id: string;
+  name?: string;
+  title?: string;
+  createdBy: string;
+  members: string[];
+  isArchived?: boolean;
+  [key: string]: any;
+}
+
+interface IssueData {
+  id: string;
+  title: string;
+  [key: string]: any;
+}
 
 @Component({
   selector: 'app-archive',
@@ -24,88 +46,104 @@ import { Todo } from '../../models/todo.model';
   templateUrl: './archive.component.html',
   styleUrls: ['./archive.component.css']
 })
-export class ArchiveComponent {
+export class ArchiveComponent implements OnInit, OnDestroy {
   archives: any[] = [];
   isLoading = true;
   archivedProjects: any[] = [];
-  completedTodos: any[] = [];
+  completedTodos: Todo[] = [];
+  memberDetails: { [key: string]: User } = {};
+  error: string | null = null;
+  private authSubscription: Subscription;
 
-  constructor(private firestore: Firestore) {
-    this.loadArchives();
+  constructor(private firestore: Firestore, private auth: AuthService, private todoService: TodoService) {
+    this.authSubscription = this.auth.user$.subscribe(user => {
+      if (user) {
+        this.loadArchives();
+        this.loadCompletedTodos();
+      } else {
+        this.archives = [];
+        this.completedTodos = [];
+        this.error = 'ログインが必要です';
+      }
+    });
+  }
+
+  ngOnInit(): void {
     this.loadCompletedTodos();
+  }
+
+  ngOnDestroy() {
+    if (this.authSubscription) {
+      this.authSubscription.unsubscribe();
+    }
   }
 
   async loadArchives() {
     this.isLoading = true;
     try {
+      const currentUser = this.auth.getCurrentUser();
+      if (!currentUser) {
+        this.error = 'ログインが必要です';
+        return;
+      }
+
       const archivesRef = collection(this.firestore, 'archives');
-      const snapshot = await getDocs(archivesRef);
+      const q = query(archivesRef, 
+        where('members', 'array-contains', currentUser.uid)
+      );
+      const snapshot = await getDocs(q);
       this.archives = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      this.error = null;
     } catch (e) {
+      console.error('Error loading archives:', e);
+      this.error = 'アーカイブの読み込みに失敗しました。';
       this.archives = [];
     } finally {
       this.isLoading = false;
     }
   }
 
-  async loadCompletedTodos() {
+  async loadCompletedTodos(): Promise<void> {
     try {
-      const todosRef = collection(this.firestore, 'todos');
-      const q = query(todosRef, where('completed', '==', true));
-      const snapshot = await getDocs(q);
-      
-      // 各Todoに対してプロジェクトとイシューの情報を取得
-      const todos = await Promise.all(
-        snapshot.docs.map(async (docSnapshot: QueryDocumentSnapshot<DocumentData>) => {
-          const todoData = { id: docSnapshot.id, ...docSnapshot.data() } as Todo & DocumentData;
-          
-          // プロジェクト情報を取得
-          const projectRef = doc(this.firestore, 'projects', todoData.projectId);
-          const projectSnap = await getDoc(projectRef);
-          const projectData = projectSnap.data() as DocumentData | undefined;
-          
-          // イシュー情報を取得
-          const issueRef = doc(this.firestore, 'projects', todoData.projectId, 'issues', todoData.issueId);
-          const issueSnap = await getDoc(issueRef);
-          const issueData = issueSnap.data() as DocumentData | undefined;
-          
-          return {
-            ...todoData,
-            projectTitle: projectData?.['name'] || '',
-            issueTitle: issueData?.['title'] || ''
-          };
-        })
-      );
-      
-      this.completedTodos = todos;
-    } catch (e) {
-      console.error('Error loading completed todos:', e);
-      this.completedTodos = [];
+      this.completedTodos = await this.todoService.getCompletedTodos();
+    } catch (error) {
+      console.error('Error loading completed todos:', error);
     }
   }
 
-  async restoreTodo(todo: any) {
+  getMemberName(uid: string): string {
+    return this.memberDetails[uid]?.displayName || '未割り当て';
+  }
+
+  async restoreTodo(todo: Todo) {
+    if (!todo.id || !todo.projectId || !todo.issueId) return;
+    
     try {
-      const todoRef = doc(this.firestore, 'todos', todo.id);
+      // 元のTodoの場所に復元
+      const todoRef = doc(this.firestore, `projects/${todo.projectId}/issues/${todo.issueId}/todos/${todo.id}`);
       await setDoc(todoRef, {
         ...todo,
         completed: false,
-        completedAt: null
+        completedAt: null,
+        updatedAt: Timestamp.now()
       });
-      await this.loadCompletedTodos();
+
+      // UIを更新
+      this.completedTodos = this.completedTodos.filter(t => t.id !== todo.id);
     } catch (e) {
       console.error('Error restoring todo:', e);
+      this.error = 'Todoの復元に失敗しました。';
     }
   }
 
-  async deleteTodo(todoId: string) {
-    if (!confirm('このToDoを完全に削除してもよろしいですか？')) return;
-    try {
-      const todoRef = doc(this.firestore, 'todos', todoId);
-      await deleteDoc(todoRef);
-      await this.loadCompletedTodos();
-    } catch (e) {
-      console.error('Error deleting todo:', e);
+  async confirmDeleteTodo(todoId: string): Promise<void> {
+    if (confirm('このToDoを削除してもよろしいですか？')) {
+      try {
+        await this.todoService.deleteTodo(todoId);
+        this.completedTodos = this.completedTodos.filter(todo => todo.id !== todoId);
+      } catch (error) {
+        console.error('Error deleting todo:', error);
+      }
     }
   }
 

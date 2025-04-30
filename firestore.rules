@@ -34,8 +34,15 @@ service cloud.firestore {
     // archives
     match /archives/{archiveId} {
       allow read, write: if request.auth != null
-        && (resource.data.createdBy == request.auth.uid
-            || (resource.data.members != null && request.auth.uid in resource.data.members));
+        && (
+          // 新規作成時
+          (request.method == 'create' && request.resource.data.createdBy == request.auth.uid)
+          // 読み取り、更新、削除時
+          || (request.method != 'create' && (
+              resource.data.createdBy == request.auth.uid
+              || (resource.data.members != null && request.auth.uid in resource.data.members)
+          ))
+        );
     }
 
     // users - フレンド機能のために読み取り権限を拡大
@@ -75,9 +82,26 @@ service cloud.firestore {
     // コレクショングループクエリのルール
     match /{path=**}/todos/{todoId} {
       allow read: if request.auth != null
-        && (get(/databases/$(database)/documents/projects/$(path[1])).data.createdBy == request.auth.uid
-            || (get(/databases/$(database)/documents/projects/$(path[1])).data.members != null
-                && request.auth.uid in get(/databases/$(database)/documents/projects/$(path[1])).data.members));
+        && (
+          // 自分に割り当てられたTodoは常に読み取り可能
+          resource.data.assignee == request.auth.uid
+          // または、プロジェクトのメンバーの場合も読み取り可能
+          || (
+            exists(/databases/$(database)/documents/projects/$(path[1]))
+            ? (
+                get(/databases/$(database)/documents/projects/$(path[1])).data.createdBy == request.auth.uid
+                || (get(/databases/$(database)/documents/projects/$(path[1])).data.members != null
+                    && request.auth.uid in get(/databases/$(database)/documents/projects/$(path[1])).data.members)
+              )
+            : exists(/databases/$(database)/documents/archives/$(path[1]))
+              ? (
+                  get(/databases/$(database)/documents/archives/$(path[1])).data.createdBy == request.auth.uid
+                  || (get(/databases/$(database)/documents/archives/$(path[1])).data.members != null
+                      && request.auth.uid in get(/databases/$(database)/documents/archives/$(path[1])).data.members)
+                )
+              : false
+          )
+        );
     }
   }
 }

@@ -86,7 +86,7 @@
               <div class="todo-details">
                 <span *ngIf="todo.dueDate" class="todo-due-date">
                   <span class="material-icons">event</span>
-                  {{ todo.dueDate ? (todo.dueDate.toDate() | date:'yyyy/MM/dd HH:mm') : '未設定' }}
+                  {{ todo.dueDate ? (formatDate(todo.dueDate)) : '期限なし' }}
                 </span>
                 <span *ngIf="todo.assignee" class="todo-assignee">
                   <span class="material-icons">person</span>

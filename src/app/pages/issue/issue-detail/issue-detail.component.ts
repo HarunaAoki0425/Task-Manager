@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Firestore, doc, getDoc, collection, query, getDocs, updateDoc, Timestamp, addDoc } from '@angular/fire/firestore';
+import { Firestore, doc, getDoc, collection, query, getDocs, updateDoc, Timestamp, addDoc, deleteDoc } from '@angular/fire/firestore';
 import { User } from '../../../models/user.model';
 import { Todo } from '../../../models/todo.model';
 import { FormsModule } from '@angular/forms';
@@ -65,9 +65,11 @@ export class IssueDetailComponent implements OnInit {
   };
 
   // 新しいTodo用のプロパティ
-  newTodoTitle = '';
-  newTodoDueDate = '';
-  newTodoAssignee = '';
+  newTodo = {
+    title: '',
+    assignee: '',
+    dueDate: null as string | null
+  };
 
   // テンプレートで使用するためにTimestampを追加
   Timestamp = Timestamp;
@@ -115,13 +117,32 @@ export class IssueDetailComponent implements OnInit {
 
     try {
       const todoRef = doc(this.firestore, `projects/${this.projectId}/issues/${this.issueId}/todos/${todo.id}`);
-      await updateDoc(todoRef, {
-        completed: !todo.completed,
-        updatedAt: Timestamp.now()
-      });
-      todo.completed = !todo.completed;
+      const now = Timestamp.now();
+      const newCompleted = !todo.completed;
+
+      if (newCompleted) {
+        // 完了状態に変更する場合
+        await updateDoc(todoRef, {
+          completed: true,
+          completedAt: now,
+          updatedAt: now
+        });
+        todo.completed = true;
+        todo.completedAt = now;
+      } else {
+        // 未完了状態に変更する場合
+        await updateDoc(todoRef, {
+          completed: false,
+          completedAt: null,
+          updatedAt: now
+        });
+        todo.completed = false;
+        todo.completedAt = null;
+      }
+      todo.updatedAt = now;
     } catch (error) {
       console.error('Error toggling todo:', error);
+      this.error = 'Todoの状態更新に失敗しました。';
     }
   }
 
@@ -182,6 +203,7 @@ export class IssueDetailComponent implements OnInit {
       })) as Todo[];
     } catch (error) {
       console.error('Error loading todos:', error);
+      this.error = 'Todoの読み込みに失敗しました。';
     }
   }
 
@@ -190,10 +212,24 @@ export class IssueDetailComponent implements OnInit {
     return member ? member.displayName : 'Unknown';
   }
 
-  formatDate(timestamp: Timestamp | null | undefined): string {
-    if (!timestamp) return '';
-    const date = timestamp.toDate();
-    return date.toLocaleDateString('ja-JP');
+  formatDate(ts: string | Timestamp | null | undefined): string {
+    if (!ts) return '';
+    
+    let date: Date;
+    if (typeof ts === 'string') {
+      date = new Date(ts);
+    } else if (ts instanceof Timestamp) {
+      date = ts.toDate();
+    } else {
+      return '';
+    }
+
+    const y = date.getFullYear();
+    const m = (date.getMonth() + 1).toString().padStart(2, '0');
+    const d = date.getDate().toString().padStart(2, '0');
+    const h = date.getHours().toString().padStart(2, '0');
+    const min = date.getMinutes().toString().padStart(2, '0');
+    return `${y}/${m}/${d} ${h}:${min}`;
   }
 
   getPriorityLabel(priority: string): string {
@@ -217,24 +253,18 @@ export class IssueDetailComponent implements OnInit {
 
   // 新しいTodoを追加
   async addTodo() {
-    if (!this.projectId || !this.issueId || !this.newTodoTitle || !this.newTodoAssignee) return;
+    if (!this.projectId || !this.issueId || !this.newTodo.title || !this.newTodo.assignee) return;
 
     try {
-      // プロジェクト情報を取得
-      const projectRef = doc(this.firestore, `projects/${this.projectId}`);
-      const projectSnap = await getDoc(projectRef);
-      const projectTitle = projectSnap.exists() ? projectSnap.data()['title'] || '' : '';
-
       const now = Timestamp.now();
-      const dueDate = this.newTodoDueDate ? Timestamp.fromDate(new Date(this.newTodoDueDate)) : null;
-      
       const todoData: Omit<Todo, 'id'> = {
-        title: this.newTodoTitle,
-        assignee: this.newTodoAssignee,
-        dueDate: dueDate,
+        title: this.newTodo.title,
+        assignee: this.newTodo.assignee,
+        dueDate: this.newTodo.dueDate ? Timestamp.fromDate(new Date(this.newTodo.dueDate)) : null,
         completed: false,
+        completedAt: null,
         projectId: this.projectId,
-        projectTitle: projectTitle,
+        projectTitle: this.issue?.title || '',
         issueId: this.issueId,
         issueTitle: this.issue?.title || '',
         createdAt: now,
@@ -242,19 +272,21 @@ export class IssueDetailComponent implements OnInit {
       };
 
       const todosRef = collection(this.firestore, `projects/${this.projectId}/issues/${this.issueId}/todos`);
-      const todoRef = await addDoc(todosRef, todoData);
+      const todoDocRef = await addDoc(todosRef, todoData);
 
-      // UIのTodoリストを更新
-      const newTodo: Todo = {
-        id: todoRef.id,
+      // UIに表示するTodoリストを更新
+      const todo: Todo = {
+        id: todoDocRef.id,
         ...todoData
       };
-      this.todos.push(newTodo);
+      this.todos.push(todo);
 
       // フォームをリセット
-      this.newTodoTitle = '';
-      this.newTodoDueDate = '';
-      this.newTodoAssignee = '';
+      this.newTodo = {
+        title: '',
+        assignee: '',
+        dueDate: null
+      };
     } catch (error) {
       console.error('Error adding todo:', error);
       this.error = 'Todoの追加に失敗しました。';
@@ -317,6 +349,33 @@ export class IssueDetailComponent implements OnInit {
     } catch (error) {
       console.error('Error saving issue:', error);
       this.error = '課題の保存に失敗しました。';
+    }
+  }
+
+  async deleteTodo(todoId: string) {
+    if (!this.projectId || !this.issueId) return;
+
+    try {
+      const todoRef = doc(this.firestore, `projects/${this.projectId}/issues/${this.issueId}/todos/${todoId}`);
+      await deleteDoc(todoRef);
+      this.todos = this.todos.filter(todo => todo.id !== todoId);
+    } catch (error) {
+      console.error('Error deleting todo:', error);
+      this.error = 'Todoの削除に失敗しました。';
+    }
+  }
+
+  async confirmDeleteTodo(todoId: string | undefined) {
+    if (!todoId) return;
+    
+    const isConfirmed = window.confirm('このToDoを削除してもよろしいですか？');
+    
+    if (isConfirmed) {
+      try {
+        await this.deleteTodo(todoId);
+      } catch (error) {
+        console.error('ToDo削除中にエラーが発生しました:', error);
+      }
     }
   }
 }

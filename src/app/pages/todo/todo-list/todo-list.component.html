@@ -39,7 +39,7 @@
          [class.completed]="todo.completed"
          [class.overdue]="!todo.completed && isOverdue(todo.dueDate)">
       <div class="todo-checkbox">
-        <input type="checkbox" [checked]="todo.completed" (change)="toggleTodo(todo)">
+        <input type="checkbox" [checked]="todo.completed" (change)="toggleTodoComplete(todo)">
       </div>
 
       <div class="todo-content">

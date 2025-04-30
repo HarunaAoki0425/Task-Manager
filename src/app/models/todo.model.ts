@@ -3,13 +3,14 @@ import { Timestamp } from '@angular/fire/firestore';
 export interface Todo {
   id?: string;
   title: string;
-  assignee: string;
-  dueDate: Timestamp | string | null;
   completed: boolean;
+  assignee: string;
+  dueDate: Timestamp | null;
   projectId: string;
   projectTitle: string;
   issueId: string;
   issueTitle: string;
   createdAt: Timestamp;
   updatedAt: Timestamp;
+  completedAt: Timestamp | null;
 } 

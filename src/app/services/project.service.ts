@@ -27,7 +27,7 @@ export class ProjectService {
 
     return querySnapshot.docs.map(doc => ({
       id: doc.id,
-      title: doc.data()['name'] || '',
+      title: doc.data()['title'] || doc.data()['name'] || '',
       description: doc.data()['description'] || '',
       members: doc.data()['members'] || [],
       createdBy: doc.data()['createdBy'] || '',
@@ -38,12 +38,10 @@ export class ProjectService {
   }
 
   async getProject(projectId: string): Promise<Project | null> {
-    // まずprojectsから取得
     let projectDoc = doc(this.firestore, 'projects', projectId);
     let projectSnap = await getDoc(projectDoc);
     
     if (!projectSnap.exists()) {
-      // なければarchivesから取得
       projectDoc = doc(this.firestore, 'archives', projectId);
       projectSnap = await getDoc(projectDoc);
     }
@@ -52,7 +50,7 @@ export class ProjectService {
       const data = projectSnap.data();
       return {
         id: projectId,
-        title: data['name'] || '',
+        title: data['title'] || data['name'] || '',
         description: data['description'] || '',
         members: data['members'] || [],
         createdBy: data['createdBy'] || '',

@@ -13,7 +13,7 @@ import { AuthService } from '../../../services/auth.service';
   styleUrls: ['./project-create.component.css']
 })
 export class ProjectCreateComponent {
-  projectName = '';
+  projectTitle = '';
   description = '';
   dueDate = '';
   noDueDate = false;
@@ -43,7 +43,7 @@ export class ProjectCreateComponent {
         await setDoc(userDocRef, { displayName: 'no name', email: user.email || '' });
       }
       const projectData = {
-        name: this.projectName,
+        title: this.projectTitle,
         description: this.description,
         createdBy: user.uid,
         members: [user.uid],

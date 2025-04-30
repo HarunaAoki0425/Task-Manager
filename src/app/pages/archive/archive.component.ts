@@ -1,21 +1,38 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Firestore, collection, getDocs, doc, getDoc, setDoc, deleteDoc } from '@angular/fire/firestore';
+import { 
+  Firestore, 
+  collection, 
+  getDocs, 
+  doc, 
+  getDoc, 
+  setDoc, 
+  deleteDoc, 
+  query, 
+  where, 
+  DocumentData,
+  QueryDocumentSnapshot
+} from '@angular/fire/firestore';
 import { RouterLink } from '@angular/router';
+import { RouterModule } from '@angular/router';
+import { Todo } from '../../models/todo.model';
 
 @Component({
   selector: 'app-archive',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, RouterModule],
   templateUrl: './archive.component.html',
   styleUrls: ['./archive.component.css']
 })
 export class ArchiveComponent {
   archives: any[] = [];
   isLoading = true;
+  archivedProjects: any[] = [];
+  completedTodos: any[] = [];
 
   constructor(private firestore: Firestore) {
     this.loadArchives();
+    this.loadCompletedTodos();
   }
 
   async loadArchives() {
@@ -31,11 +48,72 @@ export class ArchiveComponent {
     }
   }
 
+  async loadCompletedTodos() {
+    try {
+      const todosRef = collection(this.firestore, 'todos');
+      const q = query(todosRef, where('completed', '==', true));
+      const snapshot = await getDocs(q);
+      
+      // 各Todoに対してプロジェクトとイシューの情報を取得
+      const todos = await Promise.all(
+        snapshot.docs.map(async (docSnapshot: QueryDocumentSnapshot<DocumentData>) => {
+          const todoData = { id: docSnapshot.id, ...docSnapshot.data() } as Todo & DocumentData;
+          
+          // プロジェクト情報を取得
+          const projectRef = doc(this.firestore, 'projects', todoData.projectId);
+          const projectSnap = await getDoc(projectRef);
+          const projectData = projectSnap.data() as DocumentData | undefined;
+          
+          // イシュー情報を取得
+          const issueRef = doc(this.firestore, 'projects', todoData.projectId, 'issues', todoData.issueId);
+          const issueSnap = await getDoc(issueRef);
+          const issueData = issueSnap.data() as DocumentData | undefined;
+          
+          return {
+            ...todoData,
+            projectTitle: projectData?.['name'] || '',
+            issueTitle: issueData?.['title'] || ''
+          };
+        })
+      );
+      
+      this.completedTodos = todos;
+    } catch (e) {
+      console.error('Error loading completed todos:', e);
+      this.completedTodos = [];
+    }
+  }
+
+  async restoreTodo(todo: any) {
+    try {
+      const todoRef = doc(this.firestore, 'todos', todo.id);
+      await setDoc(todoRef, {
+        ...todo,
+        completed: false,
+        completedAt: null
+      });
+      await this.loadCompletedTodos();
+    } catch (e) {
+      console.error('Error restoring todo:', e);
+    }
+  }
+
+  async deleteTodo(todoId: string) {
+    if (!confirm('このToDoを完全に削除してもよろしいですか？')) return;
+    try {
+      const todoRef = doc(this.firestore, 'todos', todoId);
+      await deleteDoc(todoRef);
+      await this.loadCompletedTodos();
+    } catch (e) {
+      console.error('Error deleting todo:', e);
+    }
+  }
+
   async restoreProject(projectId: string) {
     const archiveRef = doc(this.firestore, 'archives', projectId);
     const archiveSnap = await getDoc(archiveRef);
     if (!archiveSnap.exists()) return;
-    const data = archiveSnap.data();
+    const data = archiveSnap.data() as DocumentData;
     // deletedAtを除外してprojectsに復元
     const { deletedAt, ...restoreData } = data;
     const projectRef = doc(this.firestore, 'projects', projectId);

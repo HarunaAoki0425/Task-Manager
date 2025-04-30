@@ -223,12 +223,12 @@ export class IssueDetailComponent implements OnInit {
       // プロジェクト情報を取得
       const projectRef = doc(this.firestore, `projects/${this.projectId}`);
       const projectSnap = await getDoc(projectRef);
-      const projectTitle = projectSnap.exists() ? projectSnap.data()['title'] : '';
+      const projectTitle = projectSnap.exists() ? projectSnap.data()['title'] || '' : '';
 
       const now = Timestamp.now();
       const dueDate = this.newTodoDueDate ? Timestamp.fromDate(new Date(this.newTodoDueDate)) : null;
       
-      const todoData = {
+      const todoData: Omit<Todo, 'id'> = {
         title: this.newTodoTitle,
         assignee: this.newTodoAssignee,
         dueDate: dueDate,
@@ -257,6 +257,7 @@ export class IssueDetailComponent implements OnInit {
       this.newTodoAssignee = '';
     } catch (error) {
       console.error('Error adding todo:', error);
+      this.error = 'Todoの追加に失敗しました。';
     }
   }
 

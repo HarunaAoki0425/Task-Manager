@@ -1,26 +1,77 @@
 <div class="archive-container">
-  <h2>アーカイブ</h2>
-  <div *ngIf="isLoading">読み込み中・・・</div>
-  <table *ngIf="!isLoading && archives.length > 0" class="archive-table">
-    <thead>
-      <tr>
-        <th>プロジェクト名</th>
-        <th>削除日時</th>
-        <th style="width: 160px;">操作</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let project of archives">
-        <td>
-          <a [routerLink]="['/projects', project.id]" class="project-link">{{ project.name }}</a>
-        </td>
-        <td>{{ formatDate(project.deletedAt) }}</td>
-        <td>
-          <button class="restore-btn" (click)="restoreProject(project.id)">復元</button>
-          <button class="delete-btn" (click)="deleteProject(project.id)">削除</button>
-        </td>
-      </tr>
-    </tbody>
-  </table>
-  <div *ngIf="!isLoading && archives.length === 0" class="no-archive">アーカイブされたプロジェクトはありません。</div>
+  <h1 class="page-title">アーカイブ</h1>
+
+  <!-- アーカイブされたプロジェクト -->
+  <section class="archive-section">
+    <h2 class="section-title">
+      <i class="fas fa-folder-minus"></i>
+      アーカイブされたプロジェクト
+    </h2>
+    <div class="project-list">
+      <div *ngFor="let project of archivedProjects" class="project-card">
+        <div class="project-info">
+          <h3 class="project-title">{{ project.title }}</h3>
+          <span class="archive-date">
+            <i class="fas fa-clock"></i>
+            {{ project.archivedAt | date:'yyyy/MM/dd' }}にアーカイブ
+          </span>
+        </div>
+        <div class="project-actions">
+          <button class="action-button restore">
+            <i class="fas fa-undo"></i>
+            復元
+          </button>
+          <button class="action-button delete">
+            <i class="fas fa-trash-alt"></i>
+            削除
+          </button>
+        </div>
+      </div>
+      <div *ngIf="archivedProjects.length === 0" class="empty-message">
+        アーカイブされたプロジェクトはありません
+      </div>
+    </div>
+  </section>
+
+  <!-- 完了済みToDo -->
+  <section class="archive-section">
+    <h2 class="section-title">
+      <i class="fas fa-check-circle"></i>
+      完了済みToDo
+    </h2>
+    <div class="todo-list">
+      <div *ngFor="let todo of completedTodos" class="todo-card">
+        <div class="todo-info">
+          <h3 class="todo-title">{{ todo.title }}</h3>
+          <div class="todo-details">
+            <span class="project-link">
+              <i class="fas fa-folder"></i>
+              {{ todo.projectTitle }}
+            </span>
+            <span class="issue-link">
+              <i class="fas fa-tasks"></i>
+              {{ todo.issueTitle }}
+            </span>
+            <span class="completion-date">
+              <i class="fas fa-check"></i>
+              {{ formatDate(todo.completedAt) }}に完了
+            </span>
+          </div>
+        </div>
+        <div class="todo-actions">
+          <button class="action-button restore" (click)="restoreTodo(todo)">
+            <i class="fas fa-undo"></i>
+            復元
+          </button>
+          <button class="action-button delete" (click)="deleteTodo(todo.id)">
+            <i class="fas fa-trash-alt"></i>
+            削除
+          </button>
+        </div>
+      </div>
+      <div *ngIf="completedTodos.length === 0" class="empty-message">
+        完了済みToDoはありません
+      </div>
+    </div>
+  </section>
 </div> 

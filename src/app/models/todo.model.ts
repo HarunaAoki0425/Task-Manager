@@ -4,7 +4,7 @@ export interface Todo {
   id?: string;
   title: string;
   assignee: string;
-  dueDate: Timestamp | null;
+  dueDate: Timestamp | string | null;
   completed: boolean;
   projectId: string;
   projectTitle: string;

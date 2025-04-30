@@ -51,9 +51,9 @@
 
 .todo-item {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 1rem;
-  padding: 1rem;
+  padding: 0.75rem 1rem;
   background-color: white;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
@@ -87,51 +87,105 @@
 .todo-content {
   flex: 1;
   min-width: 0;
+  margin-right: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
 }
 
 .todo-main {
+  flex: 1;
+  min-width: 0;
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
+  align-items: center;
   gap: 1rem;
-  margin-bottom: 0.5rem;
+}
+
+.todo-title-container {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
 }
 
 .todo-title {
-  font-size: 1rem;
-  color: #2d3748;
+  font-size: 0.95rem;
   font-weight: 500;
+  color: #2d3748;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+  max-width: 300px;
 }
 
 .todo-badges {
   display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
+  flex-direction: row;
+  gap: 0.75rem;
+  min-width: auto;
+  border-left: none;
+  padding-left: 0;
+  white-space: nowrap;
+}
+
+.badge-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.badge-label {
+  font-size: 0.75rem;
+  color: #718096;
+  font-weight: 500;
 }
 
 .project-badge,
 .issue-badge {
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 100px;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .project-badge {
-  background-color: #ebf4ff;
-  color: #4299e1;
+  background-color: #4a90e2;
+}
+
+.project-badge:hover {
+  background-color: #357abd;
 }
 
 .issue-badge {
-  background-color: #f0fff4;
-  color: #48bb78;
+  background-color: #7c5cbf;
+}
+
+.issue-badge:hover {
+  background-color: #6548a3;
 }
 
 .todo-details {
   display: flex;
-  gap: 1.5rem;
-  color: #718096;
-  font-size: 0.9rem;
+  gap: 1rem;
+  font-size: 0.85rem;
+  color: #666;
+  margin-top: 0;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .todo-assignee,
@@ -141,8 +195,16 @@
   gap: 0.5rem;
 }
 
-.todo-due-date.overdue {
-  color: #e53e3e;
+.todo-assignee i,
+.todo-due-date i {
+  color: #718096;
+  width: 16px;
+  text-align: center;
+}
+
+.overdue {
+  color: #dc3545;
+  background-color: #fff5f5;
 }
 
 /* アイコン */
@@ -169,4 +231,82 @@
 .no-todos {
   color: #718096;
   background-color: #f8f9fa;
+}
+
+.todo-due-date {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.15rem 0.5rem;
+  background-color: #f1f5f9;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.todo-due-date i {
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+/* 期限切れのTodoカード用のスタイルを追加 */
+.todo-item.overdue {
+  background-color: #fff5f5;
+  border-color: #feb2b2;
+  border-left: 4px solid #fc8181;
+}
+
+.todo-item.overdue:hover {
+  border-color: #fc8181;
+  box-shadow: 0 2px 4px rgba(252, 129, 129, 0.1);
+}
+
+.todo-item.overdue .todo-title {
+  color: #e53e3e;
+}
+
+.todo-item.overdue.completed {
+  background-color: #f8f9fa;
+  border-color: #e2e8f0;
+  border-left: 4px solid #cbd5e0;
+}
+
+.todo-item.overdue.completed .todo-title {
+  color: #a0aec0;
+}
+
+/* 期限切れの日付表示用のスタイル */
+.todo-due-date.overdue {
+  color: #e53e3e;
+  background-color: #fff5f5;
+  border: 1px solid #fed7d7;
+}
+
+.todo-due-date.overdue i {
+  color: #e53e3e;
+}
+
+/* 削除ボタンのスタイル */
+.delete-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  border: none;
+  background: none;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.delete-button:hover {
+  background-color: #fee2e2;
+  color: #ef4444;
+}
+
+.delete-button i {
+  font-size: 1rem;
 }

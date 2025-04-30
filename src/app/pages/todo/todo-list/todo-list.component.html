@@ -11,18 +11,6 @@
           </option>
         </select>
 
-        <select class="filter-select" [(ngModel)]="selectedMember" (ngModelChange)="onFilterChange()">
-          <option value="">担当者: すべて</option>
-          <option *ngFor="let member of members" [value]="member.uid">
-            {{ member.displayName }}
-          </option>
-        </select>
-
-        <select class="filter-select" [(ngModel)]="selectedStatus" (ngModelChange)="onFilterChange()">
-          <option value="all">ステータス: すべて</option>
-          <option value="incomplete">未完了</option>
-          <option value="completed">完了済み</option>
-        </select>
       </div>
 
       <div class="sort-group">
@@ -46,31 +34,41 @@
 
   <!-- ToDo一覧 -->
   <div class="todo-list" *ngIf="!isLoading && !error">
-    <div *ngFor="let todo of todos" class="todo-item" [class.completed]="todo.completed">
+    <div *ngFor="let todo of todos" 
+         class="todo-item" 
+         [class.completed]="todo.completed"
+         [class.overdue]="!todo.completed && isOverdue(todo.dueDate)">
       <div class="todo-checkbox">
         <input type="checkbox" [checked]="todo.completed" (change)="toggleTodo(todo)">
       </div>
 
       <div class="todo-content">
         <div class="todo-main">
-          <span class="todo-title">{{ todo.title }}</span>
-          <div class="todo-badges">
-            <span class="project-badge">{{ todo.projectTitle }}</span>
-            <span class="issue-badge">{{ todo.issueTitle }}</span>
+          <div class="todo-title-container">
+            <h3 class="todo-title">{{ todo.title }}</h3>
+            <div class="todo-details">
+              <span class="todo-due-date" [class.overdue]="!todo.completed && isOverdue(todo.dueDate)">
+                <i class="fas fa-calendar"></i>
+                {{ formatDate(todo.dueDate) }}
+              </span>
+            </div>
           </div>
         </div>
 
-        <div class="todo-details">
-          <span class="todo-assignee">
-            <i class="fas fa-user"></i>
-            {{ getMemberName(todo.assignee) }}
-          </span>
-          <span class="todo-due-date" [class.overdue]="isOverdue(todo.dueDate)">
-            <i class="fas fa-calendar"></i>
-            {{ formatDate(todo.dueDate) }}
-          </span>
+        <div class="todo-badges">
+          <a class="project-badge" [routerLink]="['/projects', todo.projectId]">
+            <i class="fas fa-folder"></i>
+            {{ todo.projectTitle }}
+          </a>
+          <a class="issue-badge" [routerLink]="['/projects', todo.projectId, 'issues', todo.issueId]">
+            <i class="fas fa-tasks"></i>
+            {{ todo.issueTitle }}
+          </a>
         </div>
       </div>
+      <button class="delete-button">
+        <i class="fas fa-trash-alt"></i>
+      </button>
     </div>
 
     <!-- Todoが存在しない場合 -->

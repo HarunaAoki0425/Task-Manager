@@ -131,28 +131,20 @@ export class IssueCreateComponent {
         };
         const issueDocRef = await addDoc(issuesRef, issueData);
         this.issueId = issueDocRef.id;
-
-        // todoコレクションを作成（空のドキュメントを追加して削除することでコレクションを作成）
-        const todosRef = collection(this.firestore, `projects/${this.projectId}/issues/${this.issueId}/todos`);
-        const tempTodoRef = await addDoc(todosRef, {
-          title: 'temp',
-          createdAt: Timestamp.now()
-        });
-        await deleteDoc(tempTodoRef);
       }
 
       // プロジェクト情報を取得
       const projectRef = doc(this.firestore, `projects/${this.projectId}`);
       const projectSnap = await getDoc(projectRef);
-      const projectTitle = projectSnap.exists() ? projectSnap.data()['title'] : '';
+      const projectTitle = projectSnap.exists() ? projectSnap.data()['title'] || '' : '';
 
       // Todoをサブコレクションとして保存
       const now = Timestamp.now();
       const todosRef = collection(this.firestore, `projects/${this.projectId}/issues/${this.issueId}/todos`);
-      const todoData = {
+      const todoData: Omit<Todo, 'id'> = {
         title: this.newTodo.title,
         assignee: this.newTodo.assignee,
-        dueDate: this.newTodo.dueDate,
+        dueDate: typeof this.newTodo.dueDate === 'string' ? Timestamp.fromDate(new Date(this.newTodo.dueDate)) : this.newTodo.dueDate,
         completed: false,
         projectId: this.projectId,
         projectTitle: projectTitle,
@@ -167,7 +159,7 @@ export class IssueCreateComponent {
 
       // UIに表示するTodoリストを更新
       const todo: Todo = {
-        id: todoDocRef.id,  // FirestoreのドキュメントIDを保存
+        id: todoDocRef.id,
         ...todoData
       };
       this.todos.push(todo);

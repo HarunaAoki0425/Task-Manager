@@ -27,7 +27,7 @@
     <tbody>
       <tr *ngFor="let project of sortedProjects$ | async">
         <td>
-          <a [routerLink]="['/projects', project.id]" class="project-link">{{ project.name }}</a>
+          <a [routerLink]="['/projects', project.id]" class="project-link">{{ project.title }}</a>
         </td>
         <td>{{ formatDate(project.createdAt) }}</td>
         <td>{{ project.dueDate ? formatDate(project.dueDate) : '' }}</td>

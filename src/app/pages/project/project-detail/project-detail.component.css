@@ -717,4 +717,114 @@
   font-size: 0.95em;
   display: inline-block;
   border: 1px solid #ffe0b2;
+}
+
+.invite-form {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background-color: #f9f9f9;
+}
+
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.form-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.form-actions button {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.form-actions button:first-child {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.form-actions button:first-child:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.form-actions .cancel-button {
+  background-color: #f1f1f1;
+  color: #333;
+}
+
+.error-message {
+  color: #d32f2f;
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.success-message {
+  color: #4CAF50;
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.invite-button {
+  padding: 0.5rem 1rem;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.invite-button:hover {
+  background-color: #45a049;
+}
+
+.clickable {
+  cursor: pointer;
+  color: #2196F3;
+  text-decoration: none;
+}
+
+.clickable:hover {
+  text-decoration: underline;
+  color: #1976D2;
+}
+
+.title-section {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.back-to-list-btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  background-color: #f8f9fa;
+  color: #212529;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.back-to-list-btn:hover {
+  background-color: #e9ecef;
 } 

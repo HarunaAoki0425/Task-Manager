@@ -7,7 +7,10 @@ import { ProjectCreateComponent } from './pages/project/project-create/project-c
 import { SettingComponent } from './pages/setting/setting.component';
 import { ProjectDetailComponent } from './pages/project/project-detail/project-detail.component';
 import { ArchiveComponent } from './pages/archive/archive.component';
-import { IssueCreateComponent } from './pages/issue/issue-create.component';
+import { IssueCreateComponent } from './pages/issue/issue-create/issue-create.component';
+import { IssueDetailComponent } from './pages/issue/issue-detail/issue-detail.component';
+import { FriendsComponent } from './pages/friends/friends.component';
+import { TodoListComponent } from './pages/todo/todo-list/todo-list.component';
 
 export const routes: Routes = [
   {
@@ -28,11 +31,11 @@ export const routes: Routes = [
         component: HomeComponent
       },
       {
-        path: 'project-list',
+        path: 'projects',
         component: ProjectListComponent
       },
       {
-        path: 'project/project-create',
+        path: 'projects/create',
         component: ProjectCreateComponent
       },
       {
@@ -40,20 +43,28 @@ export const routes: Routes = [
         component: SettingComponent
       },
       {
-        path: 'project/:id',
+        path: 'projects/:id',
         component: ProjectDetailComponent
+      },
+      {
+        path: 'projects/:projectId/issues/create',
+        component: IssueCreateComponent
+      },
+      {
+        path: 'projects/:projectId/issues/:issueId',
+        component: IssueDetailComponent
       },
       {
         path: 'archive',
         component: ArchiveComponent
       },
       {
-        path: 'issue-create',
-        component: IssueCreateComponent
+        path: 'friends',
+        component: FriendsComponent
       },
       {
-        path: 'project-invite/:projectId/:inviteId',
-        loadComponent: () => import('./pages/project/project-invite/project-invite.component').then(m => m.ProjectInviteComponent)
+        path: 'todo-list',
+        component: TodoListComponent
       }
     ]
   }

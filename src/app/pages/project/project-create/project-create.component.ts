@@ -51,7 +51,7 @@ export class ProjectCreateComponent {
         dueDate: (this.noDueDate || !this.dueDate) ? null : this.dueDate,
       };
       await addDoc(collection(this.firestore, 'projects'), projectData);
-      this.router.navigate(['/project-list']);
+      this.router.navigate(['/projects']);
     } catch (error) {
       this.errorMessage = 'プロジェクトの作成に失敗しました。';
       console.error(error);

@@ -1,0 +1,237 @@
+.issue-create-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 60vh;
+  padding: 2rem;
+  background: #f8fafc;
+}
+.issue-create-container h2 {
+  font-size: 2rem;
+  color: #1976d2;
+  letter-spacing: 0.05em;
+  margin-bottom: 2.2rem;
+}
+.issue-form {
+  width: 100%;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+  padding: 2rem;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+}
+.form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.form-row.full-width {
+  grid-column: 1 / -1;
+}
+.form-row:first-child {
+  grid-column: 1 / -1;
+}
+.form-row:has(textarea),
+.form-row:has(.todo-input-container) {
+  grid-column: 1 / -1;
+}
+.form-row label {
+  font-weight: 600;
+  color: #1976d2;
+  margin-bottom: 0.1em;
+}
+.form-input {
+  padding: 0.5rem 0.8rem;
+  border: 1.5px solid #b0c4de;
+  border-radius: 4px;
+  font-size: 1rem;
+  background: #f8faff;
+  transition: border 0.2s;
+}
+.form-input:focus {
+  border: 1.5px solid #1976d2;
+  outline: none;
+  background: #f3f7fb;
+}
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1.2rem;
+  grid-column: 1 / -1;
+}
+.save-btn {
+  background: #1976d2;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  font-size: 1.05rem;
+  font-weight: 500;
+  padding: 0.45rem 1.5rem;
+  cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+.save-btn:hover {
+  background: #1256a0;
+}
+.save-message {
+  margin-top: 1.2rem;
+  text-align: center;
+  color: #1976d2;
+  font-weight: bold;
+  font-size: 1.08rem;
+  grid-column: 1 / -1;
+}
+
+/* Todo入力エリアのスタイル */
+.todo-input-container {
+  border: 1.5px solid #b0c4de;
+  border-radius: 4px;
+  background: #f8faff;
+  overflow: hidden;
+}
+
+.todo-input-header {
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  border-bottom: 1px solid #e0e8f5;
+}
+
+.todo-input {
+  flex: 1;
+  padding: 6px 8px;
+  border: 1.5px solid #b0c4de;
+  border-radius: 4px;
+  font-size: 1rem;
+  background: #f8faff;
+}
+
+.todo-date-input {
+  width: 200px;
+  flex: none;
+}
+
+.todo-assignee-input {
+  width: 120px;
+  flex: none;
+}
+
+.add-todo-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #1976d2;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.add-todo-btn:disabled {
+  background: #b0c4de;
+  cursor: not-allowed;
+}
+
+.add-todo-btn .material-icons {
+  font-size: 20px;
+}
+
+.todo-list {
+  padding: 8px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.todo-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  border-bottom: 1px solid #e0e8f5;
+}
+
+.todo-item:last-child {
+  border-bottom: none;
+}
+
+.todo-item.completed {
+  background-color: #f8f9fa;
+}
+
+.todo-item.completed .todo-title {
+  text-decoration: line-through;
+  color: #6c757d;
+}
+
+.todo-content {
+  flex: 1;
+  margin: 0 12px;
+}
+
+.todo-title {
+  font-size: 1rem;
+  color: #2c3e50;
+  margin-bottom: 4px;
+}
+
+.todo-details {
+  display: flex;
+  gap: 16px;
+  font-size: 0.85rem;
+  color: #6c757d;
+}
+
+.todo-due-date,
+.todo-assignee {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.todo-due-date .material-icons,
+.todo-assignee .material-icons {
+  font-size: 16px;
+}
+
+.remove-btn {
+  background: none;
+  border: none;
+  color: #dc3545;
+  cursor: pointer;
+  padding: 4px;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.remove-btn:hover {
+  opacity: 1;
+}
+
+.remove-btn .material-icons {
+  font-size: 20px;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+  .issue-form {
+    grid-template-columns: 1fr;
+  }
+
+  .form-row {
+    grid-column: 1 / -1;
+  }
+
+  .todo-input-header {
+    flex-direction: column;
+  }
+
+  .todo-date-input,
+  .todo-assignee-input {
+    width: 100%;
+  }
+} 

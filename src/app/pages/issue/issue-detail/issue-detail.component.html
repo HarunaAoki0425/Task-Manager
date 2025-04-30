@@ -1,0 +1,109 @@
+<div class="issue-detail-container" *ngIf="!isLoading && !error && issue">
+  <div class="header-row">
+    <button class="back-button" (click)="goBack()">← 戻る</button>
+  </div>
+
+  <div class="issue-header">
+    <h1>{{ issue.title }}</h1>
+    <div class="issue-meta">
+      <div class="meta-item">
+        <span class="label">ステータス:</span>
+        <span [class]="'status-badge ' + issue.status">
+          {{ getStatusLabel(issue.status) }}
+        </span>
+      </div>
+
+      <div class="meta-item">
+        <span class="label">優先度:</span>
+        <span [class]="'priority-badge ' + issue.priority">
+          {{ getPriorityLabel(issue.priority) }}
+        </span>
+      </div>
+
+      <div class="meta-item">
+        <span class="label">担当者:</span>
+        <span>{{ getMemberDisplayName(issue.assignee) }}</span>
+      </div>
+
+      <div class="meta-item">
+        <span class="label">期限:</span>
+        <span>
+          {{ issue.dueDate ? (issue.dueDate.toDate() | date:'yyyy/MM/dd') : '未設定' }}
+        </span>
+      </div>
+      <div class="issue-description">
+        <h3>メモ</h3>
+        <p>{{ issue.memo }}</p>
+      </div>
+    </div>
+  </div>
+
+  
+
+  <!-- Todo section -->
+  <div class="todos-section">
+    <h3>Todo一覧</h3>
+    
+    <!-- Todo追加フォーム -->
+    <div class="todo-form">
+      <input
+        type="text"
+        [(ngModel)]="newTodoTitle"
+        placeholder="Todoを入力"
+        class="todo-input"
+      >
+      <input
+        type="date"
+        [(ngModel)]="newTodoDueDate"
+        class="todo-date"
+      >
+      <select
+        [(ngModel)]="newTodoAssignee"
+        class="todo-assignee"
+      >
+        <option value="">担当者を選択</option>
+        <option [value]="member.uid" *ngFor="let member of memberDetails">
+          {{ member.displayName }}
+        </option>
+      </select>
+      <button
+        (click)="addTodo()"
+        [disabled]="!newTodoTitle || !newTodoAssignee"
+        class="add-todo-btn"
+      >
+        追加
+      </button>
+    </div>
+
+    <!-- Todoリスト -->
+    <div class="todo-list">
+      <div *ngFor="let todo of todos" class="todo-item">
+        <input
+          type="checkbox"
+          [checked]="todo.completed"
+          (change)="toggleTodo(todo)"
+          class="todo-checkbox"
+        >
+        <span class="todo-title" [class.completed]="todo.completed">{{ todo.title }}</span>
+        <div class="todo-meta">
+          <span class="todo-assignee">
+            <i class="fas fa-user"></i>
+            {{ getMemberDisplayName(todo.assignee) }}
+          </span>
+          <span class="todo-due-date" *ngIf="todo.dueDate">
+            <i class="fas fa-calendar"></i>
+            {{ formatDate(todo.dueDate) }}
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div *ngIf="isLoading" class="loading">
+  読み込み中...
+</div>
+
+<div *ngIf="error" class="error">
+  {{ error }}
+</div>

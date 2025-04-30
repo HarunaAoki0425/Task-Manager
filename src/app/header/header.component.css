@@ -18,11 +18,18 @@ header {
   padding-right: 0;
 }
 
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  min-width: 400px;
+}
+
 h1 {
   margin: 0;
   color: #fff;
   font-size: 1.5em;
-  min-width: 180px;
+  white-space: nowrap;
 }
 
 h1 a {
@@ -62,9 +69,7 @@ nav a:hover {
 
 .search-box {
   position: relative;
-  width: 160px;
-  margin-left: auto;
-  margin-right: 3rem;
+  width: 100px;
 }
 
 .search-input {
@@ -100,7 +105,7 @@ nav a:hover {
   display: flex;
   gap: 0.5rem;
   align-items: center;
-  margin-right: -0.5rem;
+  margin-left: auto;
 }
 
 .icon-button {

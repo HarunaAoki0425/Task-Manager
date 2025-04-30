@@ -12,7 +12,7 @@
     <tbody>
       <tr *ngFor="let project of archives">
         <td>
-          <a [routerLink]="['/project', project.id]" class="project-link">{{ project.name }}</a>
+          <a [routerLink]="['/projects', project.id]" class="project-link">{{ project.name }}</a>
         </td>
         <td>{{ formatDate(project.deletedAt) }}</td>
         <td>

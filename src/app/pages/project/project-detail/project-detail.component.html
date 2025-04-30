@@ -2,7 +2,10 @@
   <div *ngIf="isLoading">読み込み中・・・</div>
   <ng-container *ngIf="!isLoading && project">
     <div class="project-title-row">
-      <h2 class="project-title">{{ project.name }}</h2>
+      <div class="title-section">
+        <button class="back-to-list-btn" (click)="goToProjectList()">← プロジェクト一覧へ</button>
+        <h2 class="project-name">{{ project.name }}</h2>
+      </div>
       <div class="project-action-btns">
         <button class="edit-btn" title="編集" (click)="startEdit()" *ngIf="!isEditing"><span>編集</span></button>
         <button class="delete-btn" title="アーカイブ" (click)="archiveProject()" [disabled]="isArchiving"><span>アーカイブ</span></button>
@@ -44,28 +47,6 @@
             </div>
           </span>
         </div>
-        <div *ngIf="pendingInvites.length > 0" class="pending-invites-row">
-          <span class="pending-invites-label">招待中</span>
-          <span class="pending-invites-list">
-            <span class="pending-invite-item" *ngFor="let invite of pendingInvites">{{ invite.email }}</span>
-          </span>
-        </div>
-        <div class="member-btn-row" style="justify-content: flex-end; margin-top: 1.2em;">
-          <button class="invite-member-btn" type="button" (click)="showInviteInput = !showInviteInput">メンバー招待</button>
-          <button class="remove-member-btn" type="button">メンバー削除</button>
-        </div>
-        <div *ngIf="showInviteInput" class="invite-popup-backdrop">
-          <div class="invite-popup">
-            <div class="invite-popup-title">メンバー招待</div>
-            <input type="email" class="invite-email-input" [(ngModel)]="inviteEmail" placeholder="メールアドレスを入力" [disabled]="inviteSending" />
-            <div *ngIf="inviteErrorMessage" class="invite-error-message">{{ inviteErrorMessage }}</div>
-            <div *ngIf="inviteSuccessMessage" class="invite-success-message">{{ inviteSuccessMessage }}</div>
-            <div class="invite-popup-actions">
-              <button class="invite-send-btn" type="button" (click)="onInviteSend()" [disabled]="inviteSending">送信</button>
-              <button class="invite-cancel-btn" type="button" (click)="showInviteInput = false" [disabled]="inviteSending">キャンセル</button>
-            </div>
-          </div>
-        </div>
       </div>
     </ng-container>
     <div *ngIf="archiveMessage" class="archive-message">{{ archiveMessage }}</div>
@@ -80,7 +61,7 @@
           <div class="issues-list">
             <div *ngFor="let issue of issuesNotStarted" class="issue-card">
               <div class="issue-card-header">
-                <div class="issue-title">{{ issue.title }}</div>
+                <div class="issue-title clickable" (click)="goToIssueDetail(issue.id)">{{ issue.title }}</div>
                 <span class="priority-icon" [ngClass]="{
                   'priority-high': issue.priority === 'high',
                   'priority-medium': issue.priority === 'medium',
@@ -112,7 +93,7 @@
           <div class="issues-list">
             <div *ngFor="let issue of issuesInProgress" class="issue-card">
               <div class="issue-card-header">
-                <div class="issue-title">{{ issue.title }}</div>
+                <div class="issue-title clickable" (click)="goToIssueDetail(issue.id)">{{ issue.title }}</div>
                 <span class="priority-icon" [ngClass]="{
                   'priority-high': issue.priority === 'high',
                   'priority-medium': issue.priority === 'medium',
@@ -145,7 +126,7 @@
           <div class="issues-list">
             <div *ngFor="let issue of issuesOnHold" class="issue-card">
               <div class="issue-card-header">
-                <div class="issue-title">{{ issue.title }}</div>
+                <div class="issue-title clickable" (click)="goToIssueDetail(issue.id)">{{ issue.title }}</div>
                 <span class="priority-icon" [ngClass]="{
                   'priority-high': issue.priority === 'high',
                   'priority-medium': issue.priority === 'medium',
@@ -178,7 +159,7 @@
           <div class="issues-list">
             <div *ngFor="let issue of issuesDone" class="issue-card">
               <div class="issue-card-header">
-                <div class="issue-title">{{ issue.title }}</div>
+                <div class="issue-title clickable" (click)="goToIssueDetail(issue.id)">{{ issue.title }}</div>
                 <span class="priority-icon" [ngClass]="{
                   'priority-high': issue.priority === 'high',
                   'priority-medium': issue.priority === 'medium',

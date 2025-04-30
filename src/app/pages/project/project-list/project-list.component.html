@@ -1,7 +1,7 @@
 <div class="project-list-container">
   <div class="project-list-header">
     <h2>プロジェクト一覧</h2>
-    <a routerLink="/project/project-create" class="create-project-button">新規プロジェクト作成</a>
+    <a routerLink="/projects/create" class="create-project-button">新規プロジェクト作成</a>
   </div>
   <table class="project-table">
     <thead>
@@ -27,7 +27,7 @@
     <tbody>
       <tr *ngFor="let project of sortedProjects$ | async">
         <td>
-          <a [routerLink]="['/project', project.id]" class="project-link">{{ project.name }}</a>
+          <a [routerLink]="['/projects', project.id]" class="project-link">{{ project.name }}</a>
         </td>
         <td>{{ formatDate(project.createdAt) }}</td>
         <td>{{ project.dueDate ? formatDate(project.dueDate) : '' }}</td>

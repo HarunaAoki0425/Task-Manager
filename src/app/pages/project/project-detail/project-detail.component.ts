@@ -1,9 +1,24 @@
-import { Component, NgZone } from '@angular/core';
+import { Component, NgZone, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Firestore, doc, getDoc, setDoc, deleteDoc, Timestamp, collection, getDocs, updateDoc, query, where } from '@angular/fire/firestore';
 import { ProjectService } from '../../../services/project.service';
+import { AuthService } from '../../../services/auth.service';
+import { Project } from '../../../services/project.service';
+
+interface Issue {
+  id: string;
+  title: string;
+  description: string;
+  status: '未着手' | '進行中' | '保留' | '完了';
+  priority: 'high' | 'medium' | 'low';
+  startDate?: any;
+  dueDate?: any;
+  assignee?: string;
+  createdAt?: any;
+  updatedAt?: any;
+}
 
 @Component({
   selector: 'app-project-detail',
@@ -12,8 +27,8 @@ import { ProjectService } from '../../../services/project.service';
   templateUrl: './project-detail.component.html',
   styleUrls: ['./project-detail.component.css']
 })
-export class ProjectDetailComponent {
-  project: any = null;
+export class ProjectDetailComponent implements OnInit {
+  project: Project | null = null;
   creatorName: string = '';
   isLoading = true;
   isArchiving = false;
@@ -22,91 +37,92 @@ export class ProjectDetailComponent {
   editDescription = '';
   editDueDate: string | null = null;
   isSaving = false;
-  issuesNotStarted: any[] = [];
-  issuesInProgress: any[] = [];
-  issuesOnHold: any[] = [];
-  issuesDone: any[] = [];
+  issuesNotStarted: Issue[] = [];
+  issuesInProgress: Issue[] = [];
+  issuesOnHold: Issue[] = [];
+  issuesDone: Issue[] = [];
   shouldScrollToIssues = false;
-  showInviteInput: boolean = false;
-  inviteEmail: string = '';
-  inviteErrorMessage: string = '';
-  inviteSending: boolean = false;
-  inviteSuccessMessage: string = '';
-  pendingInvites: any[] = [];
   membersUsernames: { uid: string, displayName: string, isCreator: boolean }[] = [];
+  projectMembers: { uid: string; displayName: string; email: string }[] = [];
 
-  constructor(private route: ActivatedRoute, private firestore: Firestore, private router: Router, private ngZone: NgZone, private projectService: ProjectService) {
-    this.loadProject();
+  constructor(
+    private route: ActivatedRoute,
+    private firestore: Firestore,
+    private router: Router,
+    private ngZone: NgZone,
+    private projectService: ProjectService,
+    private authService: AuthService
+  ) {}
+
+  async ngOnInit() {
+    const projectId = this.route.snapshot.paramMap.get('id');
+    if (projectId) {
+      await this.loadProject(projectId);
+      await this.loadProjectMembers();
+      await this.loadIssues();
+    }
   }
 
-  async loadProject() {
-    this.isLoading = true;
-    const id = this.route.snapshot.paramMap.get('id');
-    if (!id) return;
-    // まずprojectsから取得
-    let projectDoc = doc(this.firestore, 'projects', id);
-    let projectSnap = await getDoc(projectDoc);
-    let isArchive = false;
-    if (!projectSnap.exists()) {
-      // なければarchivesから取得
-      projectDoc = doc(this.firestore, 'archives', id);
-      projectSnap = await getDoc(projectDoc);
-      isArchive = true;
+  async loadProject(projectId: string) {
+    try {
+      this.project = await this.projectService.getProject(projectId);
+      if (this.project) {
+        // プロジェクトの作成者の表示名を取得
+        const creatorDoc = doc(this.firestore, 'users', this.project.createdBy);
+        const creatorSnap = await getDoc(creatorDoc);
+        this.creatorName = creatorSnap.exists() ? creatorSnap.data()['displayName'] || 'no name' : 'no name';
+      }
+    } catch (error) {
+      console.error('Error loading project:', error);
+      this.archiveMessage = 'プロジェクトの読み込みに失敗しました。';
+    } finally {
+      this.isLoading = false;
     }
-    if (projectSnap.exists()) {
-      this.project = { id, ...projectSnap.data() };
-      if (this.project.createdBy) {
-        const userDoc = doc(this.firestore, 'users', this.project.createdBy);
-        const userSnap = await getDoc(userDoc);
-        this.creatorName = userSnap.exists() ? userSnap.data()['displayName'] || 'no name' : 'no name';
-      } else {
-        this.creatorName = 'no name';
-      }
-      // メンバー名リスト取得
-      if (Array.isArray(this.project.members)) {
-        this.membersUsernames = await Promise.all(this.project.members.map(async (uid: string) => {
-          const userDoc = doc(this.firestore, 'users', uid);
-          const userSnap = await getDoc(userDoc);
-          return {
-            uid,
-            displayName: userSnap.exists() ? userSnap.data()['displayName'] || 'no name' : 'no name',
-            isCreator: uid === this.project.createdBy
-          };
-        }));
-      } else {
-        this.membersUsernames = [];
-      }
-      // 課題一覧取得
-      const issuesRef = collection(this.firestore, `projects/${id}/issues`);
-      const issuesSnap = await getDocs(issuesRef);
-      const issues: any[] = issuesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      this.issuesNotStarted = issues.filter(issue => !issue.status || issue.status === '未着手');
-      this.issuesInProgress = issues.filter(issue => issue.status === '進行中');
-      this.issuesOnHold = issues.filter(issue => issue.status === '保留');
-      this.issuesDone = issues.filter(issue => issue.status === '完了');
-      // 招待一覧取得
+  }
+
+  async loadProjectMembers() {
+    if (this.project) {
       try {
-        this.pendingInvites = (await this.projectService.getProjectInvites(id)).filter(invite => invite.status === 'pending');
-      } catch {
-        this.pendingInvites = [];
+        this.projectMembers = await this.projectService.getProjectMembers(this.project.id);
+      } catch (error) {
+        console.error('Error loading project members:', error);
+        this.archiveMessage = 'メンバー情報の読み込みに失敗しました。';
       }
     }
-    this.isLoading = false;
-    // 課題status変更時のみ中央にスクロール
-    if (this.shouldScrollToIssues) {
-      this.ngZone.runOutsideAngular(() => {
-        setTimeout(() => {
-          const section = document.getElementById('issues-section');
-          if (section) {
-            const rect = section.getBoundingClientRect();
-            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-            const sectionCenter = rect.top + scrollTop + rect.height / 2;
-            const windowCenter = window.innerHeight / 2;
-            window.scrollTo({ top: sectionCenter - windowCenter, behavior: 'smooth' });
-          }
-        }, 0);
+  }
+
+  async loadIssues() {
+    if (!this.project?.id) return;
+    try {
+      const issuesRef = collection(this.firestore, `projects/${this.project.id}/issues`);
+      const issuesSnap = await getDocs(issuesRef);
+      
+      // 配列を初期化
+      this.issuesNotStarted = [];
+      this.issuesInProgress = [];
+      this.issuesOnHold = [];
+      this.issuesDone = [];
+
+      // 取得した課題を状態別に振り分け
+      issuesSnap.docs.forEach(doc => {
+        const issue = { id: doc.id, ...doc.data() } as Issue;
+        switch (issue.status) {
+          case '未着手':
+            this.issuesNotStarted.push(issue);
+            break;
+          case '進行中':
+            this.issuesInProgress.push(issue);
+            break;
+          case '保留':
+            this.issuesOnHold.push(issue);
+            break;
+          case '完了':
+            this.issuesDone.push(issue);
+            break;
+        }
       });
-      this.shouldScrollToIssues = false;
+    } catch (error) {
+      console.error('Error loading issues:', error);
     }
   }
 
@@ -164,9 +180,21 @@ export class ProjectDetailComponent {
     if (!this.project) return;
     this.isEditing = true;
     this.editDescription = this.project.description || '';
-    this.editDueDate = this.project.dueDate
-      ? (this.project.dueDate.toDate ? this.project.dueDate.toDate().toISOString().slice(0, 16) : new Date(this.project.dueDate).toISOString().slice(0, 16))
-      : null;
+    
+    // Firestoreのタイムスタンプ型かどうかをチェック
+    if (this.project.dueDate) {
+      let date: Date;
+      if ('toDate' in this.project.dueDate) {
+        // Firestoreのタイムスタンプの場合
+        date = (this.project.dueDate as unknown as { toDate(): Date }).toDate();
+      } else {
+        // 通常のDateオブジェクトの場合
+        date = this.project.dueDate;
+      }
+      this.editDueDate = date.toISOString().slice(0, 16);
+    } else {
+      this.editDueDate = null;
+    }
   }
 
   cancelEdit() {
@@ -189,101 +217,45 @@ export class ProjectDetailComponent {
       }
       await setDoc(projectRef, updateData, { merge: true });
       this.isEditing = false;
-      await this.loadProject();
+      await this.loadProject(this.project.id);
     } finally {
       this.isSaving = false;
     }
   }
 
-  goToIssueCreate() {
-    if (!this.project?.id) return;
-    this.router.navigate(['/issue-create'], { queryParams: { projectId: this.project.id } });
+  goToProjectList() {
+    this.router.navigate(['/projects']);
   }
 
-  async startIssue(issue: any) {
+  goToIssueCreate() {
+    if (this.project) {
+      this.router.navigate(['projects', this.project.id, 'issues', 'create']);
+    }
+  }
+
+  goToIssueDetail(issueId: string) {
+    if (this.project) {
+      // URLパラメータをエンコードせずに渡す
+      this.router.navigate(['projects', this.project.id, 'issues', issueId], {
+        skipLocationChange: false,
+        replaceUrl: false
+      });
+    }
+  }
+
+  async startIssue(issue: Issue) {
     if (!this.project?.id || !issue?.id) return;
     const issueRef = doc(this.firestore, `projects/${this.project.id}/issues`, issue.id);
     await updateDoc(issueRef, { status: '進行中' });
     this.shouldScrollToIssues = true;
-    await this.loadProject();
+    await this.loadIssues();
   }
 
-  async updateIssueStatus(issue: any, status: string) {
+  async updateIssueStatus(issue: Issue, status: string) {
     if (!this.project?.id || !issue?.id) return;
     const issueRef = doc(this.firestore, `projects/${this.project.id}/issues`, issue.id);
     await updateDoc(issueRef, { status });
     this.shouldScrollToIssues = true;
-    await this.loadProject();
-  }
-
-  validateInviteEmail(): boolean {
-    this.inviteErrorMessage = '';
-    if (!this.inviteEmail || !this.inviteEmail.trim()) {
-      this.inviteErrorMessage = 'メールアドレスを入力してください。';
-      return false;
-    }
-    // 簡易メール形式チェック
-    const emailPattern = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
-    if (!emailPattern.test(this.inviteEmail.trim())) {
-      this.inviteErrorMessage = '正しいメールアドレスを入力してください。';
-      return false;
-    }
-    return true;
-  }
-
-  async onInviteSend() {
-    if (!this.validateInviteEmail()) return;
-    this.inviteSending = true;
-    this.inviteErrorMessage = '';
-    this.inviteSuccessMessage = '';
-    try {
-      // usersコレクションからメールアドレスで検索
-      const usersRef = collection(this.firestore, 'users');
-      const q = query(usersRef, where('email', '==', this.inviteEmail.trim()));
-      const snap = await getDocs(q);
-      if (snap.empty) {
-        this.inviteErrorMessage = 'そのメールアドレスのユーザーは存在しません。';
-        this.inviteSending = false;
-        return;
-      }
-      const userDoc = snap.docs[0];
-      const userUid = userDoc.id;
-
-      // プロジェクト取得
-      const projectRef = doc(this.firestore, `projects/${this.project.id}`);
-      const projectSnap = await getDoc(projectRef);
-      const project = projectSnap.data() as any;
-
-      // すでにメンバーか
-      if (project.members && project.members.includes(userUid)) {
-        this.inviteErrorMessage = 'このユーザーはすでにメンバーです。';
-        this.inviteSending = false;
-        return;
-      }
-
-      // すでに招待中か
-      const invitesRef = collection(this.firestore, `projects/${this.project.id}/invites`);
-      const inviteQ = query(invitesRef, where('email', '==', this.inviteEmail.trim()), where('status', '==', 'pending'));
-      const inviteSnap = await getDocs(inviteQ);
-      if (!inviteSnap.empty) {
-        this.inviteErrorMessage = 'このユーザーはすでに招待中です。';
-        this.inviteSending = false;
-        return;
-      }
-
-      // Firestoreに招待情報を追加
-      const inviterUid = this.project.userId || '';
-      await this.projectService.addProjectInvite(this.project.id, this.inviteEmail.trim(), inviterUid);
-      this.inviteSuccessMessage = '招待を送信しました。';
-      this.inviteEmail = '';
-      setTimeout(() => {
-        this.showInviteInput = false;
-        this.inviteSuccessMessage = '';
-      }, 1200);
-    } catch (e) {
-      this.inviteErrorMessage = '招待処理中にエラーが発生しました。';
-    } finally {
-      this.inviteSending = false;
-    }
+    await this.loadIssues();
   }
 } 

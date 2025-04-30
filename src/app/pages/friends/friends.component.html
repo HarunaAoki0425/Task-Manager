@@ -1,0 +1,41 @@
+<div class="friends-container">
+  <h2>フレンド</h2>
+  
+  <!-- 検索セクション -->
+  <div class="search-section">
+    <input 
+      type="text" 
+      [(ngModel)]="searchTerm" 
+      placeholder="メールアドレスで検索" 
+      class="search-input">
+    <button class="search-button" (click)="searchUsers()">検索</button>
+  </div>
+
+  <!-- 検索結果 -->
+  <div class="search-results" *ngIf="searchResults.length > 0">
+    <h3>検索結果</h3>
+    <div class="friend-items">
+      <div class="friend-item" *ngFor="let user of searchResults">
+        <div class="user-info">
+          <span class="user-name">{{ user.displayName || 'No Name' }}</span>
+          <span class="user-email">{{ user.email }}</span>
+        </div>
+        <button class="add-button">申請</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="friends-list">
+    <h3>フレンド一覧</h3>
+    <table class="friends-table">
+      <thead>
+        <tr>
+          <th>ユーザー名</th>
+          <th>メールアドレス</th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+  </div>
+</div> 

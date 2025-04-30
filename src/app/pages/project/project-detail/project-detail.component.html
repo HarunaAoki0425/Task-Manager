@@ -4,7 +4,7 @@
     <div class="project-title-row">
       <div class="title-section">
         <button class="back-to-list-btn" (click)="goToProjectList()">← プロジェクト一覧へ</button>
-        <h2 class="project-name">{{ project.name }}</h2>
+        <h2 class="project-name">{{ project.title }}</h2>
       </div>
       <div class="project-action-btns">
         <button class="edit-btn" title="編集" (click)="startEdit()" *ngIf="!isEditing"><span>編集</span></button>

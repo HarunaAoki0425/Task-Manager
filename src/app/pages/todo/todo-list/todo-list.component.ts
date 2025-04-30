@@ -119,14 +119,14 @@ export class TodoListComponent implements OnInit {
           const todosRef = collection(this.firestore, `projects/${project.id}/issues/${issueDoc.id}/todos`);
           let todosQuery = query(todosRef);
 
-          // フィルター条件を追加
-          if (this.selectedMember) {
-            todosQuery = query(todosQuery, where('assignee', '==', this.selectedMember));
-          }
+          // フィルター条件を追加（インデックスが必要ない順序で追加）
           if (this.selectedStatus !== 'all') {
             todosQuery = query(todosQuery, where('completed', '==', this.selectedStatus === 'completed'));
           }
-          todosQuery = query(todosQuery, orderBy(this.selectedSort === 'dueDate' ? 'dueDate' : 'createdAt', 'asc'));
+          
+          if (this.selectedMember) {
+            todosQuery = query(todosQuery, where('assignee', '==', this.selectedMember));
+          }
 
           const todosSnap = await getDocs(todosQuery);
           const todos = todosSnap.docs.map(doc => ({
@@ -140,7 +140,7 @@ export class TodoListComponent implements OnInit {
         }
       }
 
-      // 結果をソート
+      // メモリ上でソート
       this.todos = allTodos.sort((a, b) => {
         if (this.selectedSort === 'dueDate') {
           const dateA = a.dueDate?.toDate() || new Date(0);

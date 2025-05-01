@@ -1,6 +1,5 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
-import { CalendarComponent } from './pages/calendar/calendar.component';
 
 const routes: Routes = [
   {
@@ -24,7 +23,10 @@ const routes: Routes = [
     path: 'projects/:projectId/issues/:issueId',
     loadComponent: () => import('./pages/issue/issue-detail/issue-detail.component').then(m => m.IssueDetailComponent)
   },
-  { path: 'calendar', component: CalendarComponent }
+  {
+    path: 'calendar',
+    loadComponent: () => import('./pages/calendar/calendar.component').then(m => m.CalendarComponent)
+  }
 ];
 
 @NgModule({

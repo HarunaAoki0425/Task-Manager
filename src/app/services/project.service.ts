@@ -155,7 +155,8 @@ export class ProjectService {
         const archivedIssueRef = doc(collection(this.firestore, 'archives', projectId, 'issues'), issueDoc.id);
         await setDoc(archivedIssueRef, {
           ...issueData,
-          archivedAt: Timestamp.now()
+          archivedAt: Timestamp.now(),
+          isArchived: true
         });
 
         // 各Todoをアーカイブに移動
@@ -167,7 +168,8 @@ export class ProjectService {
           );
           await setDoc(archivedTodoRef, {
             ...todoData,
-            archivedAt: Timestamp.now()
+            archivedAt: Timestamp.now(),
+            isArchived: true
           });
 
           // 元のTodoを削除

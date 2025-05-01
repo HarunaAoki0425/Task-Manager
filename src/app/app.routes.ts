@@ -69,7 +69,7 @@ export const routes: Routes = [
       },
       {
         path: 'calendar',
-        loadComponent: () => import('./pages/calendar/calendar.component').then(m => m.CalendarComponent)
+        component: CalendarComponent
       }
     ]
   }

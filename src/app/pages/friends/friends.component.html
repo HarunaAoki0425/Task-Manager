@@ -1,5 +1,6 @@
 <div class="friends-container">
   <h2>フレンド</h2>
+
   
   <!-- 検索セクション -->
   <div class="search-section">
@@ -25,17 +26,51 @@
     </div>
   </div>
 
-  <div class="friends-list">
-    <h3>フレンド一覧</h3>
-    <table class="friends-table">
-      <thead>
-        <tr>
-          <th>ユーザー名</th>
-          <th>メールアドレス</th>
-        </tr>
-      </thead>
-      <tbody>
-      </tbody>
-    </table>
+    <!-- フレンド一覧 -->
+    <div class="friends-list">
+      <h3>フレンド一覧</h3>
+      <div class="friend-items">
+        <div class="friend-item">
+          <div class="user-info">
+            <span class="user-name">フレンド名</span>
+            <span class="user-email">メールアドレス</span>
+          </div>
+          <button class="remove-button">削除</button>
+        </div>
+      </div>
+    </div>
+  </div> 
+  
+  <!-- フレンド申請受信欄 -->
+  <div class="friend-requests">
+    <h3>フレンド申請</h3>
+    <div class="request-items">
+      <div class="request-item">
+        <div class="user-info">
+          <span class="user-name">申請者の名前</span>
+          <span class="user-email">メールアドレス</span>
+        </div>
+        <div class="request-actions">
+          <button class="accept-button">承認</button>
+          <button class="reject-button">拒否</button>
+        </div>
+      </div>
+    </div>
   </div>
-</div> 
+
+  <!-- フレンド承認待ち欄 -->
+  <div class="pending-requests">
+    <h3>承認待ち</h3>
+    <div class="pending-items">
+      <div class="pending-item">
+        <div class="user-info">
+          <span class="user-name">ユーザー名</span>
+          <span class="user-email">メールアドレス</span>
+        </div>
+        <div class="request-status">
+          <button class="cancel-button">取り消し</button>
+        </div>
+      </div>
+    </div>
+  </div>
+

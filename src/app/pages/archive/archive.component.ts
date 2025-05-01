@@ -1,28 +1,23 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { 
-  Firestore, 
-  collection, 
-  getDocs, 
-  doc, 
-  getDoc, 
-  setDoc, 
-  deleteDoc, 
-  query, 
-  where, 
-  DocumentData,
-  QueryDocumentSnapshot,
-  collectionGroup
-} from '@angular/fire/firestore';
 import { RouterLink } from '@angular/router';
-import { RouterModule } from '@angular/router';
-import { Todo } from '../../models/todo.model';
-import { User } from '../../models/user.model';
-import { Timestamp } from '@angular/fire/firestore';
+import {
+  Firestore,
+  collection,
+  query,
+  where,
+  getDocs,
+  Timestamp,
+  deleteDoc,
+  doc,
+  setDoc
+} from '@angular/fire/firestore';
 import { AuthService } from '../../services/auth.service';
-import { Subscription } from 'rxjs';
 import { TodoService } from '../../services/todo.service';
 import { ProjectService } from '../../services/project.service';
+import { Subscription } from 'rxjs';
+import { Todo } from '../../models/todo.model';
+import { User } from '../../models/user.model';
 
 interface ProjectData {
   id: string;
@@ -43,9 +38,9 @@ interface IssueData {
 @Component({
   selector: 'app-archive',
   standalone: true,
-  imports: [CommonModule, RouterLink, RouterModule],
+  imports: [CommonModule, RouterLink],
   templateUrl: './archive.component.html',
-  styleUrls: ['./archive.component.css']
+  styleUrls: ['./archive.component.scss']
 })
 export class ArchiveComponent implements OnInit, OnDestroy {
   archives: any[] = [];
@@ -165,27 +160,14 @@ export class ArchiveComponent implements OnInit, OnDestroy {
     await this.loadArchives();
   }
 
-  formatDate(ts: any): string {
-    if (!ts) return '';
-    let date: Date;
-    if (ts.toDate) {
-      try {
-        date = ts.toDate();
-      } catch {
-        return String(ts);
-      }
-    } else if (ts instanceof Date) {
-      date = ts;
-    } else if (typeof ts === 'number') {
-      date = new Date(ts * 1000);
-    } else {
-      date = new Date(ts);
-    }
+  formatDate(timestamp: Timestamp | null): string {
+    if (!timestamp) return '';
+    const date = timestamp.toDate();
     const y = date.getFullYear();
-    const m = (date.getMonth() + 1).toString().padStart(2, '0');
-    const d = date.getDate().toString().padStart(2, '0');
-    const h = date.getHours().toString().padStart(2, '0');
-    const min = date.getMinutes().toString().padStart(2, '0');
+    const m = ('00' + (date.getMonth() + 1)).slice(-2);
+    const d = ('00' + date.getDate()).slice(-2);
+    const h = ('00' + date.getHours()).slice(-2);
+    const min = ('00' + date.getMinutes()).slice(-2);
     return `${y}/${m}/${d} ${h}:${min}`;
   }
 } 

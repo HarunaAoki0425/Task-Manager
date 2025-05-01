@@ -43,6 +43,7 @@ export class IssueDetailComponent implements OnInit {
   projectId: string | null = null;
   issueId: string | null = null;
   issue: Issue | null = null;
+  project: { title: string } | null = null;  // プロジェクト情報を保持
   todos: Todo[] = [];
   memberDetails: User[] = [];
   isLoading = true;
@@ -158,7 +159,20 @@ export class IssueDetailComponent implements OnInit {
     if (!this.projectId || !this.issueId) return;
 
     try {
-      this.isLoading = true;
+      // プロジェクト情報を取得
+      const projectRef = doc(this.firestore, `projects/${this.projectId}`);
+      const projectSnap = await getDoc(projectRef);
+      
+      if (projectSnap.exists()) {
+        const projectData = projectSnap.data();
+        this.project = {
+          title: projectData['title'] || ''
+        };
+      } else {
+        console.error('Project not found');
+        return;
+      }
+
       const issueRef = doc(this.firestore, `projects/${this.projectId}/issues/${this.issueId}`);
       const issueSnap = await getDoc(issueRef);
       
@@ -253,7 +267,7 @@ export class IssueDetailComponent implements OnInit {
 
   // 新しいTodoを追加
   async addTodo() {
-    if (!this.projectId || !this.issueId || !this.newTodo.title || !this.newTodo.assignee) return;
+    if (!this.projectId || !this.issueId || !this.issue || !this.project || !this.newTodo.title) return;
 
     try {
       const now = Timestamp.now();
@@ -264,12 +278,17 @@ export class IssueDetailComponent implements OnInit {
         completed: false,
         completedAt: null,
         projectId: this.projectId,
-        projectTitle: this.issue?.title || '',
+        projectTitle: this.project.title,  // プロジェクトのタイトルを正しく設定
         issueId: this.issueId,
-        issueTitle: this.issue?.title || '',
+        issueTitle: this.issue.title,      // 課題のタイトルを設定
         createdAt: now,
         updatedAt: now
       };
+
+      // 入力値の検証
+      if (!todoData.projectTitle) {
+        throw new Error('プロジェクトタイトルが設定されていません');
+      }
 
       const todosRef = collection(this.firestore, `projects/${this.projectId}/issues/${this.issueId}/todos`);
       const todoDocRef = await addDoc(todosRef, todoData);

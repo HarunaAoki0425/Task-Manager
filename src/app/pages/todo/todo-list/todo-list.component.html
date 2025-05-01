@@ -12,18 +12,11 @@
         </select>
       </div>
 
-      <div class="filter-group">
-        <select class="filter-select" [(ngModel)]="selectedStatus" (ngModelChange)="onFilterChange()">
-          <option value="incomplete">未完了</option>
-          <option value="completed">完了済み</option>
-          <option value="all">すべて</option>
-        </select>
-      </div>
-
       <div class="sort-group">
         <select class="filter-select" [(ngModel)]="selectedSort" (ngModelChange)="onFilterChange()">
           <option value="dueDate">期限日順</option>
           <option value="createdAt">作成日順</option>
+          <option value="updatedAt">更新日順</option>
         </select>
       </div>
     </div>
@@ -41,6 +34,9 @@
 
   <!-- ToDo一覧 -->
   <div class="todo-list" *ngIf="!isLoading && !error">
+    <div *ngIf="todos.length === 0" class="no-todos">
+      表示するTodoはありません。
+    </div>
     <div *ngFor="let todo of todos" 
          class="todo-item" 
          [class.completed]="todo.completed"
@@ -81,11 +77,6 @@
       <button class="delete-button" *ngIf="todo.id" (click)="confirmDeleteTodo(todo)">
         <i class="fas fa-trash"></i>
       </button>
-    </div>
-
-    <!-- Todoが存在しない場合 -->
-    <div class="no-todos" *ngIf="todos.length === 0">
-      <p>Todoが見つかりません。</p>
     </div>
   </div>
 </div>

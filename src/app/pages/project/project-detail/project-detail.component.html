@@ -39,13 +39,66 @@
         </div>
         <div class="project-member-row">
           <span class="info-label">メンバー</span>
-          <span class="info-value">
-            <div class="member-list">
-              <span class="member-item" *ngFor="let member of membersUsernames">
-                {{ member.displayName }}<span *ngIf="member.isCreator" class="creator-mark">（作成者）</span>
-              </span>
+          <div class="member-list">
+            <div class="member-item" *ngFor="let member of nonCreatorMembers">
+              <div class="member-info">
+                <span class="member-name">{{ member.displayName }}</span>
+                <button class="remove-member-btn" (click)="removeMember(member.uid)">✕</button>
+              </div>
+              </div>
+            <div *ngIf="nonCreatorMembers.length === 0" class="no-members">
+              メンバーはいません
             </div>
-          </span>
+          </div>
+        </div>
+        <div class="member-actions">
+          <button class="add-member-btn" (click)="openAddMemberDialog()">＋メンバー追加</button>
+        </div>
+        <!-- メンバー追加ダイアログ -->
+        <div class="member-dialog" *ngIf="isAddingMember">
+          <div class="dialog-content">
+            <h3>メンバー追加</h3>
+            <div class="search-box">
+              <div class="search-input-group">
+                <input 
+                  type="text" 
+                  [(ngModel)]="searchQuery" 
+                  placeholder="メールアドレスまたはユーザー名で検索"
+                  class="search-input"
+                  (keyup.enter)="searchUsers()"
+                >
+                <button class="search-btn" (click)="searchUsers()">
+                  検索
+                </button>
+              </div>
+            </div>
+            <div class="search-results">
+              <div *ngIf="isSearching" class="searching-message">
+                検索中...
+              </div>
+              <div class="user-item" *ngFor="let user of searchResults">
+                <div class="user-info">
+                  <span class="user-name">{{ user.displayName }}</span>
+                  <span class="user-email">{{ user.email }}</span>
+                </div>
+                <button 
+                  class="add-user-btn" 
+                  (click)="addMember(user.uid)" 
+                  [disabled]="isUserAlreadyMember(user.uid)"
+                >
+                  {{ isUserAlreadyMember(user.uid) ? '追加済み' : '追加' }}
+                </button>
+              </div>
+              <div *ngIf="!isSearching && searchResults.length === 0 && searchQuery" class="no-results">
+                該当するユーザーが見つかりません
+              </div>
+              <div *ngIf="!searchQuery" class="search-hint">
+              </div>
+            </div>
+            <div class="dialog-actions">
+              <button class="cancel-btn" (click)="closeAddMemberDialog()">閉じる</button>
+            </div>
+          </div>
         </div>
       </div>
     </ng-container>

@@ -43,7 +43,16 @@ export class ProjectDetailComponent implements OnInit {
   issuesDone: Issue[] = [];
   shouldScrollToIssues = false;
   membersUsernames: { uid: string, displayName: string, isCreator: boolean }[] = [];
-  projectMembers: { uid: string; displayName: string; email: string }[] = [];
+  projectMembers: { uid: string; displayName: string; email: string; isCreator: boolean }[] = [];
+  isAddingMember = false;
+  searchQuery = '';
+  searchResults: { uid: string; displayName: string; email: string; }[] = [];
+  currentUserId: string | null = null;
+  isSearching = false;
+
+  get nonCreatorMembers() {
+    return this.projectMembers.filter(member => !member.isCreator);
+  }
 
   constructor(
     private route: ActivatedRoute,
@@ -52,7 +61,9 @@ export class ProjectDetailComponent implements OnInit {
     private ngZone: NgZone,
     private projectService: ProjectService,
     private authService: AuthService
-  ) {}
+  ) {
+    this.currentUserId = this.authService.getCurrentUser()?.uid || null;
+  }
 
   async ngOnInit() {
     const projectId = this.route.snapshot.paramMap.get('id');
@@ -81,13 +92,29 @@ export class ProjectDetailComponent implements OnInit {
   }
 
   async loadProjectMembers() {
-    if (this.project?.id) {  // idの存在を明示的にチェック
-      try {
-        this.projectMembers = await this.projectService.getProjectMembers(this.project.id);
-      } catch (error) {
-        console.error('Error loading project members:', error);
-        this.archiveMessage = 'メンバー情報の読み込みに失敗しました。';
-      }
+    if (!this.project?.members) return;
+    
+    try {
+      const memberPromises = this.project.members.map(async (uid) => {
+        const userDoc = doc(this.firestore, 'users', uid);
+        const userSnap = await getDoc(userDoc);
+        if (userSnap.exists()) {
+          const userData = userSnap.data();
+          return {
+            uid,
+            displayName: userData['displayName'] || 'Unknown User',
+            email: userData['email'] || '',
+            isCreator: uid === this.project?.createdBy
+          };
+        }
+        return null;
+      });
+
+      const members = (await Promise.all(memberPromises)).filter((member): member is NonNullable<typeof member> => member !== null);
+      this.projectMembers = members;
+    } catch (error) {
+      console.error('Error loading project members:', error);
+      this.archiveMessage = 'メンバー情報の読み込みに失敗しました。';
     }
   }
 
@@ -253,5 +280,128 @@ export class ProjectDetailComponent implements OnInit {
     await updateDoc(issueRef, { status });
     this.shouldScrollToIssues = true;
     await this.loadIssues();
+  }
+
+  openAddMemberDialog() {
+    this.isAddingMember = true;
+    this.searchQuery = '';
+    this.searchResults = [];
+  }
+
+  closeAddMemberDialog() {
+    this.isAddingMember = false;
+    this.searchQuery = '';
+    this.searchResults = [];
+  }
+
+  async searchUsers() {
+    if (!this.searchQuery.trim()) {
+      this.searchResults = [];
+      return;
+    }
+
+    this.isSearching = true;
+    try {
+      const usersRef = collection(this.firestore, 'users');
+      const searchTerm = this.searchQuery.toLowerCase().trim();
+      
+      // メールアドレスでの検索
+      const emailQuery = query(usersRef,
+        where('email', '>=', searchTerm),
+        where('email', '<=', searchTerm + '\uf8ff')
+      );
+      
+      // ユーザー名での検索
+      const displayNameQuery = query(usersRef,
+        where('displayName', '>=', searchTerm),
+        where('displayName', '<=', searchTerm + '\uf8ff')
+      );
+
+      // 両方のクエリを実行
+      const [emailSnapshot, displayNameSnapshot] = await Promise.all([
+        getDocs(emailQuery),
+        getDocs(displayNameQuery)
+      ]);
+
+      // 結果をマージして重複を除去
+      const userMap = new Map<string, { uid: string; displayName: string; email: string; }>();
+      
+      // メールアドレス検索の結果を追加
+      emailSnapshot.docs.forEach(doc => {
+        const userData = doc.data() as { displayName: string; email: string; };
+        userMap.set(doc.id, {
+          uid: doc.id,
+          displayName: userData.displayName || 'Unknown User',
+          email: userData.email || ''
+        });
+      });
+
+      // ユーザー名検索の結果を追加
+      displayNameSnapshot.docs.forEach(doc => {
+        const userData = doc.data() as { displayName: string; email: string; };
+        userMap.set(doc.id, {
+          uid: doc.id,
+          displayName: userData.displayName || 'Unknown User',
+          email: userData.email || ''
+        });
+      });
+
+      // 自分自身を除外して結果を配列に変換
+      this.searchResults = Array.from(userMap.values())
+        .filter(user => user.uid !== this.currentUserId)
+        .sort((a, b) => a.displayName.localeCompare(b.displayName));
+
+    } catch (error) {
+      console.error('Error searching users:', error);
+    } finally {
+      this.isSearching = false;
+    }
+  }
+
+  isUserAlreadyMember(uid: string): boolean {
+    return this.project?.members?.includes(uid) || false;
+  }
+
+  async addMember(uid: string) {
+    if (!this.project?.id || this.isUserAlreadyMember(uid)) return;
+
+    try {
+      const projectRef = doc(this.firestore, 'projects', this.project.id);
+      const updatedMembers = [...(this.project.members || []), uid];
+      await updateDoc(projectRef, { 
+        members: updatedMembers,
+        updatedAt: Timestamp.now()
+      });
+      
+      // プロジェクトとメンバー情報を再読み込み
+      await this.loadProject(this.project.id);
+      await this.loadProjectMembers();
+      
+      // 検索結果から追加したユーザーを除外
+      this.searchResults = this.searchResults.filter(user => user.uid !== uid);
+    } catch (error) {
+      console.error('Error adding member:', error);
+    }
+  }
+
+  async removeMember(uid: string) {
+    if (!this.project?.id || !this.project.members) return;
+    
+    if (confirm('このメンバーを削除してもよろしいですか？')) {
+      try {
+        const projectRef = doc(this.firestore, 'projects', this.project.id);
+        const updatedMembers = this.project.members.filter(memberId => memberId !== uid);
+        await updateDoc(projectRef, { 
+          members: updatedMembers,
+          updatedAt: Timestamp.now()
+        });
+        
+        // プロジェクトとメンバー情報を再読み込み
+        await this.loadProject(this.project.id);
+        await this.loadProjectMembers();
+      } catch (error) {
+        console.error('Error removing member:', error);
+      }
+    }
   }
 } 

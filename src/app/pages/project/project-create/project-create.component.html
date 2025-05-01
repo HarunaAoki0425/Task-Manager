@@ -2,15 +2,19 @@
   <h2>プロジェクト作成</h2>
   <form #projectForm="ngForm" (ngSubmit)="onSubmit(projectForm)">
     <div class="form-group">
-      <label for="projectTitle">プロジェクト名</label>
+      <label for="projectTitle">プロジェクト名 <span class="required">*</span></label>
       <input
         type="text"
         id="projectTitle"
         name="projectTitle"
         [(ngModel)]="projectTitle"
         required
-        class="form-input"
+        class="form-control"
+        #titleCtrl="ngModel"
       />
+      <div class="error" *ngIf="titleCtrl.invalid && (titleCtrl.dirty || titleCtrl.touched)">
+        プロジェクト名は必須です。
+      </div>
     </div>
     <div class="form-group">
       <label for="description">説明 <span class="required">*</span></label>
@@ -50,6 +54,61 @@
       </div>
       <div class="error" *ngIf="dueDateCtrl.invalid && (dueDateCtrl.dirty || dueDateCtrl.touched) && !noDueDate">
         締切日時は必須です。
+      </div>
+    </div>
+    <div class="form-group">
+      <label for="members">メンバー</label>
+      <div class="members-input-container">
+        <input
+          type="text"
+          id="members"
+          name="members"
+          class="form-control"
+          [(ngModel)]="searchTerm"
+          placeholder="ユーザー名またはメールアドレスで検索"
+          [disabled]="isSearching"
+          (keyup.enter)="searchUsers()"
+        />
+        <button 
+          type="button" 
+          class="search-button" 
+          (click)="searchUsers()" 
+          [disabled]="isSearching || !searchTerm.trim()"
+        >
+          <span *ngIf="isSearching" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+          <i class="fas fa-search"></i>
+          検索
+        </button>
+      </div>
+
+      <!-- 検索結果 -->
+      <div class="search-results" *ngIf="searchResults.length > 0">
+        <div class="search-result-item" *ngFor="let user of searchResults" (click)="selectUser(user)">
+          <div class="user-info">
+            <span class="user-name">{{ user.displayName }}</span>
+            <span class="user-email">{{ user.email }}</span>
+          </div>
+          <button type="button" class="add-user-btn">
+            <i class="fas fa-plus"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- 選択済みメンバー -->
+      <div class="selected-members" *ngIf="selectedMembers.length > 0">
+        <div class="selected-member" *ngFor="let member of selectedMembers">
+          <div class="user-info">
+            <span class="user-name">{{ member.displayName }}</span>
+            <span class="user-email">{{ member.email }}</span>
+          </div>
+          <button type="button" class="remove-member-btn" (click)="removeMember(member)">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="members-placeholder" *ngIf="selectedMembers.length === 0">
+        メンバーを追加して一緒にプロジェクトを進めましょう
       </div>
     </div>
     <div class="error" *ngIf="errorMessage">{{ errorMessage }}</div>

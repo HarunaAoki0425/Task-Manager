@@ -16,30 +16,73 @@
   margin-bottom: 1.5rem;
 }
 
-.filters {
+.header-top {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 1rem;
-  background-color: #f8f9fa;
-  padding: 1rem;
-  border-radius: 8px;
+  margin-bottom: 1rem;
 }
 
-.filter-group {
+.current-user {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  color: #495057;
+}
+
+.current-user i {
+  color: #6c757d;
+}
+
+.filters {
   display: flex;
   gap: 1rem;
-  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.filter-group,
+.sort-group {
+  flex: 1;
+  max-width: 200px;
 }
 
 .filter-select {
+  width: 100%;
   padding: 0.5rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 6px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
   background-color: white;
   font-size: 0.9rem;
-  color: #4a5568;
-  min-width: 160px;
+  color: #495057;
+  cursor: pointer;
+}
+
+.filter-select:hover {
+  border-color: #adb5bd;
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: #80bdff;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+@media (max-width: 576px) {
+  .filters {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .filter-group,
+  .sort-group {
+    width: 100%;
+    max-width: none;
+  }
 }
 
 /* ToDo一覧 */

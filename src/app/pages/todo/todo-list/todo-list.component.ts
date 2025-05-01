@@ -39,12 +39,15 @@ export class TodoListComponent implements OnInit, OnDestroy {
   isLoading = true;
   error: string | null = null;
   private unsubscribeAuth?: Unsubscribe;
+  currentUser: User | null = null;  // 現在のユーザー情報を保持
 
   // フィルター用の状態
   selectedProject = '';
   selectedMember = '';
   selectedStatus = 'incomplete';
   selectedSort = 'dueDate';
+  selectedAssignee: string = '';  // 初期値を空文字列に変更
+  assigneeList: { uid: string; displayName: string }[] = [];  // 担当者リスト
 
   constructor(
     private firestore: Firestore,
@@ -57,15 +60,26 @@ export class TodoListComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     // 認証状態の変更を監視
-    this.unsubscribeAuth = onAuthStateChanged(this.auth, (user) => {
+    this.unsubscribeAuth = onAuthStateChanged(this.auth, async (user) => {
       if (user) {
-        // 認証済みの場合はデータを読み込む
+        // ユーザー情報を取得
+        const userDoc = await getDoc(doc(this.firestore, 'users', user.uid));
+        if (userDoc.exists()) {
+          this.currentUser = { uid: userDoc.id, ...userDoc.data() } as User;
+          // 担当者フィルターを現在のユーザーに設定
+          this.selectedAssignee = this.currentUser.uid;
+        }
+        // データを読み込む
         this.loadAllData();
       } else {
+        this.currentUser = null;
+        this.selectedAssignee = 'all';  // ログアウト時は全ての担当者を表示
         // 未認証の場合はログインページにリダイレクト
         this.router.navigate(['/login']);
       }
     });
+    this.loadTodos();
+    this.loadAssignees();
   }
 
   ngOnDestroy() {
@@ -141,8 +155,9 @@ export class TodoListComponent implements OnInit, OnDestroy {
             todosQuery = query(todosQuery, where('completed', '==', this.selectedStatus === 'completed'));
           }
           
-          if (this.selectedMember) {
-            todosQuery = query(todosQuery, where('assignee', '==', this.selectedMember));
+          // 担当者フィルターを追加
+          if (this.selectedAssignee !== 'all') {
+            todosQuery = query(todosQuery, where('assignee', '==', this.selectedAssignee));
           }
 
           const todosSnap = await getDocs(todosQuery);
@@ -165,7 +180,13 @@ export class TodoListComponent implements OnInit, OnDestroy {
         const completedTodos = await this.todoService.getCompletedTodos();
         // 既に取得済みのTodoと重複しないように、IDで重複チェック
         const existingTodoIds = new Set(allTodos.map(todo => todo.id!));
-        const newCompletedTodos = completedTodos.filter(todo => !existingTodoIds.has(todo.id!));
+        const newCompletedTodos = completedTodos.filter(todo => {
+          // 担当者フィルターを適用
+          if (this.selectedAssignee !== 'all' && todo.assignee !== this.selectedAssignee) {
+            return false;
+          }
+          return !existingTodoIds.has(todo.id!);
+        });
         allTodos.push(...newCompletedTodos);
       }
 
@@ -316,5 +337,38 @@ export class TodoListComponent implements OnInit, OnDestroy {
         this.error = 'Todoの削除に失敗しました。';
       }
     }
+  }
+
+  // 担当者一覧を取得
+  async loadAssignees() {
+    try {
+      const usersRef = collection(this.firestore, 'users');
+      const usersSnap = await getDocs(usersRef);
+      
+      this.assigneeList = usersSnap.docs.map(doc => ({
+        uid: doc.id,
+        displayName: doc.data()['displayName'] || 'Unknown User'
+      }));
+
+      // 表示名でソート
+      this.assigneeList.sort((a, b) => 
+        a.displayName.localeCompare(b.displayName, 'ja')
+      );
+    } catch (error) {
+      console.error('Error loading assignees:', error);
+      this.error = 'ユーザー一覧の読み込みに失敗しました。';
+    }
+  }
+
+  // 担当者フィルターの変更時の処理
+  async onAssigneeFilterChange(assigneeId: string) {
+    this.selectedAssignee = assigneeId;
+    await this.loadTodos();  // フィルター変更時にTodoを再読み込み
+  }
+
+  // 担当者の表示名を取得
+  getAssigneeName(uid: string): string {
+    const assignee = this.assigneeList.find(a => a.uid === uid);
+    return assignee ? assignee.displayName : 'Unknown User';
   }
 }

@@ -79,6 +79,34 @@ service cloud.firestore {
             || resource.data.user2Id == request.auth.uid);
     }
 
+    // friendRequests - フレンドリクエストを管理
+    match /friendRequests/{requestId} {
+      // ドキュメントの読み取り権限
+      allow get: if request.auth != null && (
+        resource.data.fromUserId == request.auth.uid || 
+        resource.data.toUserId == request.auth.uid
+      );
+      
+      // リストとクエリの読み取り権限
+      allow list: if request.auth != null && (
+        request.query.limit <= 50 && (
+          // 送信済みフレンド申請の取得
+          (request.query.where.fromUserId == request.auth.uid && 
+           request.query.where.status == 'pending') ||
+          // 受信したフレンド申請の取得
+          (request.query.where.toUserId == request.auth.uid && 
+           request.query.where.status == 'pending')
+        )
+      );
+
+      allow create: if request.auth != null && 
+        request.resource.data.fromUserId == request.auth.uid &&
+        request.resource.data.status == 'pending';
+
+      allow delete: if request.auth != null && 
+        resource.data.fromUserId == request.auth.uid;
+    }
+
     // コレクショングループクエリのルール
     match /{path=**}/todos/{todoId} {
       allow read: if request.auth != null

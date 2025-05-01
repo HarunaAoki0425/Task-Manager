@@ -22,6 +22,7 @@ import { Timestamp } from '@angular/fire/firestore';
 import { AuthService } from '../../services/auth.service';
 import { Subscription } from 'rxjs';
 import { TodoService } from '../../services/todo.service';
+import { ProjectService } from '../../services/project.service';
 
 interface ProjectData {
   id: string;
@@ -55,7 +56,7 @@ export class ArchiveComponent implements OnInit, OnDestroy {
   error: string | null = null;
   private authSubscription: Subscription;
 
-  constructor(private firestore: Firestore, private auth: AuthService, private todoService: TodoService) {
+  constructor(private firestore: Firestore, private auth: AuthService, private todoService: TodoService, private projectService: ProjectService) {
     this.authSubscription = this.auth.user$.subscribe(user => {
       if (user) {
         this.loadArchives();
@@ -148,16 +149,13 @@ export class ArchiveComponent implements OnInit, OnDestroy {
   }
 
   async restoreProject(projectId: string) {
-    const archiveRef = doc(this.firestore, 'archives', projectId);
-    const archiveSnap = await getDoc(archiveRef);
-    if (!archiveSnap.exists()) return;
-    const data = archiveSnap.data() as DocumentData;
-    // deletedAtを除外してprojectsに復元
-    const { deletedAt, ...restoreData } = data;
-    const projectRef = doc(this.firestore, 'projects', projectId);
-    await setDoc(projectRef, restoreData);
-    await deleteDoc(archiveRef);
-    await this.loadArchives();
+    try {
+      await this.projectService.restoreProject(projectId);
+      // リストを更新
+      await this.loadArchives();
+    } catch (error) {
+      console.error('Error restoring project:', error);
+    }
   }
 
   async deleteProject(projectId: string) {

@@ -188,4 +188,81 @@ export class ProjectService {
       throw new Error('プロジェクトのアーカイブに失敗しました');
     }
   }
+
+  async restoreProject(projectId: string): Promise<void> {
+    try {
+      // アーカイブからプロジェクトデータを取得
+      const archiveRef = doc(this.firestore, 'archives', projectId);
+      const archiveSnap = await getDoc(archiveRef);
+      
+      if (!archiveSnap.exists()) {
+        throw new Error('アーカイブされたプロジェクトが見つかりません');
+      }
+
+      const projectData = archiveSnap.data();
+
+      // プロジェクトを復元
+      const projectRef = doc(this.firestore, 'projects', projectId);
+      await setDoc(projectRef, {
+        ...projectData,
+        updatedAt: Timestamp.now(),
+        isArchived: false
+      });
+
+      // アーカイブされた課題を取得
+      const archivedIssuesRef = collection(this.firestore, 'archives', projectId, 'issues');
+      const archivedIssuesSnap = await getDocs(archivedIssuesRef);
+
+      // 各課題とそのTodoを復元
+      for (const issueDoc of archivedIssuesSnap.docs) {
+        const issueId = issueDoc.id;
+        const issueData = issueDoc.data();
+
+        // アーカイブされたTodoを取得
+        const archivedTodosRef = collection(this.firestore, 'archives', projectId, 'issues', issueId, 'todos');
+        const archivedTodosSnap = await getDocs(archivedTodosRef);
+
+        // 課題を復元
+        const restoredIssueRef = doc(collection(this.firestore, 'projects', projectId, 'issues'), issueId);
+        await setDoc(restoredIssueRef, {
+          ...issueData,
+          updatedAt: Timestamp.now(),
+          isArchived: false
+        });
+
+        // 各Todoを復元
+        for (const todoDoc of archivedTodosSnap.docs) {
+          const todoId = todoDoc.id;
+          const todoData = todoDoc.data();
+
+          const restoredTodoRef = doc(
+            collection(this.firestore, 'projects', projectId, 'issues', issueId, 'todos'),
+            todoId
+          );
+
+          await setDoc(restoredTodoRef, {
+            ...todoData,
+            updatedAt: Timestamp.now(),
+            isArchived: false
+          });
+
+          // アーカイブからTodoを削除
+          const archivedTodoRef = doc(this.firestore, 'archives', projectId, 'issues', issueId, 'todos', todoId);
+          await deleteDoc(archivedTodoRef);
+        }
+
+        // アーカイブから課題を削除
+        const archivedIssueRef = doc(this.firestore, 'archives', projectId, 'issues', issueId);
+        await deleteDoc(archivedIssueRef);
+      }
+
+      // アーカイブからプロジェクトを削除
+      await deleteDoc(archiveRef);
+
+    } catch (error) {
+      console.error('Error restoring project:', error);
+      throw new Error('プロジェクトの復元に失敗しました: ' + 
+        (error instanceof Error ? error.message : '不明なエラーが発生しました'));
+    }
+  }
 } 

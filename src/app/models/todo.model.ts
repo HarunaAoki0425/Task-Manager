@@ -13,4 +13,5 @@ export interface Todo {
   createdAt: Timestamp;
   updatedAt: Timestamp;
   completedAt: Timestamp | null;
+  isArchived?: boolean;
 } 

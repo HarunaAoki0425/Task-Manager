@@ -10,7 +10,14 @@
             {{ project.title }}
           </option>
         </select>
+      </div>
 
+      <div class="filter-group">
+        <select class="filter-select" [(ngModel)]="selectedStatus" (ngModelChange)="onFilterChange()">
+          <option value="incomplete">未完了</option>
+          <option value="completed">完了済み</option>
+          <option value="all">すべて</option>
+        </select>
       </div>
 
       <div class="sort-group">
@@ -37,7 +44,8 @@
     <div *ngFor="let todo of todos" 
          class="todo-item" 
          [class.completed]="todo.completed"
-         [class.overdue]="!todo.completed && isOverdue(todo.dueDate)">
+         [class.overdue]="!todo.completed && isOverdue(todo.dueDate)"
+         [class.archived]="todo.isArchived">
       <div class="todo-checkbox">
         <input type="checkbox" [checked]="todo.completed" (change)="toggleTodoComplete(todo)">
       </div>
@@ -50,6 +58,10 @@
               <span class="todo-due-date" [class.overdue]="!todo.completed && isOverdue(todo.dueDate)">
                 <i class="fas fa-calendar"></i>
                 {{ formatDate(todo.dueDate) }}
+              </span>
+              <span class="archive-badge" *ngIf="todo.isArchived">
+                <i class="fas fa-archive"></i>
+                アーカイブ済み
               </span>
             </div>
           </div>

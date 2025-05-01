@@ -127,12 +127,13 @@ export class TodoListComponent implements OnInit, OnDestroy {
 
       // 各プロジェクトのTodoを取得
       for (const project of projectsToQuery) {
-        const issuesRef = collection(this.firestore, `projects/${project.id}/issues`);
+        const collectionPath = project.isArchived ? 'archives' : 'projects';
+        const issuesRef = collection(this.firestore, `${collectionPath}/${project.id}/issues`);
         const issuesSnap = await getDocs(issuesRef);
 
         for (const issueDoc of issuesSnap.docs) {
           const issueData = issueDoc.data();
-          const todosRef = collection(this.firestore, `projects/${project.id}/issues/${issueDoc.id}/todos`);
+          const todosRef = collection(this.firestore, `${collectionPath}/${project.id}/issues/${issueDoc.id}/todos`);
           let todosQuery = query(todosRef);
 
           // フィルター条件を追加（インデックスが必要ない順序で追加）
@@ -148,14 +149,24 @@ export class TodoListComponent implements OnInit, OnDestroy {
           const todos = todosSnap.docs.map(doc => ({
             id: doc.id,
             projectId: project.id,
-            projectTitle: project.title,  // ProjectServiceで既に正しく変換されたtitleを使用
+            projectTitle: project.title,
             issueId: issueDoc.id,
             issueTitle: issueData['title'] || '',
+            isArchived: project.isArchived,
             ...doc.data()
           } as Todo));
 
           allTodos.push(...todos);
         }
+      }
+
+      // 完了済みTodoも取得（アーカイブされていないものも含む）
+      if (this.selectedStatus === 'completed' || this.selectedStatus === 'all') {
+        const completedTodos = await this.todoService.getCompletedTodos();
+        // 既に取得済みのTodoと重複しないように、IDで重複チェック
+        const existingTodoIds = new Set(allTodos.map(todo => todo.id!));
+        const newCompletedTodos = completedTodos.filter(todo => !existingTodoIds.has(todo.id!));
+        allTodos.push(...newCompletedTodos);
       }
 
       // メモリ上でソート
@@ -199,58 +210,36 @@ export class TodoListComponent implements OnInit, OnDestroy {
     await this.loadTodos();
   }
 
-  // ToDo完了状態の切り替え
-  async toggleTodo(todo: Todo) {
+  // Todo完了状態の切り替え
+  async toggleTodoComplete(todo: Todo) {
     if (!todo.id || !todo.projectId || !todo.issueId) return;
 
     try {
-      const todoRef = doc(this.firestore, `projects/${todo.projectId}/issues/${todo.issueId}/todos/${todo.id}`);
+      const todoRef = doc(
+        this.firestore, 
+        `${todo.isArchived ? 'archives' : 'projects'}/${todo.projectId}/issues/${todo.issueId}/todos/${todo.id}`
+      );
+      
+      const now = Timestamp.now();
       const newCompleted = !todo.completed;
 
-      if (newCompleted) {
-        // 完了状態に変更する場合
-        const completedTodoData = {
-          ...todo,
-          completed: true,
-          completedAt: Timestamp.now()
-        };
-
-        // 完了済みTodoコレクションに追加
-        const completedTodoRef = doc(this.firestore, 'todos', todo.id);
-        await setDoc(completedTodoRef, completedTodoData);
-
-        // 元のTodoを削除
-        await deleteDoc(todoRef);
-      } else {
-        // 未完了状態に変更する場合
-        await updateDoc(todoRef, {
-          completed: false,
-          completedAt: null
-        });
-      }
-
-      // Todoリストを再読み込み
-      await this.loadTodos();
-    } catch (error) {
-      console.error('Error toggling todo:', error);
-      this.error = 'Todoの状態変更に失敗しました。';
-    }
-  }
-
-  // ToDo完了状態の切り替え
-  async toggleTodoComplete(todo: Todo) {
-    try {
-      const todoRef = doc(this.firestore, `projects/${todo.projectId}/issues/${todo.issueId}/todos/${todo.id}`);
       await updateDoc(todoRef, {
-        completed: true,
-        completedAt: Timestamp.now(),
-        updatedAt: Timestamp.now()
+        completed: newCompleted,
+        completedAt: newCompleted ? now : null,
+        updatedAt: now
       });
 
-      // UIから完了したTodoを削除
-      this.todos = this.todos.filter(t => t.id !== todo.id);
+      // UIを更新
+      todo.completed = newCompleted;
+      todo.completedAt = newCompleted ? now : null;
+      todo.updatedAt = now;
+
+      // フィルターが適用されている場合は再読み込み
+      if (this.selectedStatus !== 'all') {
+        await this.loadTodos();
+      }
     } catch (error) {
-      console.error('Error updating todo:', error);
+      console.error('Error toggling todo:', error);
       this.error = 'Todoの更新に失敗しました。';
     }
   }
@@ -318,13 +307,10 @@ export class TodoListComponent implements OnInit, OnDestroy {
   }
 
   async confirmDeleteTodo(todo: Todo) {
-    if (!todo.id || !todo.projectId || !todo.issueId) return;
-
-    if (confirm('このToDoを削除してもよろしいですか？')) {
+    if (confirm('このTodoを削除してもよろしいですか？')) {
       try {
-        await this.todoService.deleteTodo(todo.id, todo.projectId, todo.issueId);
-        // 削除後にTodo一覧を再読み込み
-        await this.loadTodos();
+        await this.todoService.deleteTodo(todo.id!, todo.projectId, todo.issueId, todo.isArchived);
+        this.todos = this.todos.filter(t => t.id !== todo.id);
       } catch (error) {
         console.error('Error deleting todo:', error);
         this.error = 'Todoの削除に失敗しました。';

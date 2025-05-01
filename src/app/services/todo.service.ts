@@ -67,12 +67,13 @@ export class TodoService {
 
       for (const project of allProjects) {
         try {
-          const issuesRef = collection(this.firestore, 'projects', project.id, 'issues');
+          const collectionPath = project.isArchived ? 'archives' : 'projects';
+          const issuesRef = collection(this.firestore, collectionPath, project.id, 'issues');
           const issuesSnapshot = await getDocs(issuesRef);
 
           for (const issueDoc of issuesSnapshot.docs) {
             const issueData = issueDoc.data() as IssueData;
-            const todosRef = collection(this.firestore, 'projects', project.id, 'issues', issueDoc.id, 'todos');
+            const todosRef = collection(this.firestore, collectionPath, project.id, 'issues', issueDoc.id, 'todos');
             const todosQuery = query(todosRef,
               where('completed', '==', true),
               where('assignee', '==', uid)
@@ -86,7 +87,8 @@ export class TodoService {
                 projectId: project.id,
                 issueId: issueDoc.id,
                 projectTitle: project.title || project.name || '',
-                issueTitle: issueData.title
+                issueTitle: issueData.title,
+                isArchived: project.isArchived
               };
             });
 
@@ -104,13 +106,13 @@ export class TodoService {
     }
   }
 
-  async deleteTodo(todoId: string, projectId?: string, issueId?: string): Promise<void> {
+  async deleteTodo(todoId: string, projectId?: string, issueId?: string, isArchived: boolean = false): Promise<void> {
     try {
       const uid = await this.waitForAuth();
 
       if (projectId && issueId) {
-        // プロジェクトIDと課題IDが指定されている場合（未完了Todo）
-        const todoRef = doc(this.firestore, `projects/${projectId}/issues/${issueId}/todos/${todoId}`);
+        const collectionPath = isArchived ? 'archives' : 'projects';
+        const todoRef = doc(this.firestore, `${collectionPath}/${projectId}/issues/${issueId}/todos/${todoId}`);
         await deleteDoc(todoRef);
       } else {
         // プロジェクトIDと課題IDが指定されていない場合は完了済みTodoを検索
@@ -121,7 +123,8 @@ export class TodoService {
           throw new Error('Todoが見つかりません');
         }
 
-        const todoRef = doc(this.firestore, `projects/${todo.projectId}/issues/${todo.issueId}/todos/${todoId}`);
+        const collectionPath = todo.isArchived ? 'archives' : 'projects';
+        const todoRef = doc(this.firestore, `${collectionPath}/${todo.projectId}/issues/${todo.issueId}/todos/${todoId}`);
         await deleteDoc(todoRef);
       }
     } catch (error) {

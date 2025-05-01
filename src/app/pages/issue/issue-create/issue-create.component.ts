@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Firestore, collection, addDoc, Timestamp, doc, getDoc } from '@angular/fire/firestore';
+import { Firestore, collection, addDoc, Timestamp, doc, getDoc, getDocs, query, where } from '@angular/fire/firestore';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Todo } from '../../../models/todo.model';
@@ -73,19 +73,46 @@ export class IssueCreateComponent implements OnInit {
   async loadMemberDetails() {
     try {
       if (!this.projectId) return;
+      
+      // プロジェクトのメンバーIDを取得
       const projectRef = doc(this.firestore, 'projects', this.projectId);
       const projectSnap = await getDoc(projectRef);
+      
       if (projectSnap.exists()) {
         const members = projectSnap.data()['members'] || [];
-        // メンバー情報を取得する処理を実装
-        this.memberDetails = members.map((uid: string) => ({
-          uid,
-          displayName: '', // ユーザー情報を取得して設定
-          email: ''
-        }));
+        
+        // メンバーの詳細情報を取得
+        const userPromises = members.map(async (uid: string) => {
+          const userRef = doc(this.firestore, 'users', uid);
+          const userSnap = await getDoc(userRef);
+          
+          if (userSnap.exists()) {
+            const userData = userSnap.data();
+            return {
+              uid,
+              displayName: userData['displayName'] || 'Unknown User',
+              email: userData['email'] || ''
+            };
+          }
+          return {
+            uid,
+            displayName: 'Unknown User',
+            email: ''
+          };
+        });
+
+        // すべてのユーザー情報を取得
+        this.memberDetails = await Promise.all(userPromises);
+        
+        // displayNameでソート
+        this.memberDetails.sort((a, b) => 
+          a.displayName.localeCompare(b.displayName)
+        );
       }
     } catch (error) {
       console.error('Error loading member details:', error);
+      // エラーが発生しても最低限の表示ができるように空の配列を設定
+      this.memberDetails = [];
     }
   }
 
@@ -102,6 +129,47 @@ export class IssueCreateComponent implements OnInit {
 
   removeTodo(index: number) {
     this.todos.splice(index, 1);
+  }
+
+  async addTodo() {
+    if (!this.projectId || !this.newTodo.title || !this.newTodo.assignee) {
+      this.message = 'プロジェクトID、タイトル、担当者は必須です。';
+      return;
+    }
+
+    try {
+      // 一時的なTodoオブジェクトを作成
+      const now = Timestamp.now();
+      const newTodo: Todo = {
+        id: `temp_${Date.now()}`, // 一時的なID
+        title: this.newTodo.title,
+        assignee: this.newTodo.assignee,
+        dueDate: this.newTodo.dueDate ? Timestamp.fromDate(new Date(this.newTodo.dueDate)) : null,
+        completed: false,
+        completedAt: null,
+        projectId: this.projectId,
+        projectTitle: this.projectTitle,
+        issueId: this.issueId || '', // 課題作成前は空文字列
+        issueTitle: this.title,
+        createdAt: now,
+        updatedAt: now
+      };
+
+      // 一時的なtodosリストに追加
+      this.todos.push(newTodo);
+
+      // フォームをリセット
+      this.newTodo = {
+        title: '',
+        assignee: '',
+        dueDate: ''
+      };
+
+      this.message = '';
+    } catch (error) {
+      console.error('Error adding todo:', error);
+      this.message = 'Todoの追加に失敗しました。';
+    }
   }
 
   async createIssue() {
@@ -128,48 +196,33 @@ export class IssueCreateComponent implements OnInit {
       const issueDocRef = await addDoc(issuesRef, issueData);
       this.issueId = issueDocRef.id;
 
-      if (this.newTodo.title && this.newTodo.assignee) {
-        await this.addTodo();
+      // 一時的なTodoリストをFirestoreに保存
+      if (this.todos.length > 0) {
+        const todosRef = collection(this.firestore, `projects/${this.projectId}/issues/${this.issueId}/todos`);
+        const todoPromises = this.todos.map(async (todo) => {
+          const todoData = {
+            title: todo.title,
+            assignee: todo.assignee,
+            dueDate: todo.dueDate ? (todo.dueDate instanceof Timestamp ? todo.dueDate : Timestamp.fromDate(todo.dueDate)) : null,
+            completed: false,
+            completedAt: null,
+            projectId: this.projectId,
+            projectTitle: this.projectTitle,
+            issueId: this.issueId,
+            issueTitle: this.title,
+            createdAt: now,
+            updatedAt: now
+          };
+          await addDoc(todosRef, todoData);
+        });
+
+        await Promise.all(todoPromises);
       }
 
       this.router.navigate(['/projects', this.projectId]);
     } catch (error) {
       console.error('Error creating issue:', error);
       this.message = '課題の作成に失敗しました。';
-    }
-  }
-
-  async addTodo() {
-    if (!this.projectId || !this.issueId || !this.newTodo.title || !this.newTodo.assignee) return;
-
-    try {
-      const now = Timestamp.now();
-      const todoData: Omit<Todo, 'id'> = {
-        title: this.newTodo.title,
-        assignee: this.newTodo.assignee,
-        dueDate: this.newTodo.dueDate ? Timestamp.fromDate(new Date(this.newTodo.dueDate)) : null,
-        completed: false,
-        completedAt: null,
-        projectId: this.projectId,
-        projectTitle: this.projectTitle,
-        issueId: this.issueId,
-        issueTitle: this.title,
-        createdAt: now,
-        updatedAt: now
-      };
-
-      const todosRef = collection(this.firestore, `projects/${this.projectId}/issues/${this.issueId}/todos`);
-      await addDoc(todosRef, todoData);
-
-      // フォームをリセット
-      this.newTodo = {
-        title: '',
-        assignee: '',
-        dueDate: ''
-      };
-    } catch (error) {
-      console.error('Error adding todo:', error);
-      this.message = 'Todoの追加に失敗しました。';
     }
   }
 

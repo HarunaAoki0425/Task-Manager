@@ -317,3 +317,30 @@
 .delete-button i {
   font-size: 1rem;
 }
+
+/* アーカイブされたTodo */
+.todo-item.archived {
+  background-color: #f8fafc;
+  border-style: dashed;
+  border-color: #94a3b8;
+}
+
+.todo-item.archived:hover {
+  border-color: #64748b;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.archive-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  background-color: #f1f5f9;
+  color: #64748b;
+  border-radius: 4px;
+  font-size: 0.8rem;
+}
+
+.archive-badge i {
+  font-size: 0.8rem;
+}

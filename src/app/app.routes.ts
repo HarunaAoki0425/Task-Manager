@@ -10,7 +10,8 @@ import { ArchiveComponent } from './pages/archive/archive.component';
 import { IssueCreateComponent } from './pages/issue/issue-create/issue-create.component';
 import { IssueDetailComponent } from './pages/issue/issue-detail/issue-detail.component';
 import { TodoListComponent } from './pages/todo/todo-list/todo-list.component';
-import { CalendarComponent } from './pages/calendar/calendar.component';
+import { ArchiveDetailComponent } from './pages/archive/archive-detail/archive-detail.component';
+import { authGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
   {
@@ -59,13 +60,14 @@ export const routes: Routes = [
         component: ArchiveComponent
       },
       {
+        path: 'archives/:id',
+        component: ArchiveDetailComponent
+      },
+      {
         path: 'todo-list',
         component: TodoListComponent
       },
-      {
-        path: 'calendar',
-        component: CalendarComponent
-      }
+    
     ]
   }
 ]; 

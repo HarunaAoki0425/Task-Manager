@@ -1,27 +1,26 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { MatCardModule } from '@angular/material/card';
-import { MatDatepickerModule } from '@angular/material/datepicker';
-import { MatNativeDateModule } from '@angular/material/core';
+import { CalendarModule, DateAdapter } from 'angular-calendar';
+import { adapterFactory } from 'angular-calendar/date-adapters/date-fns';
 
 @Component({
   selector: 'app-calendar',
-  templateUrl: './calendar.component.html',
-  styleUrls: ['./calendar.component.css'],
   standalone: true,
-  imports: [
-    CommonModule,
-    MatCardModule,
-    MatDatepickerModule,
-    MatNativeDateModule
-  ]
+  imports: [CommonModule, CalendarModule],
+  providers: [
+    {
+      provide: DateAdapter,
+      useFactory: adapterFactory
+    }
+  ],
+  template: `
+    <mwl-calendar-month-view
+      [viewDate]="viewDate"
+      [events]="events">
+    </mwl-calendar-month-view>
+  `
 })
 export class CalendarComponent {
-  selected: Date | null = new Date();
-
-  constructor() {}
-
-  dateSelected(date: Date | null): void {
-    console.log('Selected date:', date);
-  }
+  viewDate = new Date();
+  events = [];
 } 

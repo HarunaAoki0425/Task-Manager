@@ -191,6 +191,14 @@ export class ProjectService {
     }
   }
 
+  async getArchivedProject(projectId: string): Promise<Project> {
+    const projectDoc = await getDoc(doc(this.firestore, 'archives', projectId));
+    if (!projectDoc.exists()) {
+      throw new Error('アーカイブされたプロジェクトが見つかりません。');
+    }
+    return { id: projectDoc.id, ...projectDoc.data() } as Project;
+  }
+
   async restoreProject(projectId: string): Promise<void> {
     try {
       // アーカイブからプロジェクトデータを取得

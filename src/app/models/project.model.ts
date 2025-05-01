@@ -9,5 +9,6 @@ export interface Project {
   dueDate?: Timestamp;  // プロジェクトの期限
   createdAt: Timestamp;
   updatedAt: Timestamp;
-  isArchived?: boolean;  // プロジェクトがアーカイブされているかどうか
+  archivedAt?: Timestamp;  // アーカイブ日時を追加
+  isArchived: boolean;  // プロジェクトがアーカイブされているかどうか
 } 

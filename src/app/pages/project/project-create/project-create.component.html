@@ -17,6 +17,48 @@
       </div>
     </div>
     <div class="form-group">
+      <label for="projectColor">プロジェクトカラー <span class="required">*</span></label>
+      <div class="color-picker">
+        <div class="color-options">
+          <button 
+            type="button" 
+            class="color-option" 
+            *ngFor="let color of projectColors" 
+            [style.backgroundColor]="color.value" 
+            [class.selected]="selectedColor === color.value"
+            (click)="selectProjectColor(color.value)"
+          >
+            <span class="color-check" *ngIf="selectedColor === color.value">✓</span>
+          </button>
+          <button 
+            type="button" 
+            class="color-option custom-color" 
+            [class.selected]="selectedColor === 'custom'"
+            (click)="selectProjectColor('custom')"
+          >
+            <span class="color-check" *ngIf="selectedColor === 'custom'">✓</span>
+          </button>
+        </div>
+        <!-- カラーピッカーオーバーレイ -->
+        <div class="color-picker-overlay" *ngIf="isColorPickerVisible">
+          <div class="color-picker-container">
+            <div class="color-picker-header">
+              <h3>カラーを選択</h3>
+              <button type="button" class="close-button" (click)="closeColorPicker()">×</button>
+            </div>
+            <div class="color-picker-content">
+              <input 
+                type="color" 
+                [value]="customColor"
+                (change)="onColorPickerChange($event)"
+                class="color-picker-input"
+              >
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="form-group">
       <label for="description">説明 <span class="required">*</span></label>
       <textarea
         id="description"

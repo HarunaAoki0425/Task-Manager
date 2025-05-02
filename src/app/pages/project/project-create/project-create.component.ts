@@ -23,6 +23,21 @@ export class ProjectCreateComponent {
   isSubmitting: boolean = false;
   errorMessage: string | null = null;
   
+  // プロジェクトカラー関連
+  projectColors = [
+    { name: 'ブルー', value: '#2196F3' },
+    { name: 'グリーン', value: '#4CAF50' },
+    { name: 'レッド', value: '#F44336' },
+    { name: 'パープル', value: '#9C27B0' },
+    { name: 'オレンジ', value: '#FF9800' },
+    { name: 'ティール', value: '#009688' },
+    { name: 'ピンク', value: '#E91E63' },
+    { name: 'インディゴ', value: '#3F51B5' }
+  ];
+  selectedColor: string = this.projectColors[0].value;
+  customColor: string = '#000000';
+  isColorPickerVisible: boolean = false;
+  
   // メンバー検索関連
   searchTerm: string = '';
   isSearching: boolean = false;
@@ -80,6 +95,25 @@ export class ProjectCreateComponent {
     this.selectedMembers = this.selectedMembers.filter(member => member.uid !== user.uid);
   }
 
+  selectProjectColor(color: string) {
+    if (color === 'custom') {
+      this.isColorPickerVisible = true;
+    } else {
+      this.selectedColor = color;
+      this.isColorPickerVisible = false;
+    }
+  }
+
+  onColorPickerChange(event: Event) {
+    const input = event.target as HTMLInputElement;
+    this.customColor = input.value;
+    this.selectedColor = 'custom';
+  }
+
+  closeColorPicker() {
+    this.isColorPickerVisible = false;
+  }
+
   async onSubmit(form: NgForm) {
     if (form.invalid || (!this.noDueDate && !this.dueDate)) return;
 
@@ -99,7 +133,8 @@ export class ProjectCreateComponent {
         members: [...this.selectedMembers.map(member => member.uid), this.currentUser.uid],
         createdAt: serverTimestamp(),
         dueDate: (this.noDueDate || !this.dueDate) ? null : this.dueDate,
-        status: 'active'
+        status: 'active',
+        color: this.selectedColor === 'custom' ? this.customColor : this.selectedColor
       });
 
       this.router.navigate(['/projects']);

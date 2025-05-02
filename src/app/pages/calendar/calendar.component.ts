@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { Auth, User } from '@angular/fire/auth';
 import { addDays, startOfWeek } from 'date-fns';
-import { Firestore, collection, query, where, getDocs } from '@angular/fire/firestore';
+import { Firestore, collection, query, where, getDocs, doc, getDoc, Timestamp } from '@angular/fire/firestore';
 
 interface Project {
   id: string;
@@ -12,6 +12,18 @@ interface Project {
   userId: string;
   createdAt: Date;
   updatedAt: Date;
+}
+
+interface Issue {
+  id: string;
+  projectId: string;
+  projectTitle: string;
+  title: string;
+  startDate: Timestamp;
+  dueDate: Timestamp;
+  assignees: string[];
+  priority: string;
+  status: string;
 }
 
 interface CalendarDay {
@@ -38,6 +50,7 @@ export class CalendarComponent implements OnInit {
   selectedDate: { year: number; month: number; day: number } | null = null;
   currentUser: User | null = null;
   userProjects: Project[] = [];
+  userIssues: Issue[] = [];
 
   constructor(
     private router: Router,
@@ -52,7 +65,9 @@ export class CalendarComponent implements OnInit {
   async fetchUserProjects(userId: string) {
     try {
       const projectsRef = collection(this.firestore, 'projects');
-      const q = query(projectsRef, where('userId', '==', userId));
+      const q = query(projectsRef, 
+        where('members', 'array-contains', userId)
+      );
       const querySnapshot = await getDocs(q);
       
       this.userProjects = querySnapshot.docs.map(doc => ({
@@ -62,9 +77,43 @@ export class CalendarComponent implements OnInit {
         updatedAt: doc.data()['updatedAt']?.toDate()
       })) as Project[];
       
-      console.log('Fetched projects:', this.userProjects);
+      await this.fetchAllProjectIssues();
     } catch (error) {
       console.error('Error fetching projects:', error);
+    }
+  }
+
+  async fetchAllProjectIssues() {
+    try {
+      this.userIssues = [];
+      
+      // 各プロジェクトのissueを取得
+      for (const project of this.userProjects) {
+        const issuesRef = collection(this.firestore, `projects/${project.id}/issues`);
+        const issuesSnapshot = await getDocs(issuesRef);
+        
+        // 各issueのデータを取得して配列に追加
+        const projectIssues = issuesSnapshot.docs.map(doc => {
+          const data = doc.data();
+          console.log(`Issue "${data['title']}" dates:`, {
+            startDate: data['startDate']?.toDate(),
+            dueDate: data['dueDate']?.toDate()
+          });
+          return {
+            id: doc.id,
+            projectId: project.id,
+            projectTitle: project.title,
+            ...data
+          };
+        }) as Issue[];
+
+        this.userIssues.push(...projectIssues);
+      }
+      
+      // カレンダーを再生成して課題を表示
+      this.generateCalendar();
+    } catch (error) {
+      console.error('Error fetching issues:', error);
     }
   }
 
@@ -76,7 +125,7 @@ export class CalendarComponent implements OnInit {
         // 未認証の場合はログイン画面にリダイレクト
         this.router.navigate(['/login']);
       } else {
-        // ユーザーが認証されている場合、プロジェクトを取得
+        // ユーザーが認証されている場合、プロジェクトとissueを取得
         this.fetchUserProjects(user.uid);
       }
     });
@@ -101,7 +150,7 @@ export class CalendarComponent implements OnInit {
     for (let i = firstDay - 1; i >= 0; i--) {
       this.calendarDays.push({
         date: prevMonthLastDate - i,
-        fullDate: new Date(this.displayYear, this.displayMonth - 1, prevMonthLastDate - i),
+        fullDate: new Date(this.displayYear, this.displayMonth - 2, prevMonthLastDate - i),
         isCurrentMonth: false
       });
     }
@@ -181,5 +230,37 @@ export class CalendarComponent implements OnInit {
       day: this.currentDay
     };
     this.generateCalendar();
+  }
+
+  // 指定された日付に関連する課題を取得するメソッド
+  getIssuesForDate(date: Date): Issue[] {
+    const issues = this.userIssues.filter(issue => {
+      const startDate = issue.startDate?.toDate();
+      const dueDate = issue.dueDate?.toDate();
+      
+      if (!startDate || !dueDate) return false;
+
+      // 日付のみを比較するために時刻を00:00:00に設定
+      const compareDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      const compareStartDate = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+      const compareDueDate = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate());
+      
+      // 指定された日付が開始日と期限日の間にあるかチェック
+      const isInRange = compareDate >= compareStartDate && compareDate <= compareDueDate;
+      
+      if (isInRange) {
+        console.log(`Issue "${issue.title}" matches date ${compareDate.toISOString()}:`, {
+          startDate: startDate,
+          dueDate: dueDate,
+          compareDate: compareDate,
+          compareStartDate: compareStartDate,
+          compareDueDate: compareDueDate
+        });
+      }
+      
+      return isInRange;
+    });
+
+    return issues;
   }
 } 

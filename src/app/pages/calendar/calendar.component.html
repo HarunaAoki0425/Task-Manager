@@ -23,7 +23,17 @@
          [class.current-day]="isCurrentDay(day)"
          [class.selected-day]="isSelectedDay(day)"
          (click)="selectDay(day)">
-      {{ day.date }}
+      <div class="day-header">{{ day.date }}</div>
+      <div class="issues-container">
+        <div *ngFor="let issue of getIssuesForDate(day.fullDate)" 
+             class="issue-item"
+             [class.high-priority]="issue.priority === 'high'"
+             [class.medium-priority]="issue.priority === 'medium'"
+             [class.low-priority]="issue.priority === 'low'">
+          <div class="issue-title" [title]="issue.title">{{ issue.title }}</div>
+          <div class="issue-project" [title]="issue.projectTitle">{{ issue.projectTitle }}</div>
+        </div>
+      </div>
     </div>
   </div>
 </div> 

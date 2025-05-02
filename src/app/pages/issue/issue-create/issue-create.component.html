@@ -1,36 +1,33 @@
 <div class="issue-create-container">
   <h2>課題追加</h2>
   <form class="issue-form" (ngSubmit)="$event.preventDefault()">
-    <!-- プロジェクト名の表示 -->
-    <div class="project-title" *ngIf="projectTitle">
-      <i class="fas fa-folder"></i>
-      <span>{{ projectTitle }}</span>
+
+    <div class="form-row">
+      <label for="title">タイトル<span class="required">*</span></label>
+      <input id="title" name="title" type="text" class="form-input" [(ngModel)]="title" required />
     </div>
     <div class="form-row">
-      <label for="title">タイトル</label>
-      <input id="title" name="title" type="text" class="form-input" [(ngModel)]="title" />
+      <label for="startDate">開始日<span class="required">*</span></label>
+      <input id="startDate" name="startDate" type="date" class="form-input" [(ngModel)]="startDate" required />
     </div>
     <div class="form-row">
-      <label for="startDate">開始日</label>
-      <input id="startDate" name="startDate" type="date" class="form-input" [(ngModel)]="startDate" />
-    </div>
-    <div class="form-row">
-      <label for="dueDate">期限日</label>
-      <input id="dueDate" name="dueDate" type="date" class="form-input" [(ngModel)]="dueDate" />
+      <label for="dueDate">期限日<span class="required">*</span></label>
+      <input id="dueDate" name="dueDate" type="date" class="form-input" [(ngModel)]="dueDate" required />
     </div>
     <div class="form-row">
       <label for="assignee">担当者</label>
-      <select 
-        id="assignee" 
-        name="assignee" 
-        class="form-input" 
-        [(ngModel)]="assignee" 
-        (focus)="onAssigneeInteraction()"
-        (click)="onAssigneeInteraction()"
-      >
-        <option value="">選択してください</option>
-        <option *ngFor="let member of memberDetails" [value]="member.uid">{{ member.displayName }}</option>
-      </select>
+      <div class="assignee-list">
+        <div *ngFor="let member of memberDetails" class="assignee-item">
+          <label class="checkbox-label">
+            <input 
+              type="checkbox"
+              [checked]="isAssigneeSelected(member.uid)"
+              (change)="toggleAssignee(member.uid)"
+            >
+            <span class="member-name">{{ member.displayName }}</span>
+          </label>
+        </div>
+      </div>
     </div>
     <div class="form-row">
       <label for="priority">重要度</label>
@@ -50,7 +47,7 @@
             class="todo-input" 
             [(ngModel)]="newTodo.title" 
             name="todoTitle"
-            placeholder="新しいTodoを入力"
+            placeholder="新しいTodoを入力（必須）"
             (keyup.enter)="addTodo()"
           >
           <input 
@@ -58,14 +55,14 @@
             class="todo-input todo-date-input" 
             [(ngModel)]="newTodo.dueDate"
             name="todoDueDate"
+            required
+            placeholder="締切日時（必須）"
           >
           <select 
             class="todo-input todo-assignee-input" 
             [(ngModel)]="newTodo.assignee"
             name="todoAssignee"
             required
-            (focus)="onAssigneeInteraction()"
-            (click)="onAssigneeInteraction()"
           >
             <option value="" disabled>担当者を選択（必須）</option>
             <option *ngFor="let member of memberDetails" [value]="member.uid">{{ member.displayName }}</option>
@@ -74,9 +71,9 @@
             type="button" 
             class="add-todo-btn" 
             (click)="addTodo()" 
-            [disabled]="!newTodo.title.trim() || !newTodo.assignee"
+            [disabled]="!newTodo.title.trim() || !newTodo.dueDate || !newTodo.assignee"
           >
-            <span class="material-icons">add</span>
+          作成
           </button>
         </div>
         <div class="todo-list">

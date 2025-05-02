@@ -343,31 +343,40 @@ export class IssueDetailComponent implements OnInit {
   }
 
   async saveIssue() {
-    if (!this.projectId || !this.issueId) return;
+    if (!this.projectId || !this.issueId) {
+      this.error = 'プロジェクトIDまたは課題IDが見つかりません。';
+      return;
+    }
 
     try {
       const issueRef = doc(this.firestore, `projects/${this.projectId}/issues/${this.issueId}`);
-      
-      const updatedData = {
+      const now = Timestamp.now();
+
+      const updatedIssue = {
         title: this.editingIssue.title,
         startDate: this.convertToTimestamp(this.editingIssue.startDate),
         dueDate: this.convertToTimestamp(this.editingIssue.dueDate),
         assignee: this.editingIssue.assignee,
         priority: this.editingIssue.priority,
         memo: this.editingIssue.memo,
-        updatedAt: Timestamp.now()
+        updatedAt: now
       };
 
-      await updateDoc(issueRef, updatedData);
-      
-      // 更新後に課題を再読み込み
-      await this.loadIssue();
-      
-      // ポップアップを閉じる
+      await updateDoc(issueRef, updatedIssue);
+
+      // 成功したら、issue オブジェクトを更新
+      if (this.issue) {
+        Object.assign(this.issue, {
+          ...updatedIssue,
+          id: this.issueId
+        });
+      }
+
       this.isPopupVisible = false;
+      this.error = null;
     } catch (error) {
-      console.error('Error saving issue:', error);
-      this.error = '課題の保存に失敗しました。';
+      console.error('Error updating issue:', error);
+      this.error = '課題の更新に失敗しました。';
     }
   }
 

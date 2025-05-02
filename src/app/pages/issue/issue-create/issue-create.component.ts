@@ -19,7 +19,7 @@ export class IssueCreateComponent implements OnInit {
   title = '';
   startDate = '';
   dueDate = '';
-  assignee = '';
+  assignees: string[] = [];
   priority = 'medium';
   memo = '';
   message = '';
@@ -132,8 +132,8 @@ export class IssueCreateComponent implements OnInit {
   }
 
   async addTodo() {
-    if (!this.projectId || !this.newTodo.title || !this.newTodo.assignee) {
-      this.message = 'プロジェクトID、タイトル、担当者は必須です。';
+    if (!this.projectId || !this.newTodo.title || !this.newTodo.assignee || !this.newTodo.dueDate) {
+      this.message = 'タイトル、締切日時、担当者は必須です。';
       return;
     }
 
@@ -144,7 +144,7 @@ export class IssueCreateComponent implements OnInit {
         id: `temp_${Date.now()}`, // 一時的なID
         title: this.newTodo.title,
         assignee: this.newTodo.assignee,
-        dueDate: this.newTodo.dueDate ? Timestamp.fromDate(new Date(this.newTodo.dueDate)) : null,
+        dueDate: Timestamp.fromDate(new Date(this.newTodo.dueDate)), // 必須項目なのでnullチェック不要
         completed: false,
         completedAt: null,
         projectId: this.projectId,
@@ -173,8 +173,8 @@ export class IssueCreateComponent implements OnInit {
   }
 
   async createIssue() {
-    if (!this.projectId || !this.title) {
-      this.message = '必須項目を入力してください。';
+    if (!this.projectId || !this.title || !this.startDate || !this.dueDate) {
+      this.message = 'タイトル、開始日、期限日は必須項目です。';
       return;
     }
 
@@ -182,9 +182,9 @@ export class IssueCreateComponent implements OnInit {
       const now = Timestamp.now();
       const issueData = {
         title: this.title,
-        startDate: this.startDate ? Timestamp.fromDate(new Date(this.startDate)) : null,
-        dueDate: this.dueDate ? Timestamp.fromDate(new Date(this.dueDate)) : null,
-        assignee: this.assignee,
+        startDate: Timestamp.fromDate(new Date(this.startDate)),
+        dueDate: Timestamp.fromDate(new Date(this.dueDate)),
+        assignees: this.assignees,
         priority: this.priority,
         memo: this.memo,
         status: '未着手',
@@ -198,25 +198,18 @@ export class IssueCreateComponent implements OnInit {
 
       // 一時的なTodoリストをFirestoreに保存
       if (this.todos.length > 0) {
-        const todosRef = collection(this.firestore, `projects/${this.projectId}/issues/${this.issueId}/todos`);
-        const todoPromises = this.todos.map(async (todo) => {
+        const todosPromises = this.todos.map(todo => {
           const todoData = {
-            title: todo.title,
-            assignee: todo.assignee,
-            dueDate: todo.dueDate ? (todo.dueDate instanceof Timestamp ? todo.dueDate : Timestamp.fromDate(todo.dueDate)) : null,
-            completed: false,
-            completedAt: null,
-            projectId: this.projectId,
-            projectTitle: this.projectTitle,
+            ...todo,
             issueId: this.issueId,
             issueTitle: this.title,
             createdAt: now,
             updatedAt: now
           };
-          await addDoc(todosRef, todoData);
+          return addDoc(collection(this.firestore, `projects/${this.projectId}/issues/${this.issueId}/todos`), todoData);
         });
 
-        await Promise.all(todoPromises);
+        await Promise.all(todosPromises);
       }
 
       this.router.navigate(['/projects', this.projectId]);
@@ -247,19 +240,33 @@ export class IssueCreateComponent implements OnInit {
   }
 
   async saveIssue() {
-    if (!this.projectId || !this.title) {
-      this.message = '必須項目を入力してください。';
+    if (!this.projectId || !this.title || !this.startDate || !this.dueDate) {
+      this.message = 'タイトル、開始日、期限日は必須項目です。';
       return;
     }
 
     this.isSaving = true;
     try {
       await this.createIssue();
-      this.isSaving = false;
+      this.router.navigate(['/projects', this.projectId]);
     } catch (error) {
       console.error('Error saving issue:', error);
-      this.message = '課題の保存に失敗しました。';
+      this.message = '課題の保存中にエラーが発生しました。';
+    } finally {
       this.isSaving = false;
     }
+  }
+
+  toggleAssignee(uid: string) {
+    const index = this.assignees.indexOf(uid);
+    if (index === -1) {
+      this.assignees.push(uid);
+    } else {
+      this.assignees.splice(index, 1);
+    }
+  }
+
+  isAssigneeSelected(uid: string): boolean {
+    return this.assignees.includes(uid);
   }
 } 

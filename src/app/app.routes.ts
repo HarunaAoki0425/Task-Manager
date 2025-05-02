@@ -12,6 +12,7 @@ import { IssueDetailComponent } from './pages/issue/issue-detail/issue-detail.co
 import { TodoListComponent } from './pages/todo/todo-list/todo-list.component';
 import { ArchiveDetailComponent } from './pages/archive/archive-detail/archive-detail.component';
 import { authGuard } from './guards/auth.guard';
+import { CalendarComponent } from './pages/calendar/calendar.component';
 
 export const routes: Routes = [
   {
@@ -67,7 +68,10 @@ export const routes: Routes = [
         path: 'todo-list',
         component: TodoListComponent
       },
-    
+      {
+        path: 'calendar',
+        component: CalendarComponent
+      },  
     ]
   }
 ]; 

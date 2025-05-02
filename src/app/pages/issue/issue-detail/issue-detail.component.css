@@ -230,9 +230,14 @@
 }
 
 .add-todo-btn:disabled {
-  background-color: #cbd5e0;
+  background-color: #a0aec0;
   cursor: not-allowed;
   opacity: 0.7;
+}
+
+.add-todo-btn:disabled:hover {
+  background-color: #a0aec0;
+  transform: none;
 }
 
 .todo-list {
@@ -483,6 +488,17 @@ textarea.form-input {
   background-color: #3182ce;
 }
 
+.save-button:disabled {
+  background-color: #a0aec0;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.save-button:disabled:hover {
+  background-color: #a0aec0;
+  transform: none;
+}
+
 .cancel-button {
   background-color: #e2e8f0;
   color: #4a5568;
@@ -558,4 +574,10 @@ textarea.form-input {
 
 .form-input::placeholder {
   color: #a0aec0;
+}
+
+.required {
+  color: #ff4444;
+  margin-left: 4px;
+  font-size: 0.9rem;
 }

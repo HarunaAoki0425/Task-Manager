@@ -3,7 +3,8 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { Auth, User } from '@angular/fire/auth';
 import { addDays, startOfWeek } from 'date-fns';
-import { Firestore, collection, query, where, getDocs, doc, getDoc, Timestamp } from '@angular/fire/firestore';
+import { Firestore, collection, query, where, getDocs, doc, getDoc, Timestamp, updateDoc, serverTimestamp } from '@angular/fire/firestore';
+import { FormsModule } from '@angular/forms';
 
 interface Project {
   id: string;
@@ -24,6 +25,7 @@ interface Issue {
   assignees: string[];
   priority: string;
   status: string;
+  color?: string;  // プロジェクトから継承した色
 }
 
 interface CalendarDay {
@@ -32,10 +34,24 @@ interface CalendarDay {
   isCurrentMonth: boolean;
 }
 
+interface Todo {
+  id: string;
+  title: string;
+  dueDate: Timestamp;
+  completed: boolean;
+  completedAt: Timestamp | null;
+  assignee: string;
+  projectId: string;
+  projectTitle: string;
+  issueId: string;
+  issueTitle: string;
+  color?: string;
+}
+
 @Component({
   selector: 'app-calendar',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './calendar.component.html',
   styleUrls: ['./calendar.component.css']
 })
@@ -51,6 +67,8 @@ export class CalendarComponent implements OnInit {
   currentUser: User | null = null;
   userProjects: Project[] = [];
   userIssues: Issue[] = [];
+  userTodos: Todo[] = [];
+  selectedProjectId: string | null = null;
 
   constructor(
     private router: Router,
@@ -60,6 +78,48 @@ export class CalendarComponent implements OnInit {
     this.displayYear = this.currentYear;
     this.displayMonth = this.currentMonth;
     this.generateCalendar();
+  }
+
+  async fetchAllProjectTodos() {
+    try {
+      this.userTodos = [];
+      
+      // 各プロジェクトのTodoを取得
+      for (const project of this.userProjects) {
+        // 各プロジェクトの課題を取得
+        const issuesRef = collection(this.firestore, `projects/${project.id}/issues`);
+        const issuesSnapshot = await getDocs(issuesRef);
+
+        console.log(`Fetching todos for project: ${project.title}`);
+
+        // 各課題のTodoを取得
+        for (const issueDoc of issuesSnapshot.docs) {
+          const todosRef = collection(this.firestore, `projects/${project.id}/issues/${issueDoc.id}/todos`);
+          const todosSnapshot = await getDocs(todosRef);
+          
+          const issueTodos = todosSnapshot.docs.map(doc => {
+            const todoData = doc.data();
+            return {
+              id: doc.id,
+              ...todoData,
+              projectId: project.id,
+              projectTitle: project.title,
+              issueId: issueDoc.id,
+              issueTitle: issueDoc.data()['title'],
+              color: issueDoc.data()['color'] // 課題の色を継承
+            };
+          }) as Todo[];
+
+          console.log(`Found ${issueTodos.length} todos for issue: ${issueDoc.data()['title']}`);
+          this.userTodos.push(...issueTodos);
+        }
+      }
+
+      console.log('Total todos fetched:', this.userTodos.length);
+      console.log('Sample todo:', this.userTodos[0]);
+    } catch (error) {
+      console.error('Error fetching todos:', error);
+    }
   }
 
   async fetchUserProjects(userId: string) {
@@ -78,6 +138,7 @@ export class CalendarComponent implements OnInit {
       })) as Project[];
       
       await this.fetchAllProjectIssues();
+      await this.fetchAllProjectTodos();  // Todoも取得
     } catch (error) {
       console.error('Error fetching projects:', error);
     }
@@ -89,20 +150,22 @@ export class CalendarComponent implements OnInit {
       
       // 各プロジェクトのissueを取得
       for (const project of this.userProjects) {
+        // プロジェクトの色を取得
+        const projectRef = doc(this.firestore, 'projects', project.id);
+        const projectSnap = await getDoc(projectRef);
+        const projectColor = projectSnap.exists() ? projectSnap.data()['color'] : null;
+
         const issuesRef = collection(this.firestore, `projects/${project.id}/issues`);
         const issuesSnapshot = await getDocs(issuesRef);
         
         // 各issueのデータを取得して配列に追加
         const projectIssues = issuesSnapshot.docs.map(doc => {
           const data = doc.data();
-          console.log(`Issue "${data['title']}" dates:`, {
-            startDate: data['startDate']?.toDate(),
-            dueDate: data['dueDate']?.toDate()
-          });
           return {
             id: doc.id,
             projectId: project.id,
             projectTitle: project.title,
+            color: projectColor,  // プロジェクトの色を設定
             ...data
           };
         }) as Issue[];
@@ -232,35 +295,68 @@ export class CalendarComponent implements OnInit {
     this.generateCalendar();
   }
 
+  getFilteredProjects(): Project[] {
+    return this.userProjects;
+  }
+
+  getFilteredIssues(): Issue[] {
+    if (!this.selectedProjectId) return this.userIssues;
+    return this.userIssues.filter(issue => issue.projectId === this.selectedProjectId);
+  }
+
+  getFilteredTodos(): Todo[] {
+    if (!this.selectedProjectId) return this.userTodos;
+    return this.userTodos.filter(todo => todo.projectId === this.selectedProjectId);
+  }
+
   // 指定された日付に関連する課題を取得するメソッド
   getIssuesForDate(date: Date): Issue[] {
-    const issues = this.userIssues.filter(issue => {
+    return this.getFilteredIssues().filter(issue => {
       const startDate = issue.startDate?.toDate();
       const dueDate = issue.dueDate?.toDate();
-      
       if (!startDate || !dueDate) return false;
-
-      // 日付のみを比較するために時刻を00:00:00に設定
       const compareDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
       const compareStartDate = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
       const compareDueDate = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate());
-      
-      // 指定された日付が開始日と期限日の間にあるかチェック
-      const isInRange = compareDate >= compareStartDate && compareDate <= compareDueDate;
-      
-      if (isInRange) {
-        console.log(`Issue "${issue.title}" matches date ${compareDate.toISOString()}:`, {
-          startDate: startDate,
-          dueDate: dueDate,
-          compareDate: compareDate,
-          compareStartDate: compareStartDate,
-          compareDueDate: compareDueDate
-        });
-      }
-      
-      return isInRange;
+      return compareDate >= compareStartDate && compareDate <= compareDueDate;
     });
+  }
 
-    return issues;
+  // 指定された日付のTodoを取得するメソッド
+  getTodosForDate(date: Date): Todo[] {
+    const todos = this.getFilteredTodos().filter(todo => {
+      if (!todo.dueDate) {
+        console.log('Todo without dueDate:', todo);
+        return false;
+      }
+      if (todo.completed) return false;
+      if (!this.currentUser || todo.assignee !== this.currentUser.uid) return false;
+      const dueDate = todo.dueDate.toDate();
+      const compareDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      const compareDueDate = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate());
+      const matches = compareDate.getTime() === compareDueDate.getTime();
+      if (matches) {
+        console.log('Found todo for date:', date, todo);
+      }
+      return matches;
+    });
+    return todos;
+  }
+
+  async toggleTodoComplete(todo: any) {
+    try {
+      const newCompleted = !todo.completed;
+      const todoRef = doc(this.firestore, `projects/${todo.projectId}/issues/${todo.issueId}/todos/${todo.id}`);
+      await updateDoc(todoRef, {
+        completed: newCompleted,
+        completedAt: newCompleted ? serverTimestamp() : null,
+        updatedAt: serverTimestamp()
+      });
+      // ローカルの状態も更新
+      todo.completed = newCompleted;
+      todo.completedAt = newCompleted ? new Date() : null;
+    } catch (error) {
+      console.error('Error updating todo completion status:', error);
+    }
   }
 } 

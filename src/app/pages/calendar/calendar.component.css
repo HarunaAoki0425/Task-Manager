@@ -80,14 +80,11 @@
 }
 
 .day {
-  background: white;
-  aspect-ratio: 1;
-  min-height: 100px;
-  position: relative;
+  min-height: 120px;
   padding: 8px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: block;
+  border: 1px solid #e2e8f0;
+  background-color: white;
+  overflow-y: auto;
 }
 
 .day:hover {
@@ -109,18 +106,6 @@
 
 .selected-day:hover {
   background-color: #90caf9;
-}
-
-.current-day::after {
-  content: '';
-  position: absolute;
-  bottom: 8px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 4px;
-  height: 4px;
-  background-color: #1976d2;
-  border-radius: 50%;
 }
 
 .weekday:first-child,
@@ -259,60 +244,62 @@
   width: 100%;
 }
 
-.day {
-  background-color: white;
-  min-height: 120px;
-  padding: 8px;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-}
-
 .day-header {
   margin-bottom: 8px;
   font-weight: 500;
 }
 
-.issues-container {
-  flex-grow: 1;
+.items-container {
   overflow-y: auto;
-  font-size: 0.85rem;
+  max-height: calc(100% - 24px);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
-.issue-item {
-  margin-bottom: 4px;
+.calendar-item {
+  margin: 2px;
   padding: 4px 6px;
   border-radius: 4px;
-  background-color: #f7fafc;
+  font-size: 12px;
   cursor: pointer;
-  overflow: hidden;
+  transition: opacity 0.2s;
+  opacity: 0.9;
+  width: calc(100% - 4px);
+  box-sizing: border-box;
 }
 
-.issue-title {
+.calendar-item:hover {
+  opacity: 1;
+}
+
+.item-title {
+  font-size: 0.8em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  color: #000000;
   font-weight: 500;
+  flex: 1;
+  margin-right: 4px;
 }
 
-.issue-project {
-  font-size: 0.75rem;
-  color: #718096;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.todo-item {
+  border-left: 3px solid #666;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: white !important;
+  border: 1px solid;
+  border-left-width: 3px;
+  padding-right: 4px;
 }
 
-.high-priority {
-  border-left: 3px solid #f56565;
-}
-
-.medium-priority {
-  border-left: 3px solid #ed8936;
-}
-
-.low-priority {
-  border-left: 3px solid #48bb78;
+.todo-marker {
+  font-size: 8px;
+  margin-right: 4px;
+  color: #666;
+  flex-shrink: 0;
 }
 
 .other-month {
@@ -330,4 +317,21 @@
 
 .day:hover {
   background-color: #f7fafc;
+}
+
+.todo-checkbox {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.project-filter {
+  margin: 0 12px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+  background: #fff;
+  color: #333;
 } 

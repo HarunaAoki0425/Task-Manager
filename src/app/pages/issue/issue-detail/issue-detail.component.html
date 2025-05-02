@@ -1,7 +1,10 @@
 <div class="issue-detail-container" *ngIf="!isLoading && !error && issue">
   <div class="header-row">
     <button class="back-button" (click)="goBack()">← 戻る</button>
-    <button class="edit-button" (click)="togglePopup()">編集</button>
+    <div class="action-buttons">
+      <button class="edit-button" (click)="togglePopup()">編集</button>
+      <button class="delete-button" (click)="confirmDeleteIssue()">削除</button>
+    </div>
   </div>
 
   <div class="issue-header">
@@ -24,7 +27,9 @@
       <div class="meta-item">
         <span class="label">担当者:</span>
         <span>
-          {{ getMemberDisplayName(issue.assignee) }}
+          <ng-container *ngFor="let assignee of issue.assignees; let last = last">
+            {{ getMemberDisplayName(assignee) }}{{ !last ? '、' : '' }}
+          </ng-container>
         </span>
       </div>
 
@@ -67,6 +72,8 @@
         class="todo-date"
         required
         placeholder="締切日時（必須）"
+        [min]="issue?.startDate ? (formatDateForInput(issue.startDate).slice(0,10) + 'T00:00') : null"
+        [max]="issue?.dueDate ? (formatDateForInput(issue.dueDate).slice(0,10) + 'T23:59') : null"
       >
       <select
         [(ngModel)]="newTodo.assignee"
@@ -150,12 +157,17 @@
 
           <div class="form-group">
             <label>担当者</label>
-            <select class="form-input" [(ngModel)]="editingIssue.assignee">
-              <option value="">選択してください</option>
-              <option [value]="member.uid" *ngFor="let member of memberDetails">
-                {{ member.displayName }}
-              </option>
-            </select>
+            <div class="member-checkboxes">
+              <div *ngFor="let member of memberDetails" class="member-checkbox-item">
+                <input 
+                  type="checkbox" 
+                  [id]="'member-' + member.uid"
+                  [checked]="isAssigneeSelected(member.uid)"
+                  (change)="toggleAssignee(member.uid)"
+                >
+                <label [for]="'member-' + member.uid">{{ member.displayName }}</label>
+              </div>
+            </div>
           </div>
         </div>
 

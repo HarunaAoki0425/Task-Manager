@@ -11,4 +11,5 @@ export interface Project {
   updatedAt: Timestamp;
   archivedAt?: Timestamp;  // アーカイブ日時を追加
   isArchived: boolean;  // プロジェクトがアーカイブされているかどうか
+  color?: string;  // プロジェクトのカラー
 } 

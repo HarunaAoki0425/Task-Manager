@@ -5,3 +5,8 @@
 
 html, body { height: 100%; }
 body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+
+/* Issue titles should always be black */
+.issue-title {
+  color: #000000 !important;  /* 他のスタイルより優先させる */
+}

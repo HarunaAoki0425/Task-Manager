@@ -1,11 +1,13 @@
 <div class="project-detail-container">
   <div *ngIf="isLoading">読み込み中・・・</div>
   <ng-container *ngIf="!isLoading && project">
-    <div class="project-title-row">
-      <div class="title-section">
-        <button class="back-to-list-btn" (click)="goToProjectList()">← プロジェクト一覧へ</button>
-        <h2 class="project-name">{{ project.title }}</h2>
+    <button class="back-to-list-btn" (click)="goToProjectList()">← プロジェクト一覧へ</button>
+    <div class="project-header">
+      <div class="header-content">
+        <h1 [style.color]="project?.color || '#000000'">{{ project?.title }}</h1>
       </div>
+    </div>
+    <div class="project-title-row">
       <div class="project-action-btns">
         <button class="edit-btn" title="編集" (click)="startEdit()" *ngIf="!isEditing"><span>編集</span></button>
         <button class="delete-btn" title="アーカイブ" (click)="archiveProject()" [disabled]="isArchiving"><span>アーカイブ</span></button>
@@ -20,6 +22,48 @@
         <strong>締切日時:</strong>
         <input type="datetime-local" [(ngModel)]="editDueDate" class="edit-due-input" />
       </div>
+      <div class="detail-row">
+        <strong>プロジェクトカラー:</strong>
+        <div class="color-picker">
+          <div class="color-options">
+            <button 
+              type="button" 
+              class="color-option" 
+              *ngFor="let color of projectColors" 
+              [style.backgroundColor]="color.value" 
+              [class.selected]="editColor === color.value"
+              (click)="selectProjectColor(color.value)"
+            >
+              <span class="color-check" *ngIf="editColor === color.value">✓</span>
+            </button>
+            <button 
+              type="button" 
+              class="color-option custom-color" 
+              [class.selected]="editColor === 'custom'"
+              (click)="selectProjectColor('custom')"
+            >
+              <span class="color-check" *ngIf="editColor === 'custom'">✓</span>
+            </button>
+          </div>
+          <!-- カラーピッカーオーバーレイ -->
+          <div class="color-picker-overlay" *ngIf="isColorPickerVisible">
+            <div class="color-picker-container">
+              <div class="color-picker-header">
+                <h3>▽クリックでカラーを選択▽</h3>
+                <button type="button" class="close-button" (click)="closeColorPicker()">×</button>
+              </div>
+              <div class="color-picker-content">
+                <input 
+                  type="color" 
+                  [value]="customColor"
+                  (input)="onColorPickerChange($event)"
+                  class="color-picker-input"
+                >
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
       <div class="edit-btn-row">
         <button class="save-btn" (click)="saveEdit()" [disabled]="isSaving">保存</button>
         <button class="cancel-btn" (click)="cancelEdit()" [disabled]="isSaving">キャンセル</button>
@@ -32,9 +76,9 @@
           <span class="info-value description-value">{{ project.description || '（なし）' }}</span>
         </div>
         <div class="project-meta-row">
-          <div class="meta-item"><span class="meta-label">作成日時</span><span class="meta-value">{{ formatDate(project.createdAt) }}</span></div>
-          <div class="meta-item"><span class="meta-label">更新日時</span><span class="meta-value">{{ project.updatedAt ? formatDate(project.updatedAt) : '' }}</span></div>
-          <div class="meta-item"><span class="meta-label">締切日時</span><span class="meta-value">{{ project.dueDate ? formatDate(project.dueDate) : '' }}</span></div>
+          <div class="meta-item"><span class="meta-label">作成日</span><span class="meta-value">{{ formatDate(project.createdAt) }}</span></div>
+          <div class="meta-item"><span class="meta-label">更新日</span><span class="meta-value">{{ project.updatedAt ? formatDate(project.updatedAt) : '' }}</span></div>
+          <div class="meta-item"><span class="meta-label">締切日</span><span class="meta-value">{{ project.dueDate ? formatDate(project.dueDate) : '' }}</span></div>
           <div class="meta-item"><span class="meta-label">作成者</span><span class="meta-value">{{ creatorName }}</span></div>
         </div>
         <div class="project-member-row">

@@ -138,6 +138,11 @@ export class IssueCreateComponent implements OnInit {
     }
 
     try {
+      // プロジェクトの色を取得
+      const projectRef = doc(this.firestore, 'projects', this.projectId);
+      const projectSnap = await getDoc(projectRef);
+      const projectColor = projectSnap.exists() ? projectSnap.data()['color'] : null;
+
       // 一時的なTodoオブジェクトを作成
       const now = Timestamp.now();
       const newTodo: Todo = {
@@ -152,7 +157,8 @@ export class IssueCreateComponent implements OnInit {
         issueId: this.issueId || '', // 課題作成前は空文字列
         issueTitle: this.title,
         createdAt: now,
-        updatedAt: now
+        updatedAt: now,
+        color: projectColor // プロジェクトの色を設定
       };
 
       // 一時的なtodosリストに追加
@@ -179,17 +185,23 @@ export class IssueCreateComponent implements OnInit {
     }
 
     try {
+      // プロジェクトの色を取得
+      const projectRef = doc(this.firestore, 'projects', this.projectId);
+      const projectSnap = await getDoc(projectRef);
+      const projectColor = projectSnap.exists() ? projectSnap.data()['color'] : null;
+
       const now = Timestamp.now();
       const issueData = {
         title: this.title,
         startDate: Timestamp.fromDate(new Date(this.startDate)),
         dueDate: Timestamp.fromDate(new Date(this.dueDate)),
-        assignees: this.assignees,
+        assignees: this.assignees.length > 0 ? this.assignees : ['unassigned'],  // 担当者が選択されていない場合は未割り当て
         priority: this.priority,
         memo: this.memo,
         status: '未着手',
         createdAt: now,
-        updatedAt: now
+        updatedAt: now,
+        color: projectColor
       };
 
       const issuesRef = collection(this.firestore, `projects/${this.projectId}/issues`);
@@ -198,18 +210,24 @@ export class IssueCreateComponent implements OnInit {
 
       // 一時的なTodoリストをFirestoreに保存
       if (this.todos.length > 0) {
-        const todosPromises = this.todos.map(todo => {
+        console.log('保存前のToDoリスト:', this.todos);
+        const saveTodoPromises = this.todos.map(todo => {
           const todoData = {
             ...todo,
+            id: undefined,
             issueId: this.issueId,
             issueTitle: this.title,
-            createdAt: now,
-            updatedAt: now
+            assignee: todo.assignee || 'unassigned',
+            color: projectColor,
+            dueDate: todo.dueDate instanceof Timestamp
+              ? todo.dueDate
+              : Timestamp.fromDate(new Date(todo.dueDate as any))
           };
-          return addDoc(collection(this.firestore, `projects/${this.projectId}/issues/${this.issueId}/todos`), todoData);
+          const todosRef = collection(this.firestore, `projects/${this.projectId}/issues/${this.issueId}/todos`);
+          return addDoc(todosRef, todoData);
         });
 
-        await Promise.all(todosPromises);
+        await Promise.all(saveTodoPromises);
       }
 
       this.router.navigate(['/projects', this.projectId]);
@@ -268,5 +286,15 @@ export class IssueCreateComponent implements OnInit {
 
   isAssigneeSelected(uid: string): boolean {
     return this.assignees.includes(uid);
+  }
+
+  onBack() {
+    if (confirm('課題は保存されませんが、戻ってもよろしいですか？')) {
+      if (this.projectId) {
+        this.router.navigate(['/projects', this.projectId]);
+      } else {
+        this.router.navigate(['/projects']);
+      }
+    }
   }
 } 

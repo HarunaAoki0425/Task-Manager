@@ -2,7 +2,7 @@ import { Component, NgZone, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Firestore, doc, getDoc, setDoc, deleteDoc, Timestamp, collection, getDocs, updateDoc, query, where } from '@angular/fire/firestore';
+import { Firestore, doc, getDoc, setDoc, deleteDoc, Timestamp, collection, getDocs, updateDoc, query, where, serverTimestamp } from '@angular/fire/firestore';
 import { ProjectService } from '../../../services/project.service';
 import { AuthService } from '../../../services/auth.service';
 import { Project } from '../../../models/project.model';
@@ -18,6 +18,7 @@ interface Issue {
   assignee?: string;
   createdAt?: any;
   updatedAt?: any;
+  color?: string;  // プロジェクトから継承したカラー
 }
 
 @Component({
@@ -37,6 +38,23 @@ export class ProjectDetailComponent implements OnInit {
   editDescription = '';
   editDueDate: string | null = null;
   isSaving = false;
+  isArchived = false;  // プロジェクトのアーカイブ状態を管理
+
+  // プロジェクトカラー関連
+  projectColors = [
+    { name: 'ブルー', value: '#2196F3' },
+    { name: 'グリーン', value: '#4CAF50' },
+    { name: 'レッド', value: '#F44336' },
+    { name: 'パープル', value: '#9C27B0' },
+    { name: 'オレンジ', value: '#FF9800' },
+    { name: 'ティール', value: '#009688' },
+    { name: 'ピンク', value: '#E91E63' },
+    { name: 'インディゴ', value: '#3F51B5' }
+  ];
+  editColor: string = '';
+  customColor: string = '#000000';
+  isColorPickerVisible: boolean = false;
+
   issuesNotStarted: Issue[] = [];
   issuesInProgress: Issue[] = [];
   issuesOnHold: Issue[] = [];
@@ -76,12 +94,27 @@ export class ProjectDetailComponent implements OnInit {
 
   async loadProject(projectId: string) {
     try {
-      this.project = await this.projectService.getProject(projectId);
-      if (this.project) {
-        // プロジェクトの作成者の表示名を取得
-        const creatorDoc = doc(this.firestore, 'users', this.project.createdBy);
-        const creatorSnap = await getDoc(creatorDoc);
-        this.creatorName = creatorSnap.exists() ? creatorSnap.data()['displayName'] || 'no name' : 'no name';
+      const projectRef = doc(this.firestore, 'projects', projectId);
+      const projectSnap = await getDoc(projectRef);
+      
+      if (projectSnap.exists()) {
+        const data = projectSnap.data();
+        this.project = {
+          id: projectSnap.id,
+          ...data
+        } as Project;
+        this.isArchived = data['isArchived'] || false;  // アーカイブ状態を設定
+        
+        // クリエイター情報を取得
+        if (data['createdBy']) {
+          const userRef = doc(this.firestore, 'users', data['createdBy']);
+          const userSnap = await getDoc(userRef);
+          if (userSnap.exists()) {
+            this.creatorName = userSnap.data()['displayName'] || 'Unknown User';
+          }
+        }
+      } else {
+        this.archiveMessage = 'プロジェクトが見つかりませんでした。';
       }
     } catch (error) {
       console.error('Error loading project:', error);
@@ -200,45 +233,66 @@ export class ProjectDetailComponent implements OnInit {
   startEdit() {
     if (!this.project) return;
     this.isEditing = true;
-    this.editDescription = this.project.description || '';
-    
-    // Firestoreのタイムスタンプ型かどうかをチェック
-    if (this.project.dueDate) {
-      let date: Date;
-      if ('toDate' in this.project.dueDate) {
-        // Firestoreのタイムスタンプの場合
-        date = (this.project.dueDate as unknown as { toDate(): Date }).toDate();
-      } else {
-        // 通常のDateオブジェクトの場合
-        date = this.project.dueDate;
-      }
-      this.editDueDate = date.toISOString().slice(0, 16);
-    } else {
-      this.editDueDate = null;
+    this.editDescription = this.project.description;
+    this.editDueDate = this.project.dueDate ? this.formatDateForInput(this.project.dueDate) : null;
+    this.editColor = this.project.color || this.projectColors[0].value;
+    if (!this.projectColors.some(color => color.value === this.editColor)) {
+      this.customColor = this.editColor;
+      this.editColor = 'custom';
     }
+  }
+
+  formatDateForInput(ts: Timestamp): string {
+    const date = ts.toDate();
+    return date.toISOString().slice(0, 16);
   }
 
   cancelEdit() {
     this.isEditing = false;
+    this.editDescription = '';
+    this.editDueDate = null;
+    this.editColor = '';
+    this.isColorPickerVisible = false;
+  }
+
+  selectProjectColor(color: string) {
+    if (color === 'custom') {
+      this.isColorPickerVisible = true;
+    } else {
+      this.editColor = color;
+      this.isColorPickerVisible = false;
+    }
+  }
+
+  onColorPickerChange(event: Event) {
+    const input = event.target as HTMLInputElement;
+    this.customColor = input.value;
+    this.editColor = 'custom';
+  }
+
+  closeColorPicker() {
+    this.isColorPickerVisible = false;
   }
 
   async saveEdit() {
     if (!this.project?.id) return;
-    this.isSaving = true;
+
     try {
+      this.isSaving = true;
       const projectRef = doc(this.firestore, 'projects', this.project.id);
-      const updateData: any = {
+      await updateDoc(projectRef, {
         description: this.editDescription,
-        updatedAt: Timestamp.now(),
-      };
-      if (this.editDueDate) {
-        updateData.dueDate = Timestamp.fromDate(new Date(this.editDueDate));
-      } else {
-        updateData.dueDate = null;
-      }
-      await setDoc(projectRef, updateData, { merge: true });
-      this.isEditing = false;
+        dueDate: this.editDueDate,
+        color: this.editColor === 'custom' ? this.customColor : this.editColor,
+        updatedAt: serverTimestamp()
+      });
+
+      // プロジェクト情報を再読み込み
       await this.loadProject(this.project.id);
+      this.isEditing = false;
+    } catch (error) {
+      console.error('Error updating project:', error);
+      this.archiveMessage = 'プロジェクトの更新に失敗しました。';
     } finally {
       this.isSaving = false;
     }

@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Firestore, doc, getDoc, collection, query, getDocs, updateDoc, Timestamp, addDoc, deleteDoc } from '@angular/fire/firestore';
+import { Firestore, doc, getDoc, collection, query, getDocs, updateDoc, Timestamp, addDoc, deleteDoc, where } from '@angular/fire/firestore';
 import { User } from '../../../models/user.model';
 import { Todo } from '../../../models/todo.model';
 import { FormsModule } from '@angular/forms';
@@ -12,24 +12,26 @@ interface Issue {
   title: string;
   startDate: Timestamp;
   dueDate: Timestamp;
-  assignee: string;
+  assignees: string[];
   priority: string;
   memo: string;
   status: string;
   createdAt: Timestamp;
   updatedAt: Timestamp;
+  color?: string;
 }
 
 interface FirestoreIssueData {
   title: string;
   startDate: Timestamp;
   dueDate: Timestamp;
-  assignee: string;
+  assignees: string[];
   priority: string;
   memo: string;
   status: string;
   createdAt: Timestamp;
   updatedAt: Timestamp;
+  color?: string;
 }
 
 @Component({
@@ -53,14 +55,14 @@ export class IssueDetailComponent implements OnInit {
     title: string;
     startDate: string;
     dueDate: string;
-    assignee: string;
+    assignees: string[];
     priority: string;
     memo: string;
   } = {
     title: '',
     startDate: '',
     dueDate: '',
-    assignee: '',
+    assignees: [],
     priority: '',
     memo: ''
   };
@@ -183,12 +185,13 @@ export class IssueDetailComponent implements OnInit {
           title: data.title,
           startDate: data.startDate,
           dueDate: data.dueDate,
-          assignee: data.assignee,
+          assignees: data.assignees,
           priority: data.priority,
           memo: data.memo,
           status: data.status,
           createdAt: data.createdAt,
-          updatedAt: data.updatedAt
+          updatedAt: data.updatedAt,
+          color: data.color
         } as Issue;
         await this.loadTodos();
       } else {
@@ -222,8 +225,11 @@ export class IssueDetailComponent implements OnInit {
   }
 
   getMemberDisplayName(uid: string): string {
+    if (uid === 'unassigned') {
+      return '未割り当て';
+    }
     const member = this.memberDetails.find(m => m.uid === uid);
-    return member ? member.displayName : 'Unknown';
+    return member?.displayName || '未割り当て';
   }
 
   formatDate(ts: string | Timestamp | null | undefined): string {
@@ -270,6 +276,11 @@ export class IssueDetailComponent implements OnInit {
     if (!this.projectId || !this.issueId || !this.issue || !this.project || !this.newTodo.title) return;
 
     try {
+      // issueのcolorを取得
+      const issueRef = doc(this.firestore, `projects/${this.projectId}/issues/${this.issueId}`);
+      const issueSnap = await getDoc(issueRef);
+      const issueColor = issueSnap.exists() ? issueSnap.data()['color'] : null;
+
       const now = Timestamp.now();
       const todoData: Omit<Todo, 'id'> = {
         title: this.newTodo.title,
@@ -282,7 +293,8 @@ export class IssueDetailComponent implements OnInit {
         issueId: this.issueId,
         issueTitle: this.issue.title,      // 課題のタイトルを設定
         createdAt: now,
-        updatedAt: now
+        updatedAt: now,
+        color: issueColor  // issueのcolorを設定
       };
 
       // 入力値の検証
@@ -321,7 +333,7 @@ export class IssueDetailComponent implements OnInit {
         title: this.issue.title,
         startDate: this.formatDateForInput(this.issue.startDate),
         dueDate: this.formatDateForInput(this.issue.dueDate),
-        assignee: this.issue.assignee,
+        assignees: this.issue.assignees || [],
         priority: this.issue.priority,
         memo: this.issue.memo || ''
       };
@@ -342,6 +354,19 @@ export class IssueDetailComponent implements OnInit {
     return Timestamp.fromDate(date);
   }
 
+  toggleAssignee(uid: string) {
+    const index = this.editingIssue.assignees.indexOf(uid);
+    if (index === -1) {
+      this.editingIssue.assignees.push(uid);
+    } else {
+      this.editingIssue.assignees.splice(index, 1);
+    }
+  }
+
+  isAssigneeSelected(uid: string): boolean {
+    return this.editingIssue.assignees.includes(uid);
+  }
+
   async saveIssue() {
     if (!this.projectId || !this.issueId) {
       this.error = 'プロジェクトIDまたは課題IDが見つかりません。';
@@ -356,7 +381,7 @@ export class IssueDetailComponent implements OnInit {
         title: this.editingIssue.title,
         startDate: this.convertToTimestamp(this.editingIssue.startDate),
         dueDate: this.convertToTimestamp(this.editingIssue.dueDate),
-        assignee: this.editingIssue.assignee,
+        assignees: this.editingIssue.assignees.length > 0 ? this.editingIssue.assignees : ['unassigned'],
         priority: this.editingIssue.priority,
         memo: this.editingIssue.memo,
         updatedAt: now
@@ -403,6 +428,30 @@ export class IssueDetailComponent implements OnInit {
         await this.deleteTodo(todoId);
       } catch (error) {
         console.error('ToDo削除中にエラーが発生しました:', error);
+      }
+    }
+  }
+
+  async confirmDeleteIssue() {
+    if (!this.projectId || !this.issueId) return;
+
+    if (confirm('この課題を削除してもよろしいですか？\n※この課題に関連するToDoもすべて削除されます。')) {
+      try {
+        // 関連するTodoを削除（サブコレクションから削除）
+        const todosRef = collection(this.firestore, `projects/${this.projectId}/issues/${this.issueId}/todos`);
+        const todosSnapshot = await getDocs(todosRef);
+        const deleteTodoPromises = todosSnapshot.docs.map(doc => deleteDoc(doc.ref));
+        await Promise.all(deleteTodoPromises);
+
+        // 課題を削除
+        const issueRef = doc(this.firestore, `projects/${this.projectId}/issues/${this.issueId}`);
+        await deleteDoc(issueRef);
+
+        // プロジェクト詳細画面に戻る
+        this.router.navigate(['/projects', this.projectId]);
+      } catch (error) {
+        console.error('Error deleting issue:', error);
+        this.error = '課題の削除に失敗しました。';
       }
     }
   }

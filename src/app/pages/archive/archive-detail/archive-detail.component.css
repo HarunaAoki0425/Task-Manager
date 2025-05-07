@@ -13,14 +13,14 @@
   text-align: center;
   margin-bottom: 2rem;
   font-size: 2.2rem;
-  color: #1976d2;
+  color: #333;
   letter-spacing: 0.05em;
 }
 
 .project-title {
   text-align: center;
   font-size: 2.2rem;
-  color: #1976d2;
+  color: #333;
   font-weight: bold;
   margin-bottom: 2.2rem;
   letter-spacing: 0.04em;
@@ -178,7 +178,7 @@
 }
 .issues-section h3 {
   text-align: center;
-  color: #1976d2;
+  color: #333;
   font-size: 1.25rem;
   margin-bottom: 1.5rem;
   letter-spacing: 0.04em;
@@ -274,7 +274,7 @@
   border-bottom: none;
 }
 .info-label {
-  color: #1976d2;
+  color: #333;
   font-weight: 600;
   min-width: 7.5em;
   letter-spacing: 0.03em;
@@ -372,26 +372,51 @@
   }
 }
 
-.issue-card {
-  background: #f3f7fb;
-  border-radius: 8px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
-  padding: 1rem 0.8rem 0.7rem 0.8rem;
-  margin-bottom: 1.1rem;
+.issues-list.vertical-list {
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
-  font-size: 0.98rem;
-  word-break: break-word;
-  overflow-wrap: break-word;
+  gap: 1.2rem;
+  width: 100%;
+}
+.issue-card {
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto 1.2rem auto;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  background: #fafbfc;
+  border: 1.5px solid #e3eaf5;
+  padding: 2rem 2.2rem 1.5rem 2.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+  transition: box-shadow 0.2s, border-color 0.2s, background 0.2s;
+}
+.issue-card:hover {
+  box-shadow: 0 4px 16px rgba(25, 118, 210, 0.10);
+  border-color: #b0c4de;
+  background: #f5f8fa;
 }
 .issue-title {
+  display: inline-flex;
+  align-items: center;
   font-weight: bold;
-  color: #1976d2;
+  color: #333;
   font-size: 1.08rem;
   margin-bottom: 0.2em;
   word-break: break-word;
   overflow-wrap: break-word;
+}
+.issue-meta, .issue-memo, .issue-todos {
+  margin-bottom: 0.5em;
+}
+.issue-memo {
+  color: #666;
+  font-size: 0.97rem;
+  background: #f3f7fb;
+  border-radius: 6px;
+  padding: 0.6em 1em;
+  margin-top: 0.2em;
 }
 .issue-meta {
   display: flex;
@@ -407,12 +432,10 @@
 }
 
 .issue-card-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  margin-bottom: 0.2em;
+  margin-bottom: 0.7em;
 }
 .priority-icon {
+  margin-left: 0.7em;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -424,7 +447,6 @@
   border: none;
   background: #bdbdbd;
   color: #fff;
-  margin-left: 0.5em;
   box-shadow: none;
   letter-spacing: 0.05em;
   text-align: center;
@@ -632,7 +654,7 @@
   margin-right: 0.5em;
 }
 .meta-label {
-  color: #1976d2;
+  color: #333;
   font-weight: 600;
   font-size: 0.98em;
   margin-bottom: 0.1em;
@@ -878,7 +900,6 @@
   font-weight: 500;
 }
 
-
 .remove-member-btn {
   padding: 4px 8px;
   background-color: gray;
@@ -1106,4 +1127,10 @@
   border-radius: 6px;
   margin: 10px 0;
   font-style: italic;
+}
+
+.todo-completed {
+  background: #f0f0f0 !important;
+  color: #888 !important;
+  text-decoration: line-through;
 } 

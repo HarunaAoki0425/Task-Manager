@@ -1,6 +1,6 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { RouterLink, Router } from '@angular/router';
 import {
   Firestore,
   collection,
@@ -12,12 +12,12 @@ import {
   doc,
   setDoc
 } from '@angular/fire/firestore';
-import { AuthService } from '../../services/auth.service';
-import { TodoService } from '../../services/todo.service';
-import { ProjectService } from '../../services/project.service';
+import { AuthService } from '../../../services/auth.service';
+import { TodoService } from '../../../services/todo.service';
+import { ProjectService } from '../../../services/project.service';
 import { Subscription } from 'rxjs';
-import { Todo } from '../../models/todo.model';
-import { User } from '../../models/user.model';
+import { Todo } from '../../../models/todo.model';
+import { User } from '../../../models/user.model';
 
 interface ProjectData {
   id: string;
@@ -51,7 +51,7 @@ export class ArchiveComponent implements OnInit, OnDestroy {
   error: string | null = null;
   private authSubscription: Subscription;
 
-  constructor(private firestore: Firestore, private auth: AuthService, private todoService: TodoService, private projectService: ProjectService) {
+  constructor(private firestore: Firestore, private auth: AuthService, private todoService: TodoService, private projectService: ProjectService, private router: Router) {
     this.authSubscription = this.auth.user$.subscribe(user => {
       if (user) {
         this.loadArchives();
@@ -169,5 +169,9 @@ export class ArchiveComponent implements OnInit, OnDestroy {
     const h = ('00' + date.getHours()).slice(-2);
     const min = ('00' + date.getMinutes()).slice(-2);
     return `${y}/${m}/${d} ${h}:${min}`;
+  }
+
+  goToArchiveDetail(projectId: string) {
+    this.router.navigate(['/archives', projectId]);
   }
 } 

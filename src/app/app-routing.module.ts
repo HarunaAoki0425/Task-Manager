@@ -30,7 +30,15 @@ const routes: Routes = [
   {
     path: 'calendar/:year/:month',
     loadComponent: () => import('./pages/calendar/calendar/calendar.component').then(m => m.CalendarComponent)
-  }
+  },
+  {
+    path: 'archive',
+    loadComponent: () => import('./pages/archive/archive/archive.component').then(m => m.ArchiveComponent)
+  },
+  {
+    path: 'archives/:archiveId',
+    loadComponent: () => import('./pages/archive/archive-detail/archive-detail.component').then(m => m.ArchiveDetailComponent)
+  },
 ];
 
 @NgModule({

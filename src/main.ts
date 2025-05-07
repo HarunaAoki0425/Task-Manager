@@ -7,6 +7,10 @@ import { initializeApp, provideFirebaseApp } from '@angular/fire/app';
 import { getAuth, provideAuth } from '@angular/fire/auth';
 import { getFirestore, provideFirestore } from '@angular/fire/firestore';
 import { environment } from './environments/environment';
+import { registerLocaleData } from '@angular/common';
+import localeJa from '@angular/common/locales/ja';
+
+registerLocaleData(localeJa, 'ja-JP');
 
 bootstrapApplication(AppComponent, {
   providers: [

@@ -1,5 +1,4 @@
 <div class="archive-container">
-  <h1 class="page-title">アーカイブ</h1>
 
   <!-- 完了済みTodo -->
   <section class="archive-section">
@@ -59,10 +58,10 @@
         アーカイブされたプロジェクトはありません
       </div>
 
-      <div *ngFor="let project of archives" class="project-card">
+      <div *ngFor="let project of archives" class="project-card" (click)="goToArchiveDetail(project.id)" style="cursor: pointer;">
         <div class="project-info">
           <h3 class="project-title">
-            <a [routerLink]="['/archives', project.id]">{{ project.title }}</a>
+            {{ project.title }}
           </h3>
           <div class="archive-date">
             <i class="fas fa-archive"></i>
@@ -70,11 +69,11 @@
           </div>
         </div>
         <div class="project-actions">
-          <button class="action-button restore" (click)="restoreProject(project.id)">
+          <button class="action-button restore" (click)="restoreProject(project.id); $event.stopPropagation()">
             <i class="fas fa-undo"></i>
             復元
           </button>
-          <button class="action-button delete" (click)="deleteProject(project.id)">
+          <button class="action-button delete" (click)="deleteProject(project.id); $event.stopPropagation()">
             <i class="fas fa-trash-alt"></i>
             削除
           </button>

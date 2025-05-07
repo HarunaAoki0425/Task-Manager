@@ -389,4 +389,10 @@ export class CalendarComponent implements OnInit {
       default: return 'weekday-weekday'; // 平日
     }
   }
+
+  goToIssueDetail(issue: Issue) {
+    if (issue.projectId && issue.id) {
+      this.router.navigate(['/projects', issue.projectId, 'issues', issue.id]);
+    }
+  }
 } 

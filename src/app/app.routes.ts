@@ -6,7 +6,7 @@ import { ProjectListComponent } from './pages/project/project-list/project-list.
 import { ProjectCreateComponent } from './pages/project/project-create/project-create.component';
 import { SettingComponent } from './pages/setting/setting.component';
 import { ProjectDetailComponent } from './pages/project/project-detail/project-detail.component';
-import { ArchiveComponent } from './pages/archive/archive.component';
+import { ArchiveComponent } from './pages/archive/archive/archive.component';
 import { IssueCreateComponent } from './pages/issue/issue-create/issue-create.component';
 import { IssueDetailComponent } from './pages/issue/issue-detail/issue-detail.component';
 import { TodoListComponent } from './pages/todo/todo-list/todo-list.component';
@@ -14,7 +14,6 @@ import { ArchiveDetailComponent } from './pages/archive/archive-detail/archive-d
 import { authGuard } from './guards/auth.guard';
 import { CalendarComponent } from './pages/calendar/calendar/calendar.component';
 import { CalendarDayComponent } from './pages/calendar/calendar-day/calendar-day.component';
-
 export const routes: Routes = [
   {
     path: '',

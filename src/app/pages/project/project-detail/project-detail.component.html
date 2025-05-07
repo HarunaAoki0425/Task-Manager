@@ -285,7 +285,12 @@
     <!-- コメント欄 -->
     <div class="project-comments-section">
       <h3>コメント</h3>
-      <textarea class="comment-textarea" placeholder="コメントを入力..." [(ngModel)]="commentText"></textarea>
+      <textarea class="comment-textarea" placeholder="コメントを入力..." [(ngModel)]="commentText" (input)="onCommentInput($event)"></textarea>
+      <div class="mention-suggestions" *ngIf="showMentionList">
+        <div class="mention-suggestion" *ngFor="let member of filteredMembers" (click)="selectMention(member)">
+          {{ member.displayName }}
+        </div>
+      </div>
       <button class="comment-post-btn" (click)="postComment()" [disabled]="isPostingComment || !commentText.trim()">投稿</button>
       <div class="comments-list" *ngIf="comments.length > 0">
         <div class="comment-item" *ngFor="let comment of comments">
@@ -294,6 +299,14 @@
             <span class="comment-author">{{ commentAuthors[comment.author?.uid] || '不明' }}</span>
             <span class="comment-date">{{ formatDateTime(comment.createdAt) }}</span>
             <span class="comment-meta-spacer"></span>
+            <button class="comment-like-btn" *ngIf="!hasLiked(comment)" (click)="likeComment(comment.id)">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#e53935" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21C12 21 4 13.5 4 8.5C4 5.42 6.42 3 9.5 3C11.24 3 12.91 4.01 13.44 5.61C13.97 4.01 15.64 3 17.38 3C20.46 3 22.88 5.42 22.88 8.5C22.88 13.5 15 21 15 21H12Z"/></svg>
+              <span class="like-count">{{ comment['liked']?.length || 0 }}</span>
+            </button>
+            <button class="comment-like-btn liked" *ngIf="hasLiked(comment)" (click)="unlikeComment(comment.id)">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="#e53935" stroke="#e53935" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21C12 21 4 13.5 4 8.5C4 5.42 6.42 3 9.5 3C11.24 3 12.91 4.01 13.44 5.61C13.97 4.01 15.64 3 17.38 3C20.46 3 22.88 5.42 22.88 8.5C22.88 13.5 15 21 15 21H12Z"/></svg>
+              <span class="like-count">{{ comment['liked']?.length || 0 }}</span>
+            </button>
             <button class="comment-delete-btn" (click)="deleteComment(comment.id, comment.author?.uid)">
               削除
             </button>

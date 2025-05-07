@@ -26,6 +26,7 @@ export class LoginComponent {
   registerErrorMessage: string = '';
   registerSending: boolean = false;
   registerSuccessMessage: string = '';
+  showPassword: boolean = false;
 
   constructor(
     private authService: AuthService,

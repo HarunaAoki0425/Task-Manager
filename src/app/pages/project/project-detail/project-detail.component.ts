@@ -71,6 +71,10 @@ export class ProjectDetailComponent implements OnInit {
   isPostingComment: boolean = false;
   comments: any[] = [];
   commentAuthors: { [uid: string]: string } = {};
+  showMentionList: boolean = false;
+  mentionQuery: string = '';
+  filteredMembers: any[] = [];
+  mentionStartIndex: number | null = null;
 
   get nonCreatorMembers() {
     return this.projectMembers.filter(member => !member.isCreator);
@@ -526,5 +530,73 @@ export class ProjectDetailComponent implements OnInit {
     } catch (e) {
       console.error('コメント削除エラー', e);
     }
+  }
+
+  onCommentInput(event: any) {
+    const value = event.target.value;
+    const cursorPos = event.target.selectionStart;
+    const textBeforeCursor = value.slice(0, cursorPos);
+    const atIndex = textBeforeCursor.lastIndexOf('@');
+    if (atIndex !== -1 && (atIndex === 0 || /\s/.test(textBeforeCursor[atIndex - 1]))) {
+      this.mentionQuery = textBeforeCursor.slice(atIndex + 1);
+      this.filteredMembers = this.projectMembers.filter(m =>
+        m.displayName.toLowerCase().includes(this.mentionQuery.toLowerCase())
+      );
+      this.showMentionList = this.filteredMembers.length > 0;
+      this.mentionStartIndex = atIndex;
+    } else {
+      this.showMentionList = false;
+      this.mentionStartIndex = null;
+    }
+  }
+
+  selectMention(member: any) {
+    if (this.mentionStartIndex !== null) {
+      const textarea = document.querySelector('.comment-textarea') as HTMLTextAreaElement;
+      const cursorPos = textarea ? textarea.selectionStart : this.commentText.length;
+      const before = this.commentText.slice(0, this.mentionStartIndex);
+      const after = this.commentText.slice(cursorPos);
+      this.commentText = `${before}@${member.displayName} ${after}`;
+      this.showMentionList = false;
+      this.mentionStartIndex = null;
+      setTimeout(() => {
+        if (textarea) {
+          textarea.focus();
+          textarea.selectionStart = textarea.selectionEnd = (before + '@' + member.displayName + ' ').length;
+        }
+      });
+    }
+  }
+
+  async likeComment(commentId: string) {
+    if (!this.project?.id || !this.currentUserId) return;
+    const commentRef = doc(this.firestore, 'projects', this.project.id, 'comments', commentId);
+    const commentSnap = await getDoc(commentRef);
+    if (!commentSnap.exists()) return;
+    const data = commentSnap.data();
+    const likes: string[] = Array.isArray(data['likes']) ? data['likes'] : [];
+    if (!likes.includes(this.currentUserId)) {
+      likes.push(this.currentUserId);
+      await updateDoc(commentRef, { likes });
+      await this.loadComments();
+    }
+  }
+
+  async unlikeComment(commentId: string) {
+    if (!this.project?.id || !this.currentUserId) return;
+    const commentRef = doc(this.firestore, 'projects', this.project.id, 'comments', commentId);
+    const commentSnap = await getDoc(commentRef);
+    if (!commentSnap.exists()) return;
+    const data = commentSnap.data();
+    const likes: string[] = Array.isArray(data['likes']) ? data['likes'] : [];
+    if (likes.includes(this.currentUserId)) {
+      const newLikes = likes.filter(uid => uid !== this.currentUserId);
+      await updateDoc(commentRef, { likes: newLikes });
+      await this.loadComments();
+    }
+  }
+
+  hasLiked(comment: any): boolean {
+    return comment['likes'] && this.currentUserId && comment['likes'].includes(this.currentUserId);
   }
 } 

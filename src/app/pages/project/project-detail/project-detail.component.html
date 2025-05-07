@@ -282,6 +282,25 @@
         </div>
       </div>
     </div>
+    <!-- コメント欄 -->
+    <div class="project-comments-section">
+      <h3>コメント</h3>
+      <textarea class="comment-textarea" placeholder="コメントを入力..." [(ngModel)]="commentText"></textarea>
+      <button class="comment-post-btn" (click)="postComment()" [disabled]="isPostingComment || !commentText.trim()">投稿</button>
+      <div class="comments-list" *ngIf="comments.length > 0">
+        <div class="comment-item" *ngFor="let comment of comments">
+          <div class="comment-content">{{ comment.content }}</div>
+          <div class="comment-meta">
+            <span class="comment-author">{{ commentAuthors[comment.author?.uid] || '不明' }}</span>
+            <span class="comment-date">{{ formatDateTime(comment.createdAt) }}</span>
+            <span class="comment-meta-spacer"></span>
+            <button class="comment-delete-btn" (click)="deleteComment(comment.id, comment.author?.uid)">
+              削除
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </ng-container>
   <div *ngIf="!isLoading && !project">
     <div>プロジェクトが見つかりません。</div>

@@ -71,4 +71,19 @@
       </div>
     </ng-container>
 
+    <!-- コメント欄 -->
+    <div class="archive-comments-section">
+      <h3>コメント</h3>
+      <div class="comments-list" *ngIf="archiveComments.length > 0">
+        <div class="comment-item" *ngFor="let comment of archiveComments">
+          <div class="comment-content">{{ comment.content }}</div>
+          <div class="comment-meta">
+            <span class="comment-author">{{ getArchiveCommentAuthor(comment.author?.uid) }}</span>
+            <span class="comment-date">{{ formatArchiveCommentDate(comment.createdAt) }}</span>
+          </div>
+        </div>
+      </div>
+      <div *ngIf="archiveComments.length === 0" class="no-comments">コメントはありません</div>
+    </div>
+
   </div> 

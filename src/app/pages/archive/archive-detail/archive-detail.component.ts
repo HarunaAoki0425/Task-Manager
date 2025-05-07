@@ -18,6 +18,8 @@ export class ArchiveDetailComponent implements OnInit {
   archivedTodos: { [issueId: string]: any[] } = {};
   archiveProjectMembers: { uid: string; displayName: string; email: string }[] = [];
   creatorName: string = '';
+  archiveComments: any[] = [];
+  archiveCommentAuthors: { [uid: string]: string } = {};
 
   constructor(
     private route: ActivatedRoute,
@@ -78,6 +80,17 @@ export class ArchiveDetailComponent implements OnInit {
         const todosSnap = await getDocs(todosRef);
         this.archivedTodos = { ...this.archivedTodos, [issue.id]: todosSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })) };
         this.cdr.detectChanges();
+      }
+      // コメント一覧
+      const commentsRef = collection(this.firestore, 'archives', projectId, 'comments');
+      const commentsSnap = await getDocs(commentsRef);
+      this.archiveComments = commentsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      // ユーザー名取得
+      const uids = Array.from(new Set(this.archiveComments.map(c => c.author?.uid).filter(Boolean)));
+      for (const uid of uids) {
+        const userRef = doc(this.firestore, 'users', uid);
+        const userSnap = await getDoc(userRef);
+        this.archiveCommentAuthors[uid] = userSnap.exists() ? (userSnap.data()['displayName'] || '不明') : '不明';
       }
     } catch (error) {
       console.error('Error loading archive data:', error);
@@ -153,5 +166,13 @@ export class ArchiveDetailComponent implements OnInit {
 
   trackByTodoId(index: number, todo: any) {
     return todo.id;
+  }
+
+  formatArchiveCommentDate(ts: any): string {
+    if (!ts) return '';
+    return new DatePipe('ja-JP').transform(ts.toDate(), 'yyyy/MM/dd HH:mm') || '';
+  }
+  getArchiveCommentAuthor(uid: string): string {
+    return this.archiveCommentAuthors[uid] || '不明';
   }
 }

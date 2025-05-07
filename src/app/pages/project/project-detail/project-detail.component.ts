@@ -2,7 +2,7 @@ import { Component, NgZone, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Firestore, doc, getDoc, setDoc, deleteDoc, Timestamp, collection, getDocs, updateDoc, query, where, serverTimestamp } from '@angular/fire/firestore';
+import { Firestore, doc, getDoc, setDoc, deleteDoc, Timestamp, collection, getDocs, updateDoc, query, where, serverTimestamp, orderBy } from '@angular/fire/firestore';
 import { ProjectService } from '../../../services/project.service';
 import { AuthService } from '../../../services/auth.service';
 import { Project } from '../../../models/project.model';
@@ -67,6 +67,10 @@ export class ProjectDetailComponent implements OnInit {
   searchResults: { uid: string; displayName: string; email: string; }[] = [];
   currentUserId: string | null = null;
   isSearching = false;
+  commentText: string = '';
+  isPostingComment: boolean = false;
+  comments: any[] = [];
+  commentAuthors: { [uid: string]: string } = {};
 
   get nonCreatorMembers() {
     return this.projectMembers.filter(member => !member.isCreator);
@@ -89,6 +93,7 @@ export class ProjectDetailComponent implements OnInit {
       await this.loadProject(projectId);
       await this.loadProjectMembers();
       await this.loadIssues();
+      await this.loadComments();
     }
   }
 
@@ -454,6 +459,72 @@ export class ProjectDetailComponent implements OnInit {
       } catch (error) {
         console.error('Error removing member:', error);
       }
+    }
+  }
+
+  async loadComments() {
+    if (!this.project?.id) return;
+    const commentsRef = collection(this.firestore, 'projects', this.project.id, 'comments');
+    const q = query(commentsRef, orderBy('createdAt', 'asc'));
+    const snap = await getDocs(q);
+    this.comments = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    // ユニークなuidを抽出
+    const uids = Array.from(new Set(this.comments.map(c => c.author?.uid).filter(uid => !!uid)));
+    this.commentAuthors = {};
+    for (const uid of uids) {
+      const userDoc = await getDoc(doc(this.firestore, 'users', uid));
+      this.commentAuthors[uid] = userDoc.exists() ? (userDoc.data()['displayName'] || '不明') : '不明';
+    }
+  }
+
+  formatDateTime(ts: any): string {
+    if (!ts) return '';
+    let date: Date;
+    if (ts.toDate) {
+      try { date = ts.toDate(); } catch { return String(ts); }
+    } else if (ts instanceof Date) {
+      date = ts;
+    } else if (typeof ts === 'number') {
+      date = new Date(ts * 1000);
+    } else {
+      date = new Date(ts);
+    }
+    const y = date.getFullYear();
+    const m = (date.getMonth() + 1).toString().padStart(2, '0');
+    const d = date.getDate().toString().padStart(2, '0');
+    const h = date.getHours().toString().padStart(2, '0');
+    const min = date.getMinutes().toString().padStart(2, '0');
+    return `${y}/${m}/${d} ${h}:${min}`;
+  }
+
+  async postComment() {
+    if (!this.project?.id || !this.commentText.trim()) return;
+    this.isPostingComment = true;
+    try {
+      const user = this.authService.getCurrentUser();
+      const commentsRef = collection(this.firestore, 'projects', this.project.id, 'comments');
+      await setDoc(doc(commentsRef), {
+        content: this.commentText.trim(),
+        author: user ? { uid: user.uid, displayName: user.displayName || '' } : null,
+        createdAt: Timestamp.now()
+      });
+      this.commentText = '';
+      await this.loadComments();
+    } catch (e) {
+      console.error('コメント投稿エラー', e);
+    } finally {
+      this.isPostingComment = false;
+    }
+  }
+
+  async deleteComment(commentId: string, authorUid: string) {
+    if (!this.project?.id) return;
+    if (!confirm('このコメントを削除しますか？')) return;
+    try {
+      await deleteDoc(doc(this.firestore, 'projects', this.project.id, 'comments', commentId));
+      await this.loadComments();
+    } catch (e) {
+      console.error('コメント削除エラー', e);
     }
   }
 } 

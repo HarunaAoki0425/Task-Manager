@@ -182,6 +182,22 @@ export class ProjectService {
         await deleteDoc(issueRef);
       }
 
+      // コメントを取得
+      const commentsRef = collection(this.firestore, 'projects', projectId, 'comments');
+      const commentsSnap = await getDocs(commentsRef);
+      for (const commentDoc of commentsSnap.docs) {
+        const commentData = commentDoc.data();
+        const archivedCommentRef = doc(collection(this.firestore, 'archives', projectId, 'comments'), commentDoc.id);
+        await setDoc(archivedCommentRef, {
+          ...commentData,
+          archivedAt: Timestamp.now(),
+          isArchived: true
+        });
+        // 元のコメントを削除
+        const commentRef = doc(this.firestore, 'projects', projectId, 'comments', commentDoc.id);
+        await deleteDoc(commentRef);
+      }
+
       // 元のプロジェクトを削除
       await deleteDoc(projectRef);
 
@@ -274,5 +290,49 @@ export class ProjectService {
       throw new Error('プロジェクトの復元に失敗しました: ' + 
         (error instanceof Error ? error.message : '不明なエラーが発生しました'));
     }
+  }
+
+  async deleteArchivedProjectWithSubcollections(projectId: string): Promise<void> {
+    // アーカイブプロジェクトのissuesとtodosをすべて削除
+    const issuesRef = collection(this.firestore, 'archives', projectId, 'issues');
+    const issuesSnap = await getDocs(issuesRef);
+    for (const issueDoc of issuesSnap.docs) {
+      const issueId = issueDoc.id;
+      // todos削除
+      const todosRef = collection(this.firestore, 'archives', projectId, 'issues', issueId, 'todos');
+      const todosSnap = await getDocs(todosRef);
+      for (const todoDoc of todosSnap.docs) {
+        await deleteDoc(doc(this.firestore, 'archives', projectId, 'issues', issueId, 'todos', todoDoc.id));
+      }
+      // issue削除
+      await deleteDoc(doc(this.firestore, 'archives', projectId, 'issues', issueId));
+    }
+    // アーカイブプロジェクトのcommentsをすべて削除
+    const commentsRef = collection(this.firestore, 'archives', projectId, 'comments');
+    const commentsSnap = await getDocs(commentsRef);
+    for (const commentDoc of commentsSnap.docs) {
+      await deleteDoc(doc(this.firestore, 'archives', projectId, 'comments', commentDoc.id));
+    }
+    // プロジェクト本体削除
+    await deleteDoc(doc(this.firestore, 'archives', projectId));
+  }
+
+  async deleteProjectWithSubcollections(projectId: string): Promise<void> {
+    // プロジェクトのissuesとtodosをすべて削除
+    const issuesRef = collection(this.firestore, 'projects', projectId, 'issues');
+    const issuesSnap = await getDocs(issuesRef);
+    for (const issueDoc of issuesSnap.docs) {
+      const issueId = issueDoc.id;
+      // todos削除
+      const todosRef = collection(this.firestore, 'projects', projectId, 'issues', issueId, 'todos');
+      const todosSnap = await getDocs(todosRef);
+      for (const todoDoc of todosSnap.docs) {
+        await deleteDoc(doc(this.firestore, 'projects', projectId, 'issues', issueId, 'todos', todoDoc.id));
+      }
+      // issue削除
+      await deleteDoc(doc(this.firestore, 'projects', projectId, 'issues', issueId));
+    }
+    // プロジェクト本体削除
+    await deleteDoc(doc(this.firestore, 'projects', projectId));
   }
 } 

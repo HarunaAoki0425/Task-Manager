@@ -155,8 +155,7 @@ export class ArchiveComponent implements OnInit, OnDestroy {
 
   async deleteProject(projectId: string) {
     if (!confirm('削除したらもう戻せません。本当に削除しますか？')) return;
-    const archiveRef = doc(this.firestore, 'archives', projectId);
-    await deleteDoc(archiveRef);
+    await this.projectService.deleteArchivedProjectWithSubcollections(projectId);
     await this.loadArchives();
   }
 

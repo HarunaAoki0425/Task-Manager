@@ -420,7 +420,8 @@
 }
 .issue-meta {
   display: flex;
-  gap: 1.2em;
+  gap: 1.5em;
+  align-items: center;
   color: #555;
   font-size: 0.97rem;
   flex-wrap: wrap;
@@ -1133,4 +1134,10 @@
   background: #f0f0f0 !important;
   color: #888 !important;
   text-decoration: line-through;
+}
+
+.todo-meta {
+  display: flex;
+  gap: 1.5em;
+  align-items: center;
 } 

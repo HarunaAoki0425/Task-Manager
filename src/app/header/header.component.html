@@ -4,7 +4,29 @@
       <h1><a routerLink="/home">Task Manager</a></h1>
       <div class="search-box">
         <span class="material-icons search-icon">search</span>
-        <input type="text" placeholder="検索" class="search-input">
+        <input type="text" placeholder="検索" class="search-input" [(ngModel)]="searchText" (keydown.enter)="onSearch()">
+        <div class="search-popup-backdrop" *ngIf="filteredProjects.length > 0" (click)="closeSearchPopup()"></div>
+        <div class="search-popup" *ngIf="filteredProjects.length > 0 || filteredIssues.length > 0 || filteredTodos.length > 0">
+          <button class="close-popup-btn" (click)="closeSearchPopup()">×</button>
+          <div *ngIf="filteredProjects.length > 0">
+            <div class="search-popup-label">プロジェクト</div>
+            <ul>
+              <li *ngFor="let project of filteredProjects" (click)="goToProjectDetail(project)" class="search-result-item">{{ project.title }}</li>
+            </ul>
+          </div>
+          <div *ngIf="filteredIssues.length > 0">
+            <div class="search-popup-label">課題</div>
+            <ul>
+              <li *ngFor="let issue of filteredIssues" (click)="goToIssueDetail(issue)" class="search-result-item">{{ issue.title }}</li>
+            </ul>
+          </div>
+          <div *ngIf="filteredTodos.length > 0">
+            <div class="search-popup-label">ToDo</div>
+            <ul>
+              <li *ngFor="let todo of filteredTodos" (click)="goToTodoParentIssue(todo)" class="search-result-item">{{ todo.title }}</li>
+            </ul>
+          </div>
+        </div>
       </div>
     </div>
     <nav>

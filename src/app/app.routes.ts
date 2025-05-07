@@ -12,7 +12,8 @@ import { IssueDetailComponent } from './pages/issue/issue-detail/issue-detail.co
 import { TodoListComponent } from './pages/todo/todo-list/todo-list.component';
 import { ArchiveDetailComponent } from './pages/archive/archive-detail/archive-detail.component';
 import { authGuard } from './guards/auth.guard';
-import { CalendarComponent } from './pages/calendar/calendar.component';
+import { CalendarComponent } from './pages/calendar/calendar/calendar.component';
+import { CalendarDayComponent } from './pages/calendar/calendar-day/calendar-day.component';
 
 export const routes: Routes = [
   {
@@ -71,7 +72,11 @@ export const routes: Routes = [
       {
         path: 'calendar',
         component: CalendarComponent
-      },  
+      },
+      {
+        path: 'calendar/day/:date',
+        component: CalendarDayComponent
+      },
     ]
   }
 ]; 

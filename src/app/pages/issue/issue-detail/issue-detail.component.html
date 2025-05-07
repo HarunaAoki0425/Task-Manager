@@ -1,6 +1,6 @@
-<div class="issue-detail-container" *ngIf="!isLoading && !error && issue">
+<div class="issue-detail-container" *ngIf="!isLoading && !error && issue && memberDetails && memberDetails.length > 0">
   <div class="header-row">
-    <button class="back-button" (click)="goBack()">← 戻る</button>
+    <button class="back-button" (click)="goBack()">← プロジェクト画面へ戻る</button>
     <div class="action-buttons">
       <button class="edit-button" (click)="togglePopup()">編集</button>
       <button class="delete-button" (click)="confirmDeleteIssue()">削除</button>
@@ -26,9 +26,11 @@
 
       <div class="meta-item">
         <span class="label">担当者:</span>
-        <span>
-          <ng-container *ngFor="let assignee of issue.assignees; let last = last">
-            {{ getMemberDisplayName(assignee) }}{{ !last ? '、' : '' }}
+        <span class="issue-assignees">
+          <ng-container *ngIf="issue.assignees && issue.assignees.length > 0 && memberDetails">
+            <ng-container *ngFor="let uid of issue.assignees; let last = last">
+              {{ getMemberDisplayName(uid) }}<span *ngIf="!last">, </span>
+            </ng-container>
           </ng-container>
         </span>
       </div>

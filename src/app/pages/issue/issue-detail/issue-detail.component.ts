@@ -225,8 +225,9 @@ export class IssueDetailComponent implements OnInit {
   }
 
   getMemberDisplayName(uid: string): string {
+    if (!this.memberDetails) return '';
     if (uid === 'unassigned') {
-      return '未割り当て';
+      return ' ';
     }
     const member = this.memberDetails.find(m => m.uid === uid);
     return member?.displayName || '未割り当て';
@@ -358,8 +359,10 @@ export class IssueDetailComponent implements OnInit {
     const index = this.editingIssue.assignees.indexOf(uid);
     if (index === -1) {
       this.editingIssue.assignees.push(uid);
+      this.editingIssue.assignees = this.editingIssue.assignees.filter(a => a !== 'unassigned');
     } else {
       this.editingIssue.assignees.splice(index, 1);
+      // 0人になっても空配列のまま
     }
   }
 
@@ -377,11 +380,13 @@ export class IssueDetailComponent implements OnInit {
       const issueRef = doc(this.firestore, `projects/${this.projectId}/issues/${this.issueId}`);
       const now = Timestamp.now();
 
+      const assignees = this.editingIssue.assignees.filter(a => a !== 'unassigned');
+
       const updatedIssue = {
         title: this.editingIssue.title,
         startDate: this.convertToTimestamp(this.editingIssue.startDate),
         dueDate: this.convertToTimestamp(this.editingIssue.dueDate),
-        assignees: this.editingIssue.assignees.length > 0 ? this.editingIssue.assignees : ['unassigned'],
+        assignees, // 空配列もそのまま保存
         priority: this.editingIssue.priority,
         memo: this.editingIssue.memo,
         updatedAt: now

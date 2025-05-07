@@ -1,0 +1,57 @@
+<div class="calendar-day-container">
+  <h2 *ngIf="selectedDateObj; else noDate">
+    {{ selectedDateObj?.getFullYear() }}年{{ (selectedDateObj?.getMonth() ?? 0) + 1 }}月{{ selectedDateObj?.getDate() ?? '' }}日の予定
+  </h2>
+  <ng-template #noDate>
+    <h2>日付不明の予定</h2>
+  </ng-template>
+
+  <div *ngIf="isLoading">読み込み中...</div>
+  <div *ngIf="error" class="error">{{ error }}</div>
+
+  <div class="calendar-day-main">
+    <button class="back-to-calendar" (click)="goToCalendar()">←カレンダーへ戻る</button>
+    <section class="section issue-section">
+      <h3>稼働中の課題</h3>
+      <div class="issue-list">
+        <ng-container *ngIf="!isLoading && !error">
+          <div *ngIf="issues.length === 0" class="empty">この日の課題はありません</div>
+          <ul *ngIf="issues.length > 0">
+            <li *ngFor="let issue of issues">
+              <div class="issue-card" [style.--issue-bg]="issue.projectColor || '#e3f2fd'" (click)="goToIssueDetail(issue)">
+                <div class="issue-card-left">
+                  <div class="issue-title">{{ issue.title }}</div>
+                  <div class="issue-meta">
+                    <!-- ここに優先度や担当者など他の情報があれば追加 -->
+                  </div>
+                </div>
+                <div class="issue-card-right">
+                  <span class="issue-date">期限日：{{ issue.dueDate.toDate() | date:'MM/dd' }}</span>
+                  <span class="issue-status">ステータス：{{ issue.status }}</span>
+                </div>
+              </div>
+            </li>
+          </ul>
+        </ng-container>
+      </div>
+    </section>
+
+    <section class="section todo-section">
+      <h3>今日のToDo</h3>
+      <div class="todo-list">
+        <ng-container *ngIf="!isLoading && !error">
+          <div *ngIf="incompleteTodos.length === 0" class="empty">今日のToDoはありません</div>
+          <ul *ngIf="incompleteTodos.length > 0">
+            <li *ngFor="let todo of incompleteTodos">
+              <div class="todo-card" [style.--todo-border]="todo.projectColor || '#b3c6e0'">
+                <span class="todo-title">{{ todo.title }}</span>
+                <span class="todo-time">{{ todo.dueDate.toDate() | date:'HH:mm' }}</span>
+                <input type="checkbox" class="todo-checkbox" [checked]="todo.completed" (change)="toggleTodoComplete(todo)" style="margin-left: 12px;" />
+              </div>
+            </li>
+          </ul>
+        </ng-container>
+      </div>
+    </section>
+  </div>
+</div>

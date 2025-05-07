@@ -183,6 +183,10 @@ export class IssueCreateComponent implements OnInit {
       this.message = 'タイトル、開始日、期限日は必須項目です。';
       return;
     }
+    if (this.dueDate < this.startDate) {
+      this.message = '期限日は開始日以降の日付を選択してください。';
+      return;
+    }
 
     try {
       // プロジェクトの色を取得
@@ -212,9 +216,10 @@ export class IssueCreateComponent implements OnInit {
       if (this.todos.length > 0) {
         console.log('保存前のToDoリスト:', this.todos);
         const saveTodoPromises = this.todos.map(todo => {
+          // idフィールドを除外
+          const { id, ...todoWithoutId } = todo;
           const todoData = {
-            ...todo,
-            id: undefined,
+            ...todoWithoutId,
             issueId: this.issueId,
             issueTitle: this.title,
             assignee: todo.assignee || 'unassigned',

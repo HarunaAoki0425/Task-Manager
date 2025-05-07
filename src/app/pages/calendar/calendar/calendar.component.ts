@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { Auth, User } from '@angular/fire/auth';
 import { addDays, startOfWeek } from 'date-fns';
 import { Firestore, collection, query, where, getDocs, doc, getDoc, Timestamp, updateDoc, serverTimestamp } from '@angular/fire/firestore';
@@ -69,9 +69,11 @@ export class CalendarComponent implements OnInit {
   userIssues: Issue[] = [];
   userTodos: Todo[] = [];
   selectedProjectId: string | null = null;
+  contentFilter: 'all' | 'issue' | 'todo' = 'all';
 
   constructor(
     private router: Router,
+    private route: ActivatedRoute,
     private auth: Auth,
     private firestore: Firestore
   ) {
@@ -181,14 +183,25 @@ export class CalendarComponent implements OnInit {
   }
 
   ngOnInit() {
-    // 認証状態の監視を開始
+    this.route.paramMap.subscribe(params => {
+      const year = params.get('year');
+      const month = params.get('month');
+      if (year && month) {
+        this.displayYear = +year;
+        this.displayMonth = +month;
+        this.generateCalendar();
+      } else {
+        this.displayYear = this.currentYear;
+        this.displayMonth = this.currentMonth;
+        this.generateCalendar();
+      }
+    });
+
     this.auth.onAuthStateChanged(user => {
       this.currentUser = user;
       if (!user) {
-        // 未認証の場合はログイン画面にリダイレクト
         this.router.navigate(['/login']);
       } else {
-        // ユーザーが認証されている場合、プロジェクトとissueを取得
         this.fetchUserProjects(user.uid);
       }
     });
@@ -357,6 +370,23 @@ export class CalendarComponent implements OnInit {
       todo.completedAt = newCompleted ? new Date() : null;
     } catch (error) {
       console.error('Error updating todo completion status:', error);
+    }
+  }
+
+  goToDayView(day: CalendarDay): void {
+    const y = day.fullDate.getFullYear();
+    const m = (day.fullDate.getMonth() + 1).toString().padStart(2, '0');
+    const d = day.fullDate.getDate().toString().padStart(2, '0');
+    const dateStr = `${y}-${m}-${d}`;
+    this.router.navigate(['/calendar/day', dateStr]);
+  }
+
+  getDayHeaderClass(day: CalendarDay): string {
+    const weekday = day.fullDate.getDay();
+    switch (weekday) {
+      case 0: return 'weekday-sun'; // 日曜
+      case 6: return 'weekday-sat'; // 土曜
+      default: return 'weekday-weekday'; // 平日
     }
   }
 } 

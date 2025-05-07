@@ -25,7 +25,11 @@ const routes: Routes = [
   },
   {
     path: 'calendar',
-    loadComponent: () => import('./pages/calendar/calendar.component').then(m => m.CalendarComponent)
+    loadComponent: () => import('./pages/calendar/calendar/calendar.component').then(m => m.CalendarComponent)
+  },
+  {
+    path: 'calendar/:year/:month',
+    loadComponent: () => import('./pages/calendar/calendar/calendar.component').then(m => m.CalendarComponent)
   }
 ];
 

@@ -3,7 +3,7 @@ import { CommonModule, DatePipe } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Project } from '../../../models/project.model';
 import { ProjectService } from '../../../services/project.service';
-import { Timestamp, Firestore, doc, getDoc, collection, getDocs } from '@angular/fire/firestore';
+import { Timestamp, Firestore, doc, getDoc, collection, getDocs, writeBatch, setDoc } from '@angular/fire/firestore';
 
 @Component({
   selector: 'app-archive-detail',
@@ -84,9 +84,20 @@ export class ArchiveDetailComponent implements OnInit {
       // コメント一覧
       const commentsRef = collection(this.firestore, 'archives', projectId, 'comments');
       const commentsSnap = await getDocs(commentsRef);
-      this.archiveComments = commentsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      // ユーザー名取得
-      const uids = Array.from(new Set(this.archiveComments.map(c => c.author?.uid).filter(Boolean)));
+      this.archiveComments = [];
+      const uids = new Set<string>();
+      for (const docSnap of commentsSnap.docs) {
+        const comment = { id: docSnap.id, ...docSnap.data(), replies: [] as any[] } as any;
+        // repliesサブコレクション取得
+        const repliesRef = collection(this.firestore, 'archives', projectId, 'comments', comment.id, 'replies');
+        const repliesSnap = await getDocs(repliesRef);
+        comment.replies = repliesSnap.docs.map(r => ({ id: r.id, ...r.data() }));
+        this.archiveComments.push(comment);
+        if (comment.author?.uid) uids.add(comment.author.uid);
+        for (const reply of comment.replies) {
+          if (reply.user?.uid) uids.add(reply.user.uid);
+        }
+      }
       for (const uid of uids) {
         const userRef = doc(this.firestore, 'users', uid);
         const userSnap = await getDoc(userRef);
@@ -174,5 +185,55 @@ export class ArchiveDetailComponent implements OnInit {
   }
   getArchiveCommentAuthor(uid: string): string {
     return this.archiveCommentAuthors[uid] || '不明';
+  }
+
+  async restoreProjectWithCommentsAndReplies() {
+    if (!this.project?.id) return;
+    const projectId = this.project.id;
+    try {
+      // 1. まずarchives/{projectId}から本体データを取得し、projects/{projectId}本体を作成
+      const archiveProjectRef = doc(this.firestore, 'archives', projectId);
+      const archiveProjectSnap = await getDoc(archiveProjectRef);
+      if (!archiveProjectSnap.exists()) {
+        alert('アーカイブプロジェクトが見つかりません');
+        return;
+      }
+      const projectData = archiveProjectSnap.data();
+      await setDoc(doc(this.firestore, 'projects', projectId), projectData);
+
+      // 2. commentsとrepliesをprojects配下にコピー＆アーカイブ側を削除
+      const commentsRef = collection(this.firestore, 'archives', projectId, 'comments');
+      const commentsSnap = await getDocs(commentsRef);
+      const batch = writeBatch(this.firestore);
+
+      for (const commentDoc of commentsSnap.docs) {
+        const commentData = commentDoc.data();
+        const commentId = commentDoc.id;
+        // 復元先にコメントをコピー
+        const restoreCommentRef = doc(this.firestore, 'projects', projectId, 'comments', commentId);
+        batch.set(restoreCommentRef, commentData);
+
+        // replies取得
+        const repliesRef = collection(this.firestore, 'archives', projectId, 'comments', commentId, 'replies');
+        const repliesSnap = await getDocs(repliesRef);
+        for (const replyDoc of repliesSnap.docs) {
+          const replyData = replyDoc.data();
+          const replyId = replyDoc.id;
+          // 復元先にリプライをコピー
+          const restoreReplyRef = doc(this.firestore, 'projects', projectId, 'comments', commentId, 'replies', replyId);
+          batch.set(restoreReplyRef, replyData);
+          // アーカイブ側のリプライを削除
+          batch.delete(replyDoc.ref);
+        }
+        // アーカイブ側のコメントを削除
+        batch.delete(commentDoc.ref);
+      }
+      await batch.commit();
+
+      alert('プロジェクト・コメント・リプライの復元が完了しました');
+    } catch (error) {
+      console.error('Error restoring project, comments and replies:', error);
+      alert('復元に失敗しました');
+    }
   }
 }

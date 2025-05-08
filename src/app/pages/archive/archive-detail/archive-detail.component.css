@@ -1144,51 +1144,113 @@
 
 .archive-comments-section {
   margin-top: 2.5rem;
-  background: #f8fafd;
-  border-radius: 10px;
-  padding: 2rem 1vw 2.5rem 1vw;
-  box-shadow: 0 1px 6px rgba(0,0,0,0.04);
-  width: 100%;
-  max-width: none;
+  padding: 1.5rem 0 0 0;
 }
-.archive-comments-section h3 {
-  text-align: center;
-  color: #333;
-  font-size: 1.25rem;
-  margin-bottom: 1.5rem;
-  letter-spacing: 0.04em;
-}
+
 .comments-list {
-  margin-top: 1.2rem;
-  border-top: 1px solid #e3eaf5;
-  padding-top: 1.2rem;
+  min-height: 14.4em;
+  max-height: 14.4em;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
 }
+
 .comment-item {
-  margin-bottom: 1.3rem;
-  padding-bottom: 0.7rem;
-  border-bottom: 1px solid #f0f0f0;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(25, 118, 210, 0.07);
+  padding: 1.1rem 1.3rem 0.7rem 1.3rem;
+  margin-bottom: 0;
+  border: 1px solid #e3eaf5;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  position: relative;
+  transition: box-shadow 0.2s;
 }
+.comment-item:hover {
+  box-shadow: 0 4px 16px rgba(25, 118, 210, 0.13);
+}
+
 .comment-content {
   font-size: 1.08rem;
   color: #222;
-  margin-bottom: 0.3em;
+  margin-bottom: 0.2em;
   white-space: pre-line;
+  line-height: 1.7;
+  word-break: break-word;
 }
+
 .comment-meta {
-  font-size: 0.93rem;
-  color: #888;
   display: flex;
-  gap: 1.2em;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.97em;
+  color: #888;
+  margin-bottom: 0.2em;
+  flex-wrap: wrap;
 }
 .comment-author {
-  font-weight: 500;
+  font-weight: 600;
   color: #1976d2;
 }
 .comment-date {
   font-family: monospace;
+  color: #888;
+  font-size: 0.96em;
 }
+
+.replies-list {
+  margin: 10px 0 0 0;
+  padding: 10px 12px 10px 18px;
+  border-left: 3px solid #e3e3e3;
+  background: #f5f7fa;
+  border-radius: 0 8px 8px 0;
+  max-height: 5.2em;
+  overflow-y: auto;
+  direction: rtl;
+  text-align: left;
+}
+.reply-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 6px;
+  font-size: 0.97em;
+  direction: ltr;
+}
+.reply-content {
+  color: #333;
+  word-break: break-all;
+  flex: 1 1 auto;
+}
+.reply-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #888;
+  font-size: 0.92em;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.reply-author {
+  color: #1976d2;
+  font-weight: bold;
+  margin-right: 4px;
+}
+.reply-date {
+  color: #888;
+  font-size: 0.92em;
+}
+.reply-item:last-child {
+  margin-bottom: 0;
+}
+
 .no-comments {
+  color: #888;
   text-align: center;
-  color: #aaa;
-  margin-top: 1.5rem;
+  margin-top: 2em;
+  font-size: 1.1em;
 } 

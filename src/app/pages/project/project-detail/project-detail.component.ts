@@ -1,11 +1,12 @@
-import { Component, NgZone, OnInit } from '@angular/core';
+import { Component, NgZone, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Firestore, doc, getDoc, setDoc, deleteDoc, Timestamp, collection, getDocs, updateDoc, query, where, serverTimestamp, orderBy } from '@angular/fire/firestore';
+import { Firestore, doc, getDoc, setDoc, deleteDoc, Timestamp, collection, getDocs, updateDoc, query, where, serverTimestamp, orderBy, writeBatch, collection as fsCollection, doc as fsDoc, setDoc as fsSetDoc, deleteDoc as fsDeleteDoc } from '@angular/fire/firestore';
 import { ProjectService } from '../../../services/project.service';
 import { AuthService } from '../../../services/auth.service';
 import { Project } from '../../../models/project.model';
+import { Subscription } from 'rxjs';
 
 interface Issue {
   id: string;
@@ -28,7 +29,7 @@ interface Issue {
   templateUrl: './project-detail.component.html',
   styleUrls: ['./project-detail.component.css']
 })
-export class ProjectDetailComponent implements OnInit {
+export class ProjectDetailComponent implements OnInit, OnDestroy {
   project: Project | null = null;
   creatorName: string = '';
   isLoading = true;
@@ -66,6 +67,7 @@ export class ProjectDetailComponent implements OnInit {
   searchQuery = '';
   searchResults: { uid: string; displayName: string; email: string; }[] = [];
   currentUserId: string | null = null;
+  private userSub: Subscription | undefined;
   isSearching = false;
   commentText: string = '';
   isPostingComment: boolean = false;
@@ -75,9 +77,26 @@ export class ProjectDetailComponent implements OnInit {
   mentionQuery: string = '';
   filteredMembers: any[] = [];
   mentionStartIndex: number | null = null;
+  // コメントごとのローカルいいね状態
+  commentLikeStates: { [commentId: string]: boolean } = {};
+  replyingCommentId: string | null = null;
+  replyText: string = '';
+  // 返信用メンション状態
+  replyShowMentionList: boolean = false;
+  replyMentionQuery: string = '';
+  replyFilteredMembers: any[] = [];
+  replyMentionStartIndex: number | null = null;
+  expandedReplies: { [commentId: string]: boolean } = {};
 
   get nonCreatorMembers() {
     return this.projectMembers.filter(member => !member.isCreator);
+  }
+
+  get filteredMembersWithAll() {
+    return [
+      { uid: 'all', displayName: 'All' },
+      ...this.filteredMembers
+    ];
   }
 
   constructor(
@@ -92,6 +111,10 @@ export class ProjectDetailComponent implements OnInit {
   }
 
   async ngOnInit() {
+    // ユーザー情報の購読
+    this.userSub = this.authService.user$.subscribe(user => {
+      this.currentUserId = user?.uid || null;
+    });
     const projectId = this.route.snapshot.paramMap.get('id');
     if (projectId) {
       await this.loadProject(projectId);
@@ -230,6 +253,47 @@ export class ProjectDetailComponent implements OnInit {
 
     if (confirm('このプロジェクトをアーカイブしますか？\n※プロジェクト内のすべての課題とToDoもアーカイブされます。')) {
       try {
+        // 1. まず親アーカイブドキュメントを作成
+        await setDoc(doc(this.firestore, 'archives', this.project.id), {
+          createdBy: this.project.createdBy,
+          members: this.project.members,
+          // 他のプロジェクト情報も必要に応じて追加
+        });
+
+        // 2. commentsとrepliesをバッチでコピー＆削除
+        const commentsRef = collection(this.firestore, 'projects', this.project.id, 'comments');
+        const commentsSnap = await getDocs(commentsRef);
+        const batch = writeBatch(this.firestore);
+
+        for (const commentDoc of commentsSnap.docs) {
+          const commentData = commentDoc.data();
+          const commentId = commentDoc.id;
+
+          // アーカイブ先にコメントをコピー
+          const archiveCommentRef = doc(this.firestore, 'archives', this.project.id, 'comments', commentId);
+          batch.set(archiveCommentRef, commentData);
+
+          // replies取得
+          const repliesRef = collection(this.firestore, 'projects', this.project.id, 'comments', commentId, 'replies');
+          const repliesSnap = await getDocs(repliesRef);
+
+          for (const replyDoc of repliesSnap.docs) {
+            const replyData = replyDoc.data();
+            const replyId = replyDoc.id;
+            // アーカイブ先にリプライをコピー
+            const archiveReplyRef = doc(this.firestore, 'archives', this.project.id, 'comments', commentId, 'replies', replyId);
+            batch.set(archiveReplyRef, replyData);
+            // 元のリプライを削除
+            batch.delete(replyDoc.ref);
+          }
+
+          // 元のコメントを削除
+          batch.delete(commentDoc.ref);
+        }
+
+        await batch.commit();
+
+        // 既存のプロジェクトアーカイブ処理
         await this.projectService.archiveProject(this.project.id);
         this.router.navigate(['/projects']);
       } catch (error) {
@@ -471,9 +535,21 @@ export class ProjectDetailComponent implements OnInit {
     const commentsRef = collection(this.firestore, 'projects', this.project.id, 'comments');
     const q = query(commentsRef, orderBy('createdAt', 'asc'));
     const snap = await getDocs(q);
-    this.comments = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    this.comments = [];
     // ユニークなuidを抽出
-    const uids = Array.from(new Set(this.comments.map(c => c.author?.uid).filter(uid => !!uid)));
+    const uids = new Set<string>();
+    for (const docSnap of snap.docs) {
+      const comment = { id: docSnap.id, ...docSnap.data(), replies: [] as any[] } as any;
+      // repliesサブコレクション取得
+      const repliesRef = collection(this.firestore, 'projects', this.project.id, 'comments', comment.id, 'replies');
+      const repliesSnap = await getDocs(repliesRef);
+      comment.replies = repliesSnap.docs.map(r => ({ id: r.id, ...r.data() }));
+      this.comments.push(comment);
+      if (comment.author?.uid) uids.add(comment.author.uid);
+      for (const reply of comment.replies) {
+        if (reply.user?.uid) uids.add(reply.user.uid);
+      }
+    }
     this.commentAuthors = {};
     for (const uid of uids) {
       const userDoc = await getDoc(doc(this.firestore, 'users', uid));
@@ -568,35 +644,144 @@ export class ProjectDetailComponent implements OnInit {
     }
   }
 
-  async likeComment(commentId: string) {
+  toggleLike(commentId: string) {
+    this.commentLikeStates[commentId] = !this.commentLikeStates[commentId];
+  }
+
+  async likeComment(comment: any) {
     if (!this.project?.id || !this.currentUserId) return;
-    const commentRef = doc(this.firestore, 'projects', this.project.id, 'comments', commentId);
-    const commentSnap = await getDoc(commentRef);
-    if (!commentSnap.exists()) return;
-    const data = commentSnap.data();
-    const likes: string[] = Array.isArray(data['likes']) ? data['likes'] : [];
+    const commentRef = doc(this.firestore, 'projects', this.project.id, 'comments', comment.id);
+    const likes: string[] = Array.isArray(comment['likes']) ? [...comment['likes']] : [];
     if (!likes.includes(this.currentUserId)) {
       likes.push(this.currentUserId);
       await updateDoc(commentRef, { likes });
-      await this.loadComments();
+      comment['likes'] = likes;
     }
   }
 
-  async unlikeComment(commentId: string) {
-    if (!this.project?.id || !this.currentUserId) return;
-    const commentRef = doc(this.firestore, 'projects', this.project.id, 'comments', commentId);
-    const commentSnap = await getDoc(commentRef);
-    if (!commentSnap.exists()) return;
-    const data = commentSnap.data();
-    const likes: string[] = Array.isArray(data['likes']) ? data['likes'] : [];
-    if (likes.includes(this.currentUserId)) {
-      const newLikes = likes.filter(uid => uid !== this.currentUserId);
-      await updateDoc(commentRef, { likes: newLikes });
-      await this.loadComments();
-    }
-  }
-
+  /**
+   * 指定コメントにログインユーザーがいいねしているか判定
+   */
   hasLiked(comment: any): boolean {
-    return comment['likes'] && this.currentUserId && comment['likes'].includes(this.currentUserId);
+    if (!this.currentUserId) {
+      return false;
+    }
+    const likes: string[] = Array.isArray(comment['likes']) ? comment['likes'] : [];
+    return likes.includes(this.currentUserId);
+  }
+
+  /**
+   * 指定コメントのlikesからログインユーザーを削除（いいね解除）
+   */
+  async unlikeComment(comment: any) {
+    if (!this.project?.id || !this.currentUserId) return;
+    const commentRef = doc(this.firestore, 'projects', this.project.id, 'comments', comment.id);
+    const likes: string[] = Array.isArray(comment['likes']) ? [...comment['likes']] : [];
+    const index = likes.indexOf(this.currentUserId);
+    if (index !== -1) {
+      likes.splice(index, 1);
+      await updateDoc(commentRef, { likes });
+      comment['likes'] = likes;
+    }
+  }
+
+  openReplyPopup(commentId: string) {
+    this.replyingCommentId = commentId;
+    this.replyText = '';
+  }
+
+  closeReplyPopup() {
+    this.replyingCommentId = null;
+    this.replyText = '';
+  }
+
+  onReplyInput(event: any) {
+    const value = event.target.value;
+    const cursorPos = event.target.selectionStart;
+    const textBeforeCursor = value.slice(0, cursorPos);
+    const atIndex = textBeforeCursor.lastIndexOf('@');
+    if (atIndex !== -1 && (atIndex === 0 || /\s/.test(textBeforeCursor[atIndex - 1]))) {
+      this.replyMentionQuery = textBeforeCursor.slice(atIndex + 1);
+      // プロジェクトメンバー全員＋@Allでフィルタ
+      const allMembers = [
+        { uid: 'all', displayName: 'All' },
+        ...this.projectMembers
+      ];
+      this.replyFilteredMembers = allMembers.filter(m =>
+        m.displayName.toLowerCase().includes(this.replyMentionQuery.toLowerCase())
+      );
+      this.replyShowMentionList = this.replyFilteredMembers.length > 0;
+      this.replyMentionStartIndex = atIndex;
+    } else {
+      this.replyShowMentionList = false;
+      this.replyMentionStartIndex = null;
+    }
+  }
+
+  selectReplyMention(member: any) {
+    if (this.replyMentionStartIndex !== null) {
+      const textarea = document.querySelector('.reply-textarea') as HTMLTextAreaElement;
+      const cursorPos = textarea ? textarea.selectionStart : this.replyText.length;
+      const before = this.replyText.slice(0, this.replyMentionStartIndex);
+      const after = this.replyText.slice(cursorPos);
+      this.replyText = `${before}@${member.displayName} ${after}`;
+      this.replyShowMentionList = false;
+      this.replyMentionStartIndex = null;
+      setTimeout(() => {
+        if (textarea) {
+          textarea.focus();
+          textarea.selectionStart = textarea.selectionEnd = (before + '@' + member.displayName + ' ').length;
+        }
+      });
+    }
+  }
+
+  async sendReply(comment: any) {
+    if (!this.project?.id || !this.replyText.trim() || !this.currentUserId) return;
+    const user = this.authService.getCurrentUser();
+    const repliesRef = collection(this.firestore, 'projects', this.project.id, 'comments', comment.id, 'replies');
+    const replyData = {
+      user: user ? { uid: user.uid, displayName: user.displayName || '' } : null,
+      content: this.replyText.trim(),
+      createdAt: Timestamp.now()
+    };
+    await setDoc(doc(repliesRef), replyData);
+    // ローカルにも即時反映
+    if (!comment.replies) comment.replies = [];
+    comment.replies.push({
+      ...replyData,
+      id: Math.random().toString(36).slice(2) // 仮ID
+    });
+    this.replyText = '';
+    this.replyingCommentId = null;
+    this.replyShowMentionList = false;
+    this.replyMentionQuery = '';
+    this.replyMentionStartIndex = null;
+  }
+
+  getRepliesSorted(comment: any) {
+    return [...(comment.replies || [])].sort((a, b) => {
+      const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt);
+      const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt);
+      return dateB.getTime() - dateA.getTime(); // 降順
+    });
+  }
+
+  getCommentsSorted() {
+    return [...(this.comments || [])].sort((a, b) => {
+      const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt);
+      const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt);
+      return dateB.getTime() - dateA.getTime(); // 降順
+    });
+  }
+
+  toggleReplies(commentId: string) {
+    this.expandedReplies[commentId] = !this.expandedReplies[commentId];
+  }
+
+  ngOnDestroy() {
+    if (this.userSub) {
+      this.userSub.unsubscribe();
+    }
   }
 } 

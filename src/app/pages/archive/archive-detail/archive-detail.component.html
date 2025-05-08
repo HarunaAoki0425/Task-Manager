@@ -81,6 +81,16 @@
             <span class="comment-author">{{ getArchiveCommentAuthor(comment.author?.uid) }}</span>
             <span class="comment-date">{{ formatArchiveCommentDate(comment.createdAt) }}</span>
           </div>
+          <!-- 返信リスト -->
+          <div class="replies-list" *ngIf="comment.replies && comment.replies.length > 0">
+            <div class="reply-item" *ngFor="let reply of comment.replies">
+              <span class="reply-content">{{ reply.content }}</span>
+              <span class="reply-meta">
+                <span class="reply-author">{{ getArchiveCommentAuthor(reply.user?.uid) }}</span>
+                <span class="reply-date">{{ formatArchiveCommentDate(reply.createdAt) }}</span>
+              </span>
+            </div>
+          </div>
         </div>
       </div>
       <div *ngIf="archiveComments.length === 0" class="no-comments">コメントはありません</div>

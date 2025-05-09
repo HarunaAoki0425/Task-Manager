@@ -6,7 +6,7 @@
     <div class="displayname-row">
       <strong>ユーザー名:</strong>
       <ng-container *ngIf="!isEditing; else editBlock">
-        <span class="displayname-text">{{ displayName || 'no name' }}</span>
+        <span class="displayname-text">{{ displayName || 'no-name' }}</span>
         <button (click)="startEdit()" class="edit-btn">変更</button>
       </ng-container>
       <ng-template #editBlock>

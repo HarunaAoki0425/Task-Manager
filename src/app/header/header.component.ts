@@ -52,6 +52,9 @@ export class HeaderComponent {
   }
 
   async logout() {
+    if (!confirm('ログアウトしますか？')) {
+      return;
+    }
     try {
       await this.authService.logout();
       await this.router.navigate(['/login']);

@@ -74,6 +74,11 @@ export class SettingComponent implements OnInit {
       this.isSaving = false;
       return;
     }
+    if (this.displayNameInput.includes(' ')) {
+      this.message = 'ユーザー名にスペースは使えません。';
+      this.isSaving = false;
+      return;
+    }
     try {
       const newName = this.displayNameInput.trim() || 'no name';
       const userDoc = doc(this.firestore, 'users', user.uid);

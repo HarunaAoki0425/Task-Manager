@@ -32,6 +32,7 @@ interface Issue {
 })
 export class ProjectDetailComponent implements OnInit, OnDestroy {
   project: Project | null = null;
+  projectTitle: string = '';
   creatorName: string = '';
   isLoading = true;
   isArchiving = false;
@@ -136,6 +137,7 @@ export class ProjectDetailComponent implements OnInit, OnDestroy {
           id: projectSnap.id,
           ...data
         } as Project;
+        this.projectTitle = data['title'] || '';
         this.isArchived = data['isArchived'] || false;  // アーカイブ状態を設定
         
         // クリエイター情報を取得
@@ -595,17 +597,76 @@ export class ProjectDetailComponent implements OnInit, OnDestroy {
     return `${y}/${m}/${d} ${h}:${min}`;
   }
 
+  // コメント本文から@メンション（@displayName/@All）を抽出しuid配列で返す
+  extractMentionUids(content: string): string[] {
+    const mentionPattern = /@([^\s@]+)/g;
+    const mentions: string[] = [];
+    let match;
+    let allMentioned = false;
+
+    console.log('[DEBUG] projectMembers:', this.projectMembers);
+
+    while ((match = mentionPattern.exec(content)) !== null) {
+      const displayName = match[1];
+      console.log('[DEBUG] 抽出displayName:', displayName);
+      if (displayName === 'All') {
+        allMentioned = true;
+      } else {
+        const member = this.projectMembers?.find(m => m.displayName.trim().toLowerCase() === displayName.trim().toLowerCase());
+        console.log('[DEBUG] member found for', displayName, ':', member);
+        if (member && member.uid) {
+          mentions.push(member.uid);
+        }
+      }
+    }
+
+    if (allMentioned && this.projectMembers) {
+      mentions.push(...this.projectMembers.filter(m => m.uid !== this.currentUserId).map(m => m.uid));
+    }
+
+    // 重複排除
+    return Array.from(new Set(mentions));
+  }
+
+  // コメント本文から@メンションを除去
+  removeMentions(text: string): string {
+    return text.replace(/@[^ -\s@]+ ?/g, '').trim();
+  }
+
+  // コメント投稿
   async postComment() {
     if (!this.project?.id || !this.commentText.trim()) return;
     this.isPostingComment = true;
     try {
       const user = this.authService.getCurrentUser();
       const commentsRef = collection(this.firestore, 'projects', this.project.id, 'comments');
+      const mentions = this.extractMentionUids(this.commentText.trim());
       await setDoc(doc(commentsRef), {
         content: this.commentText.trim(),
         author: user ? { uid: user.uid, displayName: user.displayName || '' } : null,
-        createdAt: Timestamp.now()
+        createdAt: Timestamp.now(),
+        mentions: mentions
       });
+
+      // メンション通知を作成
+      if (mentions.length > 0) {
+        const notificationsRef = collection(this.firestore, 'notifications');
+        const contentWithoutMentions = this.removeMentions(this.commentText.trim());
+        let contentPreview = contentWithoutMentions.slice(0, 10);
+        if (contentWithoutMentions.length > 10) {
+          contentPreview += '・・・';
+        }
+        await addDoc(notificationsRef, {
+          createdAt: Timestamp.now(),
+          title: this.projectTitle,
+          message: `コメントでメンションされました。「${contentPreview}」`,
+          recipients: mentions,
+          read: false,
+          projectId: this.project?.id,
+          content: this.commentText.trim()
+        });
+      }
+
       this.commentText = '';
       await this.loadComments();
     } catch (e) {
@@ -634,7 +695,8 @@ export class ProjectDetailComponent implements OnInit, OnDestroy {
     if (atIndex !== -1 && (atIndex === 0 || /\s/.test(textBeforeCursor[atIndex - 1]))) {
       this.mentionQuery = textBeforeCursor.slice(atIndex + 1);
       this.filteredMembers = this.projectMembers.filter(m =>
-        m.displayName.toLowerCase().includes(this.mentionQuery.toLowerCase())
+        m.displayName.toLowerCase().includes(this.mentionQuery.toLowerCase()) &&
+        m.uid !== this.currentUserId
       );
       this.showMentionList = this.filteredMembers.length > 0;
       this.mentionStartIndex = atIndex;
@@ -674,6 +736,26 @@ export class ProjectDetailComponent implements OnInit, OnDestroy {
       likes.push(this.currentUserId);
       await updateDoc(commentRef, { likes });
       comment['likes'] = likes;
+
+      // --- 通知作成 ---
+      if (comment.author?.uid && comment.author.uid !== this.currentUserId) {
+        const notificationsRef = collection(this.firestore, 'notifications');
+        const contentWithoutMentions = this.removeMentions(comment.content || '');
+        let contentPreview = contentWithoutMentions.slice(0, 10);
+        if (contentWithoutMentions.length > 10) {
+          contentPreview += '・・・';
+        }
+        await addDoc(notificationsRef, {
+          createdAt: Timestamp.now(),
+          title: this.projectTitle,
+          message: `コメントにいいねされました。「${contentPreview}」`,
+          recipients: [comment.author.uid],
+          read: false,
+          projectId: this.project?.id,
+          content: comment.content || ''
+        });
+      }
+      // --- 通知作成ここまで ---
     }
   }
 
@@ -775,6 +857,26 @@ export class ProjectDetailComponent implements OnInit, OnDestroy {
     this.replyShowMentionList = false;
     this.replyMentionQuery = '';
     this.replyMentionStartIndex = null;
+
+    // --- 通知作成 ---
+    if (comment.author?.uid && comment.author.uid !== this.currentUserId) {
+      const notificationsRef = collection(this.firestore, 'notifications');
+      const contentWithoutMentions = this.removeMentions(replyData.content);
+      let contentPreview = contentWithoutMentions.slice(0, 10);
+      if (contentWithoutMentions.length > 10) {
+        contentPreview += '・・・';
+      }
+      await addDoc(notificationsRef, {
+        createdAt: Timestamp.now(),
+        title: this.projectTitle,
+        message: `コメントに返信がありました。「${contentPreview}」`,
+        recipients: [comment.author.uid],
+        read: false,
+        projectId: this.project?.id,
+        content: replyData.content
+      });
+    }
+    // --- 通知作成ここまで ---
   }
 
   getRepliesSorted(comment: any) {

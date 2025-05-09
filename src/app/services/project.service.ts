@@ -97,10 +97,31 @@ export class ProjectService {
 
     const project = projectSnap.data();
     const members = Array.isArray(project['members']) ? project['members'] : [];
-    
+    let notificationNeeded = false;
     if (!members.includes(userId)) {
       members.push(userId);
       await updateDoc(projectRef, { members });
+      notificationNeeded = true;
+    }
+
+    // 通知作成
+    if (notificationNeeded) {
+      const notificationsRef = collection(this.firestore, 'notifications');
+      const existingMembers = members.filter((uid: string) => uid !== userId);
+      const addedMembers = [userId];
+      const membersField = [
+        ...existingMembers.map((uid: string) => ({ uid, type: 'existing' })),
+        ...addedMembers.map((uid: string) => ({ uid, type: 'added' }))
+      ];
+      await addDoc(notificationsRef, {
+        createdAt: Timestamp.now(),
+        createdBy: this.auth.currentUser?.uid ?? '',
+        members: membersField,
+        message: 'プロジェクトメンバーに追加されました。',
+        projectId: projectId,
+        read: false,
+        title: project['title'] || ''
+      });
     }
   }
 

@@ -212,6 +212,27 @@ export class IssueCreateComponent implements OnInit {
       const issueDocRef = await addDoc(issuesRef, issueData);
       this.issueId = issueDocRef.id;
 
+      // 課題担当者への通知を作成
+      // createdByはassigneesに含まれていない場合もあるので、projectのcreatedByを取得する
+      let projectCreatedBy = '';
+      if (projectSnap.exists()) {
+        projectCreatedBy = projectSnap.data()['createdBy'] || '';
+      }
+      // recipients: 担当者から作成者を除外
+      const recipients = this.assignees.filter(uid => uid !== projectCreatedBy);
+      if (recipients.length > 0) {
+        const notificationsRef = collection(this.firestore, 'notifications');
+        await addDoc(notificationsRef, {
+          projectId: this.projectId,
+          issueId: issueDocRef.id,
+          issuetitle: this.title,
+          createdAt: now,
+          read: false,
+          recipients: recipients,
+          message: `課題「${this.title}」の担当者に選ばれました。`
+        });
+      }
+
       // 一時的なTodoリストをFirestoreに保存
       if (this.todos.length > 0) {
         console.log('保存前のToDoリスト:', this.todos);
@@ -220,7 +241,7 @@ export class IssueCreateComponent implements OnInit {
           const { id, ...todoWithoutId } = todo;
           const todoData = {
             ...todoWithoutId,
-            issueId: this.issueId,
+            issueId: issueDocRef.id,
             issueTitle: this.title,
             assignee: todo.assignee || 'unassigned',
             color: projectColor,
@@ -228,11 +249,28 @@ export class IssueCreateComponent implements OnInit {
               ? todo.dueDate
               : Timestamp.fromDate(new Date(todo.dueDate as any))
           };
-          const todosRef = collection(this.firestore, `projects/${this.projectId}/issues/${this.issueId}/todos`);
+          const todosRef = collection(this.firestore, `projects/${this.projectId}/issues/${issueDocRef.id}/todos`);
           return addDoc(todosRef, todoData);
         });
 
         await Promise.all(saveTodoPromises);
+
+        // Todoごとに通知を作成
+        for (const todo of this.todos) {
+          const assignee = todo.assignee;
+          if (assignee && assignee !== projectCreatedBy && assignee !== 'unassigned') {
+            const notificationsRef = collection(this.firestore, 'notifications');
+            await addDoc(notificationsRef, {
+              projectId: this.projectId,
+              issueId: issueDocRef.id,
+              issuetitle: this.title,
+              createdAt: now,
+              read: false,
+              recipients: [assignee],
+              message: `課題「${this.title}」のToDo「${todo.title}」の担当者に選ばれました。`
+            });
+          }
+        }
       }
 
       this.router.navigate(['/projects', this.projectId]);

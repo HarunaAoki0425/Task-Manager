@@ -6,6 +6,7 @@ import { User } from '../../../models/user.model';
 import { Todo } from '../../../models/todo.model';
 import { FormsModule } from '@angular/forms';
 import { ProjectService } from '../../../services/project.service';
+import { AuthService } from '../../../services/auth.service';
 
 interface Issue {
   id?: string;
@@ -81,7 +82,8 @@ export class IssueDetailComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private firestore: Firestore,
-    private projectService: ProjectService
+    private projectService: ProjectService,
+    private authService: AuthService
   ) {}
 
   ngOnInit() {
@@ -108,7 +110,7 @@ export class IssueDetailComponent implements OnInit {
     try {
       console.log('Loading members for project:', this.projectId);
       this.memberDetails = await this.projectService.getProjectMembers(this.projectId);
-      console.log('Loaded members:', this.memberDetails);
+      console.log('[DEBUG] memberDetails:', this.memberDetails);
     } catch (error) {
       console.error('Error loading project members:', error);
     }
@@ -194,6 +196,13 @@ export class IssueDetailComponent implements OnInit {
           color: data.color
         } as Issue;
         await this.loadTodos();
+        // デバッグ: assigneesの中身を出力
+        console.log('[DEBUG] issue.assignees:', this.issue.assignees);
+        if (this.issue.assignees) {
+          for (const uid of this.issue.assignees) {
+            console.log(`[DEBUG] getMemberDisplayName(${uid}):`, this.getMemberDisplayName(uid));
+          }
+        }
       } else {
         this.error = '課題が見つかりませんでした。';
       }
@@ -313,6 +322,22 @@ export class IssueDetailComponent implements OnInit {
       };
       this.todos.push(todo);
 
+      // Todo担当者への通知
+      const assignee = todo.assignee;
+      const currentUser = this.authService.getCurrentUser();
+      if (assignee && assignee !== (currentUser?.uid ?? '') && assignee !== 'unassigned') {
+        const notificationsRef = collection(this.firestore, 'notifications');
+        await addDoc(notificationsRef, {
+          projectId: this.projectId,
+          issueId: this.issueId,
+          issuetitle: this.issue?.title || '',
+          createdAt: now,
+          read: false,
+          recipients: [assignee],
+          message: `課題「${this.issue?.title || ''}」のToDo「${todo.title}」の担当者に選ばれました。`
+        });
+      }
+
       // フォームをリセット
       this.newTodo = {
         title: '',
@@ -380,6 +405,8 @@ export class IssueDetailComponent implements OnInit {
       const issueRef = doc(this.firestore, `projects/${this.projectId}/issues/${this.issueId}`);
       const now = Timestamp.now();
 
+      // 変更前のassignees
+      const prevAssignees = this.issue?.assignees || [];
       const assignees = this.editingIssue.assignees.filter(a => a !== 'unassigned');
 
       const updatedIssue = {
@@ -394,19 +421,26 @@ export class IssueDetailComponent implements OnInit {
 
       await updateDoc(issueRef, updatedIssue);
 
-      // 成功したら、issue オブジェクトを更新
-      if (this.issue) {
-        Object.assign(this.issue, {
-          ...updatedIssue,
-          id: this.issueId
+      // 通知: 新たに追加された担当者のみ
+      const newAssignees = assignees.filter(uid => !prevAssignees.includes(uid));
+      // 編集者（自分）を除外
+      const currentUser = this.authService.getCurrentUser();
+      const recipients = newAssignees.filter(uid => uid !== currentUser?.uid);
+      if (recipients.length > 0) {
+        const notificationsRef = collection(this.firestore, 'notifications');
+        await addDoc(notificationsRef, {
+          projectId: this.projectId,
+          issueId: this.issueId,
+          issuetitle: this.editingIssue.title,
+          createdAt: now,
+          read: false,
+          recipients: recipients,
+          message: `課題「${this.editingIssue.title}」の担当者に追加されました。`
         });
       }
-
-      this.isPopupVisible = false;
-      this.error = null;
     } catch (error) {
-      console.error('Error updating issue:', error);
-      this.error = '課題の更新に失敗しました。';
+      console.error('Error saving issue:', error);
+      this.error = '課題の保存に失敗しました。';
     }
   }
 

@@ -24,20 +24,36 @@ service cloud.firestore {
           && request.resource.data.inviterUid == request.auth.uid;
       }
 
-      // その他のサブコレクション用の一般ルール
+      // commentsサブコレクション
+      match /comments/{commentId} {
+        allow read: if isProjectMember(projectId);
+        // likesフィールドだけの更新、または全体が同じ場合のみ許可
+        allow update: if isProjectMember(projectId)
+          && (request.resource.data.keys().hasOnly(['likes']) || request.resource.data == resource.data);
+        allow create, delete: if isProjectMember(projectId);
+
+        // repliesサブコレクション（明示的に全権限）
+        match /replies/{replyId} {
+          allow read, create, update, delete: if isProjectMember(projectId);
+        }
+      }
+
+      // issuesサブコレクション
+      match /issues/{issueId} {
+        allow read, create, update, delete: if isProjectMember(projectId);
+
+        // todosサブコレクション（明示的に全権限）
+        match /todos/{todoId} {
+          allow read, create, update, delete: if isProjectMember(projectId);
+        }
+      }
+
+      // その他のサブコレクション用の一般ルール（catch-all、必ず一番下に！）
       match /{subcollection=**}/{docId} {
         allow read, write: if request.auth != null
           && (get(/databases/$(database)/documents/projects/$(projectId)).data.createdBy == request.auth.uid
               || (get(/databases/$(database)/documents/projects/$(projectId)).data.members != null
                   && request.auth.uid in get(/databases/$(database)/documents/projects/$(projectId)).data.members));
-      }
-
-      // コメントサブコレクション
-      match /comments/{commentId} {
-        allow read: if isProjectMember(projectId);
-        allow update: if isProjectMember(projectId)
-          && (request.resource.data.keys().hasOnly(['liked']) || request.resource.data == resource.data);
-        allow create, delete: if isProjectMember(projectId);
       }
     }
 
@@ -53,69 +69,44 @@ service cloud.firestore {
               || (resource.data.members != null && request.auth.uid in resource.data.members)
           ))
         );
-    }
 
-    // users - フレンド機能のために読み取り権限を拡大
+      // サブコレクション（comments, repliesなど）にも同じ権限を適用
+      match /{subcollection=**}/{docId} {
+        allow read, write: if request.auth != null
+          && (
+            get(/databases/$(database)/documents/archives/$(archiveId)).data.createdBy == request.auth.uid
+            || (get(/databases/$(database)/documents/archives/$(archiveId)).data.members != null
+                && request.auth.uid in get(/databases/$(database)/documents/archives/$(archiveId)).data.members)
+          );
+      }
+    }
+    // users
     match /users/{userId} {
-      // 自分のドキュメントは完全なアクセス権
       allow write: if request.auth != null && request.auth.uid == userId;
-      // 他のユーザーの基本情報（表示名、メールアドレス）は読み取り可能
       allow read: if request.auth != null;
-    }
 
-    // friendships - フレンド関係を管理
-    match /friendships/{friendshipId} {
-      // 自分が送信者または受信者の場合のみ読み取り可能
-      allow read: if request.auth != null 
-        && (resource.data.user1Id == request.auth.uid 
-            || resource.data.user2Id == request.auth.uid);
-      
-      // フレンドリクエストの作成（自分がuser1Idの場合のみ）
-      allow create: if request.auth != null 
-        && request.resource.data.user1Id == request.auth.uid
-        && request.resource.data.status == 'pending'
-        && request.resource.data.createdAt is timestamp
-        && request.resource.data.updatedAt is timestamp;
-      
-      // フレンドリクエストの更新（送信者または受信者の場合のみ）
-      allow update: if request.auth != null 
-        && (resource.data.user1Id == request.auth.uid 
-            || resource.data.user2Id == request.auth.uid)
-        && request.resource.data.updatedAt is timestamp;
-      
-      // フレンドシップの削除（どちらかのユーザーが可能）
-      allow delete: if request.auth != null 
-        && (resource.data.user1Id == request.auth.uid 
-            || resource.data.user2Id == request.auth.uid);
-    }
-
-    // friendRequests - フレンドリクエストを管理
-    match /friendRequests/{requestId} {
-      // ドキュメントの読み取り権限
-      allow get: if request.auth != null && (
-        resource.data.fromUserId == request.auth.uid || 
-        resource.data.toUserId == request.auth.uid
-      );
-      
-      // リストとクエリの読み取り権限
-      allow list: if request.auth != null && (
-        request.query.limit <= 50 && (
-          // 送信済みフレンド申請の取得
-          (request.query.where.fromUserId == request.auth.uid && 
-           request.query.where.status == 'pending') ||
-          // 受信したフレンド申請の取得
-          (request.query.where.toUserId == request.auth.uid && 
-           request.query.where.status == 'pending')
+match /users/{userId}/notifications {
+  allow list: if true;
+}
+match /users/{userId}/notifications/{notificationId} {
+  allow read: if true;
+  allow write: if request.auth != null && (
+    request.auth.uid == userId ||
+    (
+      exists(/databases/$(database)/documents/projects/$(request.resource.data.projectId)) &&
+      (
+        get(/databases/$(database)/documents/projects/$(request.resource.data.projectId)).data.createdBy == request.auth.uid ||
+        (
+          get(/databases/$(database)/documents/projects/$(request.resource.data.projectId)).data.members != null &&
+          request.auth.uid in get(/databases/$(database)/documents/projects/$(request.resource.data.projectId)).data.members
         )
-      );
-
-      allow create: if request.auth != null && 
-        request.resource.data.fromUserId == request.auth.uid &&
-        request.resource.data.status == 'pending';
-
-      allow delete: if request.auth != null && 
-        resource.data.fromUserId == request.auth.uid;
+      )
+    )
+  );
     }
+
+    }
+
 
     // コレクショングループクエリのルール
     match /{path=**}/todos/{todoId} {
@@ -141,5 +132,17 @@ service cloud.firestore {
           )
         );
     }
+    }
   }
+
+  // 共通関数
+  function isAuthenticated() {
+    return request.auth != null;
+  }
+
+  function isProjectMember(projectId) {
+    let project = get(/databases/$(database)/documents/projects/$(projectId));
+    return isAuthenticated() && 
+      (project.data.createdBy == request.auth.uid || 
+      (project.data.members != null && request.auth.uid in project.data.members));
 }

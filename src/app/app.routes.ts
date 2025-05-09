@@ -14,6 +14,7 @@ import { ArchiveDetailComponent } from './pages/archive/archive-detail/archive-d
 import { authGuard } from './guards/auth.guard';
 import { CalendarComponent } from './pages/calendar/calendar/calendar.component';
 import { CalendarDayComponent } from './pages/calendar/calendar-day/calendar-day.component';
+import { NotificationComponent } from './pages/notofication/notification.component';
 export const routes: Routes = [
   {
     path: '',
@@ -75,6 +76,10 @@ export const routes: Routes = [
       {
         path: 'calendar/day/:date',
         component: CalendarDayComponent
+      },
+      {
+        path: 'notification',
+        component: NotificationComponent
       },
     ]
   }

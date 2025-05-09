@@ -1,0 +1,17 @@
+<div class="notification-list-page">
+  <button class="close-popup-btn" (click)="onClose()">×</button>
+  <h2>通知一覧</h2>
+  <div *ngIf="notifications.length > 0">
+    <div *ngFor="let notif of notifications" class="notification-card" [ngClass]="{'unread': notif.read === false, 'read': notif.read === true}" (click)="markAsRead(notif)">
+      <div>{{ notif.message }}</div>
+      <div>
+        <strong>
+          <a [routerLink]="['/projects', notif.projectId]" class="project-link" (click)="$event.stopPropagation(); onClose()">{{ notif.title }}</a>
+          <a [routerLink]="['/projects', notif.projectId, 'issues', notif.issueId]" class="issue-link" (click)="$event.stopPropagation(); onClose()">{{ notif.issuetitle }}</a>
+        </strong>
+      </div>
+      <div>{{ notif.createdAt?.toDate() | date:'yyyy/MM/dd HH:mm' }}</div>
+    </div>
+  </div>
+  <div *ngIf="notifications.length === 0">通知はありません</div>
+</div>

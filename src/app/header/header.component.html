@@ -38,9 +38,10 @@
       </ul>
     </nav>
     <div class="header-actions">
-      <a routerLink="/notification" class="icon-button">
+      <button class="icon-button notification-btn" (click)="toggleNotificationPopup()" style="position:relative;">
         <span class="material-icons">notifications</span>
-      </a>
+        <span *ngIf="unreadCount > 0" class="badge">{{ unreadCount }}</span>
+      </button>
       <a routerLink="/setting" class="icon-button">
         <span class="material-icons">settings</span>
       </a>
@@ -49,4 +50,10 @@
       </button>
     </div>
   </div>
-</header> 
+</header>
+
+<app-notification
+  *ngIf="showNotificationPopup"
+  (close)="showNotificationPopup = false"
+  (readChanged)="fetchNotifications()">
+</app-notification> 

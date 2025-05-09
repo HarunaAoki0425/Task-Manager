@@ -2,7 +2,7 @@ import { Component, NgZone, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Firestore, doc, getDoc, setDoc, deleteDoc, Timestamp, collection, getDocs, updateDoc, query, where, serverTimestamp, orderBy, writeBatch, collection as fsCollection, doc as fsDoc, setDoc as fsSetDoc, deleteDoc as fsDeleteDoc } from '@angular/fire/firestore';
+import { Firestore, doc, getDoc, setDoc, deleteDoc, Timestamp, collection, getDocs, updateDoc, query, where, serverTimestamp, orderBy, writeBatch, collection as fsCollection, doc as fsDoc, setDoc as fsSetDoc, deleteDoc as fsDeleteDoc, addDoc } from '@angular/fire/firestore';
 import { ProjectService } from '../../../services/project.service';
 import { AuthService } from '../../../services/auth.service';
 import { Project } from '../../../models/project.model';
@@ -17,6 +17,7 @@ interface Issue {
   startDate?: any;
   dueDate?: any;
   assignee?: string;
+  assignees?: string[];
   createdAt?: any;
   updatedAt?: any;
   color?: string;  // プロジェクトから継承したカラー
@@ -496,6 +497,23 @@ export class ProjectDetailComponent implements OnInit, OnDestroy {
       await updateDoc(projectRef, { 
         members: updatedMembers,
         updatedAt: Timestamp.now()
+      });
+
+      // 通知作成処理を追加
+      const notificationsRef = collection(this.firestore, 'notifications');
+      const existingMembers = (this.project.members || []).filter((memberUid: string) => memberUid !== uid);
+      const addedMembers = [uid];
+      const membersField = [
+        ...existingMembers.map((memberUid: string) => ({ uid: memberUid, type: 'existing' })),
+        ...addedMembers.map((memberUid: string) => ({ uid: memberUid, type: 'added' }))
+      ];
+      await addDoc(notificationsRef, {
+        createdAt: Timestamp.now(),
+        recipients: [uid],
+        message: 'プロジェクトメンバーに追加されました。',
+        projectId: this.project.id,
+        read: false,
+        title: this.project.title || ''
       });
       
       // プロジェクトとメンバー情報を再読み込み

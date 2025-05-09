@@ -1,0 +1,74 @@
+:host {
+  position: fixed;
+  top: 60px; /* 調整: ヘッダーの高さ+余白 */
+  right: 40px; /* 通知アイコンの右端に合わせて調整 */
+  z-index: 2000;
+  width: 20vw;
+  min-width: 320px;
+  max-width: 480px;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.18);
+  padding: 1.2rem 1.2rem 1rem 1.2rem;
+  display: block;
+}
+
+.close-popup-btn {
+  position: absolute;
+  top: 0.7em;
+  right: 1em;
+  background: none;
+  border: none;
+  font-size: 1.3em;
+  color: #888;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.notification-list-page {
+  position: relative;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.unread-label {
+  color: #d32f2f;
+  font-weight: bold;
+  margin-right: 0.5em;
+}
+.read-label {
+  color: #888;
+  font-weight: normal;
+  margin-right: 0.5em;
+}
+.notification-status {
+  margin-bottom: 0.2em;
+}
+
+.notification-card {
+  background: #fafbfc;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  padding: 1em 1.2em 0.8em 1.2em;
+  margin-bottom: 1.1em;
+  transition: box-shadow 0.2s;
+}
+.notification-card:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.10);
+}
+
+.notification-card.unread {
+  background: #e3f2fd;
+  border-color: #64b5f6;
+}
+.notification-card.read {
+  background: #fafbfc;
+  border-color: #e0e0e0;
+}
+
+.notification-card:active {
+  background: #bbdefb;
+  transform: scale(0.98);
+  transition: background 0.1s, transform 0.1s;
+}

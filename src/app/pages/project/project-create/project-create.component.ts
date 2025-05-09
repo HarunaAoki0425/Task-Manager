@@ -7,6 +7,7 @@ import { AuthService } from '../../../services/auth.service';
 import { User } from '../../../models/user.model';
 import { FriendService } from '../../../services/friend.service';
 import { NgForm } from '@angular/forms';
+import { ProjectService } from '../../../services/project.service';
 
 @Component({
   selector: 'app-project-create',
@@ -49,7 +50,8 @@ export class ProjectCreateComponent {
     private firestore: Firestore,
     private authService: AuthService,
     private router: Router,
-    private friendService: FriendService
+    private friendService: FriendService,
+    private projectService: ProjectService
   ) {
     // 初期化時に現在のユーザー情報を取得
     this.authService.user$.subscribe(user => {
@@ -126,7 +128,7 @@ export class ProjectCreateComponent {
       }
 
       const projectsRef = collection(this.firestore, 'projects');
-      await addDoc(projectsRef, {
+      const docRef = await addDoc(projectsRef, {
         title: this.projectTitle,
         description: this.description,
         createdBy: this.currentUser.uid,
@@ -135,6 +137,19 @@ export class ProjectCreateComponent {
         dueDate: (this.noDueDate || !this.dueDate) ? null : this.dueDate,
         status: 'active',
         color: this.selectedColor === 'custom' ? this.customColor : this.selectedColor
+      });
+
+      // notificationsコレクションにも保存
+      const notificationsRef = collection(this.firestore, 'notifications');
+      const allMembers = [...this.selectedMembers.map(member => member.uid), this.currentUser!.uid];
+      const recipients = allMembers.filter(uid => uid !== this.currentUser!.uid);
+      await addDoc(notificationsRef, {
+        createdAt: serverTimestamp(),
+        recipients: recipients,
+        projectId: docRef.id,
+        title: this.projectTitle,
+        message: '新しいプロジェクトのメンバーに追加されました。',
+        read: false
       });
 
       this.router.navigate(['/projects']);

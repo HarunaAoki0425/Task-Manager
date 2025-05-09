@@ -177,7 +177,16 @@
                 <span>期限日: {{ formatDate(issue.dueDate) }}</span>
               </div>
               <div class="issue-meta">
-                <span>担当者: {{ getMemberDisplayName(issue.assignee) }}</span>
+                <span>担当者: 
+                  <ng-container *ngIf="issue.assignees && issue.assignees.length > 0">
+                    <ng-container *ngFor="let uid of issue.assignees; let last = last">
+                      {{ getMemberDisplayName(uid) }}<span *ngIf="!last">, </span>
+                    </ng-container>
+                  </ng-container>
+                  <ng-container *ngIf="!issue.assignees || issue.assignees.length === 0">
+                    未割り当て
+                  </ng-container>
+                </span>
               </div>
               <div class="issue-actions">
                 <button class="start-btn" (click)="startIssue(issue)">開始▶</button>
@@ -209,7 +218,16 @@
                 <span>期限日: {{ formatDate(issue.dueDate) }}</span>
               </div>
               <div class="issue-meta">
-                <span>担当者  : {{ getMemberDisplayName(issue.assignee) }}</span>
+                <span>担当者: 
+                  <ng-container *ngIf="issue.assignees && issue.assignees.length > 0">
+                    <ng-container *ngFor="let uid of issue.assignees; let last = last">
+                      {{ getMemberDisplayName(uid) }}<span *ngIf="!last">, </span>
+                    </ng-container>
+                  </ng-container>
+                  <ng-container *ngIf="!issue.assignees || issue.assignees.length === 0">
+                    未割り当て
+                  </ng-container>
+                </span>
               </div>
               <div class="issue-actions">
                 <button class="hold-btn" (click)="updateIssueStatus(issue, '保留')">保留▶</button>
@@ -242,7 +260,16 @@
                 <span>期限日: {{ formatDate(issue.dueDate) }}</span>
               </div>
               <div class="issue-meta">
-                <span>担当者: {{ getMemberDisplayName(issue.assignee) }}</span>
+                <span>担当者: 
+                  <ng-container *ngIf="issue.assignees && issue.assignees.length > 0">
+                    <ng-container *ngFor="let uid of issue.assignees; let last = last">
+                      {{ getMemberDisplayName(uid) }}<span *ngIf="!last">, </span>
+                    </ng-container>
+                  </ng-container>
+                  <ng-container *ngIf="!issue.assignees || issue.assignees.length === 0">
+                    未割り当て
+                  </ng-container>
+                </span>
               </div>
               <div class="issue-actions">
                 <button class="start-btn" (click)="updateIssueStatus(issue, '進行中')">◀再開</button>
@@ -275,7 +302,16 @@
                 <span>期限日: {{ formatDate(issue.dueDate) }}</span>
               </div>
               <div class="issue-meta">
-                <span>担当者: {{ getMemberDisplayName(issue.assignee) }}</span>
+                <span>担当者: 
+                  <ng-container *ngIf="issue.assignees && issue.assignees.length > 0">
+                    <ng-container *ngFor="let uid of issue.assignees; let last = last">
+                      {{ getMemberDisplayName(uid) }}<span *ngIf="!last">, </span>
+                    </ng-container>
+                  </ng-container>
+                  <ng-container *ngIf="!issue.assignees || issue.assignees.length === 0">
+                    未割り当て
+                  </ng-container>
+                </span>
               </div>
             </div>
           </div>

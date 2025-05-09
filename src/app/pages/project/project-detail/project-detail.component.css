@@ -57,6 +57,13 @@
 .edit-btn:hover {
   background: #1256a0;
 }
+.edit-btn:disabled {
+  background: #ccc !important;
+  color: #888 !important;
+  cursor: not-allowed !important;
+  border: 1px solid #bbb !important;
+  opacity: 0.7;
+}
 .delete-btn {
   background: #e53935;
   color: #fff;
@@ -560,9 +567,8 @@
 
 .member-list {
   display: flex;
+  gap: 0.5em;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 8px;
 }
 
 .member-item {
@@ -579,6 +585,7 @@
 
 .member-info {
   display: flex;
+  flex-direction: row;
   align-items: center;
   gap: 6px;
 }
@@ -620,22 +627,17 @@
 }
 .project-meta-row {
   display: flex;
-  gap: 2.2em;
-  margin-bottom: 1.2em;
-  flex-wrap: wrap;
-  justify-content: flex-start;
+  gap: 2em;
+  align-items: flex-start;
 }
 .meta-item {
   display: flex;
   flex-direction: column;
-  min-width: 8.5em;
-  margin-right: 0.5em;
+  min-width: 120px;
 }
 .meta-label {
-  color: #1976d2;
-  font-weight: 600;
-  font-size: 0.98em;
-  margin-bottom: 0.1em;
+  font-weight: bold;
+  margin-bottom: 0.5em;
 }
 .meta-value {
   color: #333;
@@ -821,6 +823,7 @@
   cursor: pointer;
   font-size: 14px;
   transition: background-color 0.2s;
+  margin-bottom: 1.2rem;
 }
 
 .back-to-list-btn:hover {
@@ -840,12 +843,13 @@
   background-color: #4CAF50;
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: 4px;
   cursor: pointer;
-  font-size: 0.95rem;
+  font-size: 14px;
   display: flex;
   align-items: center;
   gap: 6px;
+  height: 38px;
   transition: all 0.2s ease;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
@@ -871,7 +875,9 @@
 
 .member-info {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
 }
 
 .member-name {
@@ -1255,7 +1261,7 @@
   padding: 2rem 1rem;
   background-color: white;
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
 }
 
 .header-content {

@@ -9,8 +9,9 @@
     </div>
     <div class="project-title-row">
       <div class="project-action-btns">
-        <button class="edit-btn" title="編集" (click)="startEdit()" *ngIf="!isEditing"><span>編集</span></button>
-        <button class="delete-btn" title="アーカイブ" (click)="archiveProject()" [disabled]="isArchiving"><span>アーカイブ</span></button>
+        <button class="add-member-btn" (click)="openAddMemberDialog()" *ngIf="currentUserId === project.createdBy">＋メンバー追加</button>
+        <button class="edit-btn" title="編集" (click)="startEdit()" *ngIf="!isEditing && currentUserId === project.createdBy"><span>編集</span></button>
+        <button class="delete-btn" title="アーカイブ" (click)="archiveProject()" [disabled]="isArchiving" *ngIf="currentUserId === project.createdBy"><span>アーカイブ</span></button>
       </div>
     </div>
     <ng-container *ngIf="isEditing">
@@ -77,26 +78,22 @@
         </div>
         <div class="project-meta-row">
           <div class="meta-item"><span class="meta-label">作成日</span><span class="meta-value">{{ formatDate(project.createdAt) }}</span></div>
-          <div class="meta-item"><span class="meta-label">更新日</span><span class="meta-value">{{ project.updatedAt ? formatDate(project.updatedAt) : '' }}</span></div>
           <div class="meta-item"><span class="meta-label">締切日</span><span class="meta-value">{{ project.dueDate ? formatDate(project.dueDate) : '' }}</span></div>
           <div class="meta-item"><span class="meta-label">作成者</span><span class="meta-value">{{ creatorName }}</span></div>
-        </div>
-        <div class="project-member-row">
-          <span class="info-label">メンバー</span>
-          <div class="member-list">
-            <div class="member-item" *ngFor="let member of nonCreatorMembers">
-              <div class="member-info">
-                <span class="member-name">{{ member.displayName }}</span>
-                <button class="remove-member-btn" (click)="removeMember(member.uid)">✕</button>
+          <div class="meta-item">
+            <span class="meta-label">メンバー</span>
+            <div class="member-list">
+              <div class="member-item" *ngFor="let member of nonCreatorMembers">
+                <div class="member-info">
+                  <span class="member-name">{{ member.displayName }}</span>
+                  <button class="remove-member-btn" (click)="removeMember(member.uid)" *ngIf="currentUserId === project.createdBy">✕</button>
+                </div>
               </div>
+              <div *ngIf="nonCreatorMembers.length === 0" class="no-members">
+                メンバーはいません
               </div>
-            <div *ngIf="nonCreatorMembers.length === 0" class="no-members">
-              メンバーはいません
             </div>
           </div>
-        </div>
-        <div class="member-actions">
-          <button class="add-member-btn" (click)="openAddMemberDialog()">＋メンバー追加</button>
         </div>
         <!-- メンバー追加ダイアログ -->
         <div class="member-dialog" *ngIf="isAddingMember">

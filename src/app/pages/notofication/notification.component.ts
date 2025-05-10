@@ -1,7 +1,7 @@
 import { Component, OnInit, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { collection, getDocs, Firestore, doc, updateDoc, deleteDoc } from '@angular/fire/firestore';
+import { collection, getDocs, Firestore, doc, updateDoc, deleteDoc, getDoc } from '@angular/fire/firestore';
 import { AuthService } from '../../services/auth.service';
 
 @Component({
@@ -24,6 +24,7 @@ export class NotificationComponent implements OnInit {
   constructor(private authService: AuthService, private firestore: Firestore) {}
 
   async ngOnInit() {
+    let batchFixed = false;
     this.authService.user$.subscribe(async user => {
       this.user = user;
       if (user) {
@@ -39,6 +40,11 @@ export class NotificationComponent implements OnInit {
             const bTime = b.createdAt && b.createdAt.toDate ? b.createdAt.toDate().getTime() : 0;
             return bTime - aTime;
           });
+        // 一度だけバッチ処理を実行
+        if (!batchFixed) {
+          batchFixed = true;
+          await this.batchFixProjectIdForNotifications();
+        }
       } else {
         this.notifications = [];
       }
@@ -63,5 +69,34 @@ export class NotificationComponent implements OnInit {
 
   onClose() {
     this.close.emit();
+  }
+
+  // 既存通知のprojectIdを一括修正するバッチ処理
+  async batchFixProjectIdForNotifications() {
+    const notifCol = collection(this.firestore, 'notifications');
+    const notifSnap = await getDocs(notifCol);
+    for (const notifDoc of notifSnap.docs) {
+      const notif = notifDoc.data() as any;
+      if (!notif.projectId && notif.issueId) {
+        // issueIdから親プロジェクトを探す
+        // プロジェクト一覧を取得
+        const projectsCol = collection(this.firestore, 'projects');
+        const projectsSnap = await getDocs(projectsCol);
+        let foundProjectId = null;
+        for (const projectDoc of projectsSnap.docs) {
+          const issuesCol = collection(this.firestore, `projects/${projectDoc.id}/issues`);
+          const issueDoc = await getDoc(doc(this.firestore, `projects/${projectDoc.id}/issues/${notif.issueId}`));
+          if (issueDoc.exists()) {
+            foundProjectId = projectDoc.id;
+            break;
+          }
+        }
+        if (foundProjectId) {
+          // projectIdを通知に追加
+          const notifRef = doc(this.firestore, 'notifications', notifDoc.id);
+          await updateDoc(notifRef, { projectId: foundProjectId });
+        }
+      }
+    }
   }
 }

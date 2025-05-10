@@ -51,13 +51,15 @@
           <div *ngFor="let todo of getTodosForDate(day.fullDate)"
                class="calendar-item todo-item"
                [style.border-color]="todo.color || '#e9ecef'">
-            <div class="item-title" [title]="todo.title">
-              {{ todo.title }}
+            <div class="item-title" [title]="todo.todoTitle">
+              {{ todo.todoTitle }}
             </div>
             <input type="checkbox" 
                    class="todo-checkbox" 
                    [checked]="todo.completed"
-                   (change)="toggleTodoComplete(todo)">
+                   (change)="toggleTodoComplete(todo)"
+                   [disabled]="todo.completed">
+            <!-- 日付・時間は表示しない -->
           </div>
         </ng-container>
       </div>

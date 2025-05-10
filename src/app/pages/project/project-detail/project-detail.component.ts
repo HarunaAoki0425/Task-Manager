@@ -500,7 +500,9 @@ export class ProjectDetailComponent implements OnInit, OnDestroy {
         members: updatedMembers,
         updatedAt: Timestamp.now()
       });
-
+      // 新メンバーを既存課題のmembersにも追加
+      await this.projectService.addMemberToAllIssues(this.project.id, uid);
+      
       // 通知作成処理を追加
       const notificationsRef = collection(this.firestore, 'notifications');
       const existingMembers = (this.project.members || []).filter((memberUid: string) => memberUid !== uid);

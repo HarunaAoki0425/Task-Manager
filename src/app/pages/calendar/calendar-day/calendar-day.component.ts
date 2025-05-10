@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { Firestore, collection, query, where, getDocs, Timestamp, doc, updateDoc } from '@angular/fire/firestore';
+import { Auth } from '@angular/fire/auth';
 
 interface Issue {
   id: string;
@@ -19,13 +20,14 @@ interface Issue {
 
 interface Todo {
   id: string;
-  title: string;
-  dueDate: Timestamp;
+  todoTitle: string;
+  todoDueDate: Timestamp;
   completed: boolean;
   completedAt?: Timestamp | null;
   projectColor?: string;
   projectId?: string;
   issueId?: string;
+  assignee: string;
   // 必要に応じて他のフィールドも追加
 }
 
@@ -44,7 +46,7 @@ export class CalendarDayComponent implements OnInit {
   isLoading = true;
   error: string | null = null;
 
-  constructor(private route: ActivatedRoute, private firestore: Firestore, private router: Router) {}
+  constructor(private route: ActivatedRoute, private firestore: Firestore, private router: Router, private auth: Auth) {}
 
   ngOnInit() {
     this.selectedDate = this.route.snapshot.paramMap.get('date');
@@ -67,9 +69,18 @@ export class CalendarDayComponent implements OnInit {
       const tsStart = Timestamp.fromDate(startOfDay);
       const tsEnd = Timestamp.fromDate(endOfDay);
 
-      // 課題: startDate <= selectedDate <= dueDate
-      const issuesRef = collection(this.firestore, 'projects');
-      const projectsSnapshot = await getDocs(issuesRef);
+      // 現在のユーザーIDを取得
+      const userId = this.auth.currentUser?.uid;
+      if (!userId) {
+        this.isLoading = false;
+        this.error = 'ユーザー情報が取得できませんでした。';
+        return;
+      }
+
+      // 自分がメンバーのプロジェクトのみ取得
+      const projectsRef = collection(this.firestore, 'projects');
+      const projectsQuery = query(projectsRef, where('members', 'array-contains', userId));
+      const projectsSnapshot = await getDocs(projectsQuery);
       let allIssues: Issue[] = [];
       for (const projectDoc of projectsSnapshot.docs) {
         const projectId = projectDoc.id;
@@ -98,7 +109,7 @@ export class CalendarDayComponent implements OnInit {
         const issuesSnapshot = await getDocs(issuesCol);
         for (const issueDoc of issuesSnapshot.docs) {
           const todosCol = collection(this.firestore, `projects/${projectId}/issues/${issueDoc.id}/todos`);
-          const q = query(todosCol, where('dueDate', '>=', tsStart), where('dueDate', '<=', tsEnd));
+          const q = query(todosCol, where('todoDueDate', '>=', tsStart), where('todoDueDate', '<=', tsEnd));
           const todosSnapshot = await getDocs(q);
           allTodos.push(...todosSnapshot.docs.map(doc => ({
             id: doc.id,
@@ -109,7 +120,7 @@ export class CalendarDayComponent implements OnInit {
           }) as Todo));
         }
       }
-      this.todos = allTodos;
+      this.todos = allTodos.filter(todo => todo.assignee === userId);
       this.isLoading = false;
     } catch (error) {
       console.error('Firestore取得エラー:', error);
@@ -121,7 +132,7 @@ export class CalendarDayComponent implements OnInit {
   get incompleteTodos(): Todo[] {
     return this.todos
       .filter(t => !t.completed)
-      .sort((a, b) => a.dueDate.toDate().getTime() - b.dueDate.toDate().getTime());
+      .sort((a, b) => a.todoDueDate.toDate().getTime() - b.todoDueDate.toDate().getTime());
   }
 
   async toggleTodoComplete(todo: Todo) {

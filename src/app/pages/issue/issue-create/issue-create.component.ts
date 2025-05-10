@@ -30,9 +30,9 @@ export class IssueCreateComponent implements OnInit {
   todos: Todo[] = [];
 
   newTodo = {
-    title: '',
+    todoTitle: '',
     assignee: '',
-    dueDate: ''
+    todoDueDate: ''
   };
 
   constructor(
@@ -134,7 +134,7 @@ export class IssueCreateComponent implements OnInit {
   }
 
   async addTodo() {
-    if (!this.projectId || !this.newTodo.title || !this.newTodo.assignee || !this.newTodo.dueDate) {
+    if (!this.projectId || !this.newTodo.todoTitle || !this.newTodo.assignee || !this.newTodo.todoDueDate) {
       this.message = 'タイトル、締切日時、担当者は必須です。';
       return;
     }
@@ -149,9 +149,9 @@ export class IssueCreateComponent implements OnInit {
       const now = Timestamp.now();
       const newTodo: Todo = {
         id: `temp_${Date.now()}`, // 一時的なID
-        title: this.newTodo.title,
+        todoTitle: this.newTodo.todoTitle,
         assignee: this.newTodo.assignee,
-        dueDate: Timestamp.fromDate(new Date(this.newTodo.dueDate)), // 必須項目なのでnullチェック不要
+        todoDueDate: Timestamp.fromDate(new Date(this.newTodo.todoDueDate)), // 必須項目なのでnullチェック不要
         completed: false,
         completedAt: null,
         projectId: this.projectId,
@@ -168,9 +168,9 @@ export class IssueCreateComponent implements OnInit {
 
       // フォームをリセット
       this.newTodo = {
-        title: '',
+        todoTitle: '',
         assignee: '',
-        dueDate: ''
+        todoDueDate: ''
       };
 
       this.message = '';
@@ -248,9 +248,9 @@ export class IssueCreateComponent implements OnInit {
             issueTitle: this.title,
             assignee: todo.assignee || 'unassigned',
             color: projectColor,
-            dueDate: todo.dueDate instanceof Timestamp
-              ? todo.dueDate
-              : Timestamp.fromDate(new Date(todo.dueDate as any))
+            todoDueDate: todo.todoDueDate instanceof Timestamp
+              ? todo.todoDueDate
+              : Timestamp.fromDate(new Date(todo.todoDueDate as any))
           };
           const todosRef = collection(this.firestore, `projects/${this.projectId}/issues/${issueDocRef.id}/todos`);
           return addDoc(todosRef, todoData);
@@ -270,7 +270,7 @@ export class IssueCreateComponent implements OnInit {
               createdAt: now,
               read: false,
               recipients: [assignee],
-              message: `課題「${this.title}」のToDo「${todo.title}」の担当者に選ばれました。`
+              message: `課題「${this.title}」のToDo「${todo.todoTitle}」の担当者に選ばれました。`
             });
           }
         }

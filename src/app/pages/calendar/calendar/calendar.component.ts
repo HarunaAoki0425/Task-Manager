@@ -36,8 +36,8 @@ interface CalendarDay {
 
 interface Todo {
   id: string;
-  title: string;
-  dueDate: Timestamp;
+  todoTitle: string;
+  todoDueDate: Timestamp;
   completed: boolean;
   completedAt: Timestamp | null;
   assignee: string;
@@ -103,7 +103,11 @@ export class CalendarComponent implements OnInit {
             const todoData = doc.data();
             return {
               id: doc.id,
-              ...todoData,
+              todoTitle: todoData['todoTitle'] || todoData['title'],
+              todoDueDate: todoData['todoDueDate'] || todoData['dueDate'],
+              completed: todoData['completed'],
+              completedAt: todoData['completedAt'],
+              assignee: todoData['assignee'],
               projectId: project.id,
               projectTitle: project.title,
               issueId: issueDoc.id,
@@ -338,13 +342,13 @@ export class CalendarComponent implements OnInit {
   // 指定された日付のTodoを取得するメソッド
   getTodosForDate(date: Date): Todo[] {
     const todos = this.getFilteredTodos().filter(todo => {
-      if (!todo.dueDate) {
+      if (!todo.todoDueDate) {
         console.log('Todo without dueDate:', todo);
         return false;
       }
       if (todo.completed) return false;
       if (!this.currentUser || todo.assignee !== this.currentUser.uid) return false;
-      const dueDate = todo.dueDate.toDate();
+      const dueDate = todo.todoDueDate.toDate();
       const compareDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
       const compareDueDate = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate());
       const matches = compareDate.getTime() === compareDueDate.getTime();

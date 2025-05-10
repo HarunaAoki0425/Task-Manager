@@ -196,18 +196,18 @@ export class TodoListComponent implements OnInit, OnDestroy {
           let dateA: Date;
           let dateB: Date;
           
-          if (a.dueDate instanceof Timestamp) {
-            dateA = a.dueDate.toDate();
-          } else if (typeof a.dueDate === 'string') {
-            dateA = new Date(a.dueDate);
+          if (a.todoDueDate instanceof Timestamp) {
+            dateA = a.todoDueDate.toDate();
+          } else if (typeof a.todoDueDate === 'string') {
+            dateA = new Date(a.todoDueDate);
           } else {
             dateA = new Date(0);
           }
 
-          if (b.dueDate instanceof Timestamp) {
-            dateB = b.dueDate.toDate();
-          } else if (typeof b.dueDate === 'string') {
-            dateB = new Date(b.dueDate);
+          if (b.todoDueDate instanceof Timestamp) {
+            dateB = b.todoDueDate.toDate();
+          } else if (typeof b.todoDueDate === 'string') {
+            dateB = new Date(b.todoDueDate);
           } else {
             dateB = new Date(0);
           }

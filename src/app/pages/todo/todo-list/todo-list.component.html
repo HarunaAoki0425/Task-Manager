@@ -40,7 +40,7 @@
     <div *ngFor="let todo of todos" 
          class="todo-item" 
          [class.completed]="todo.completed"
-         [class.overdue]="!todo.completed && isOverdue(todo.dueDate)"
+         [class.overdue]="!todo.completed && isOverdue(todo.todoDueDate)"
          [class.archived]="todo.isArchived">
       <div class="todo-checkbox">
         <input type="checkbox" [checked]="todo.completed" (change)="toggleTodoComplete(todo)">
@@ -49,11 +49,11 @@
       <div class="todo-content">
         <div class="todo-main">
           <div class="todo-title-container">
-            <h3 class="todo-title">{{ todo.title }}</h3>
+            <h3 class="todo-title">{{ todo.todoTitle }}</h3>
             <div class="todo-details">
-              <span class="todo-due-date" [class.overdue]="!todo.completed && isOverdue(todo.dueDate)">
+              <span class="todo-due-date" [class.overdue]="!todo.completed && isOverdue(todo.todoDueDate)">
                 <i class="fas fa-calendar"></i>
-                {{ formatDate(todo.dueDate) }}
+                {{ formatDate(todo.todoDueDate) }}
               </span>
               <span class="archive-badge" *ngIf="todo.isArchived">
                 <i class="fas fa-archive"></i>

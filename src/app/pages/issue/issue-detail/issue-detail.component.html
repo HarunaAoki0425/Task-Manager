@@ -64,13 +64,13 @@
     <div class="todo-form">
       <input
         type="text"
-        [(ngModel)]="newTodo.title"
+        [(ngModel)]="newTodo.todoTitle"
         placeholder="新しいToDoを入力（必須）"
         class="todo-input"
       >
       <input
         type="datetime-local"
-        [(ngModel)]="newTodo.dueDate"
+        [(ngModel)]="newTodo.todoDueDate"
         class="todo-date"
         required
         placeholder="締切日時（必須）"
@@ -90,7 +90,7 @@
       <button 
         (click)="addTodo()" 
         class="add-todo-button"
-        [disabled]="!newTodo.title.trim() || !newTodo.dueDate || !newTodo.assignee"
+        [disabled]="!newTodo.todoTitle.trim() || !newTodo.todoDueDate || !newTodo.assignee"
       >
         <i class="fas fa-plus"></i>
         追加
@@ -99,22 +99,22 @@
 
     <!-- Todoリスト -->
     <div class="todo-list">
-      <div *ngFor="let todo of todos" class="todo-item">
+      <div *ngFor="let todo of todos" class="todo-item" [class.overdue]="isOverdue(todo.todoDueDate)">
         <input
           type="checkbox"
           [checked]="todo.completed"
           (change)="toggleTodo(todo)"
           class="todo-checkbox"
         >
-        <span class="todo-title" [class.completed]="todo.completed">{{ todo.title }}</span>
+        <span class="todo-title" [class.completed]="todo.completed">{{ todo.todoTitle }}</span>
         <div class="todo-meta">
           <span class="todo-assignee">
             <i class="fas fa-user"></i>
             {{ getMemberDisplayName(todo.assignee) }}
           </span>
-          <span class="todo-due-date" *ngIf="todo.dueDate">
+          <span class="todo-due-date" *ngIf="todo.todoDueDate">
             <i class="fas fa-calendar"></i>
-            {{ todo.dueDate ? (formatDate(todo.dueDate)) : '期限なし' }}
+            {{ todo.todoDueDate ? (formatDate(todo.todoDueDate)) : '期限なし' }}
           </span>
           <span class="todo-completed-date" *ngIf="todo.completed && todo.completedAt">
             <i class="fas fa-check"></i>
@@ -195,7 +195,7 @@
       <button 
         class="save-button" 
         (click)="saveIssue()" 
-        [disabled]="!editingIssue.issueTitle.trim() || !editingIssue.startDate.trim() || !editingIssue.dueDate.trim()">
+        [disabled]="!editingIssue.issueTitle || !editingIssue.issueTitle.trim() || !editingIssue.startDate || !editingIssue.startDate.trim() || !editingIssue.dueDate || !editingIssue.dueDate.trim()">
         保存
       </button>
       <button class="cancel-button" (click)="togglePopup()">閉じる</button>

@@ -47,7 +47,7 @@
             <input 
               type="text" 
               class="todo-input" 
-              [(ngModel)]="newTodo.title" 
+              [(ngModel)]="newTodo.todoTitle" 
               name="todoTitle"
               placeholder="新しいTodoを入力（必須）"
               (keyup.enter)="addTodo()"
@@ -55,7 +55,7 @@
             <input 
               type="datetime-local" 
               class="todo-input todo-date-input" 
-              [(ngModel)]="newTodo.dueDate"
+              [(ngModel)]="newTodo.todoDueDate"
               name="todoDueDate"
               required
               placeholder="締切日時（必須）"
@@ -75,7 +75,7 @@
               type="button" 
               class="add-todo-btn" 
               (click)="addTodo()" 
-              [disabled]="!newTodo.title.trim() || !newTodo.dueDate || !newTodo.assignee"
+              [disabled]="!newTodo.todoTitle.trim() || !newTodo.todoDueDate || !newTodo.assignee"
             >
             作成
             </button>
@@ -88,11 +88,11 @@
                 (change)="toggleTodo(i)"
               >
               <div class="todo-content">
-                <div class="todo-title">{{ todo.title }}</div>
+                <div class="todo-title">{{ todo.todoTitle }}</div>
                 <div class="todo-details">
-                  <span *ngIf="todo.dueDate" class="todo-due-date">
+                  <span *ngIf="todo.todoDueDate" class="todo-due-date">
                     <span class="material-icons">event</span>
-                    {{ todo.dueDate ? (formatDate(todo.dueDate)) : '期限なし' }}
+                    {{ todo.todoDueDate ? (formatDate(todo.todoDueDate)) : '期限なし' }}
                   </span>
                   <span *ngIf="todo.assignee" class="todo-assignee">
                     <span class="material-icons">person</span>

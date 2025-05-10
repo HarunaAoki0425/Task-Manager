@@ -44,8 +44,8 @@
           <ul *ngIf="incompleteTodos.length > 0">
             <li *ngFor="let todo of incompleteTodos">
               <div class="todo-card" [style.--todo-border]="todo.projectColor || '#b3c6e0'">
-                <span class="todo-title">{{ todo.title }}</span>
-                <span class="todo-time">{{ todo.dueDate.toDate() | date:'HH:mm' }}</span>
+                <span class="todo-title">{{ todo.todoTitle }}</span>
+                <span class="todo-time">{{ todo.todoDueDate.toDate() | date:'HH:mm' }}</span>
                 <input type="checkbox" class="todo-checkbox" [checked]="todo.completed" (change)="toggleTodoComplete(todo)" style="margin-left: 12px;" />
               </div>
             </li>

@@ -64,14 +64,11 @@ export class ProjectService {
   }
 
   async getProjectMembers(projectId: string): Promise<{ uid: string; displayName: string; email: string }[]> {
-    console.log('Getting project details for:', projectId);
     const project = await this.getProject(projectId);
     if (!project || !Array.isArray(project.members)) {
-      console.log('No project found or no members array:', project);
       return [];
     }
 
-    console.log('Project members array:', project.members);
     const members = await Promise.all(project.members.map(async (uid: string) => {
       const userDoc = doc(this.firestore, 'users', uid);
       const userSnap = await getDoc(userDoc);
@@ -80,7 +77,6 @@ export class ProjectService {
         displayName: userSnap.exists() ? userSnap.data()['displayName'] || 'no name' : 'no name',
         email: userSnap.exists() ? userSnap.data()['email'] || '' : ''
       };
-      console.log('Loaded member details:', result);
       return result;
     }));
 
@@ -102,6 +98,8 @@ export class ProjectService {
       members.push(userId);
       await updateDoc(projectRef, { members });
       notificationNeeded = true;
+      // 新メンバーを既存課題のmembersに追加
+      await this.addMemberToAllIssues(projectId, userId);
     }
 
     // 通知作成
@@ -113,15 +111,20 @@ export class ProjectService {
         ...existingMembers.map((uid: string) => ({ uid, type: 'existing' })),
         ...addedMembers.map((uid: string) => ({ uid, type: 'added' }))
       ];
-      await addDoc(notificationsRef, {
-        createdAt: Timestamp.now(),
-        createdBy: this.auth.currentUser?.uid ?? '',
-        members: membersField,
-        message: 'プロジェクトメンバーに追加されました。',
-        projectId: projectId,
-        read: false,
-        title: project['title'] || ''
-      });
+      // recipients: 作成者以外のメンバー
+      const recipients = existingMembers;
+      if (recipients.length > 0) {
+        await addDoc(notificationsRef, {
+          createdAt: Timestamp.now(),
+          createdBy: this.auth.currentUser?.uid ?? '',
+          members: membersField,
+          message: 'プロジェクトメンバーに追加されました。',
+          projectId: projectId,
+          read: false,
+          title: project['title'] || '',
+          recipients: recipients
+        });
+      }
     }
   }
 
@@ -369,41 +372,93 @@ export class ProjectService {
     tomorrow.setDate(today.getDate() + 1);
     const projects = await this.getUserProjects();
     const allIssues: any[] = [];
+    const notificationsRef = collection(this.firestore, 'notifications');
     for (const project of projects) {
       const issuesRef = collection(this.firestore, 'projects', project.id!, 'issues');
-      const q = query(
+      // 開始日が今日の課題
+      const qStart = query(
         issuesRef,
         where('startDate', '>=', Timestamp.fromDate(today)),
         where('startDate', '<', Timestamp.fromDate(tomorrow)),
         where('status', '==', '未着手'),
         where('members', 'array-contains', userId)
       );
-      const snapshot = await getDocs(q);
-      for (const docSnap of snapshot.docs) {
+      const snapshotStart = await getDocs(qStart);
+      for (const docSnap of snapshotStart.docs) {
         const issue = { id: docSnap.id, ...(docSnap.data() as any), projectId: project.id };
         allIssues.push(issue);
         // 通知作成処理
-        const notificationsRef = collection(this.firestore, 'notifications');
-        // 既存通知の重複チェック（同じissueId, user, 今日の日付で）
-        const notifQ = query(
+        // 開始日が今日の課題の通知作成
+        const notifQStart = query(
           notificationsRef,
           where('issueId', '==', issue.id),
-          where('userId', '==', userId)
+          where('userId', '==', userId),
+          where('type', '==', 'start')
         );
-        const notifSnap = await getDocs(notifQ);
-        if (notifSnap.empty) {
+        const notifSnapStart = await getDocs(notifQStart);
+        if (notifSnapStart.empty) {
           await addDoc(notificationsRef, {
             message: '今日が開始日の課題があります。',
             issueTitle: issue.issueTitle || '',
             issueId: issue.id,
+            projectId: project.id,
             userId: userId,
             recipients: [userId],
             createdAt: Timestamp.now(),
-            read: false
+            read: false,
+            type: 'start'
+          });
+        }
+      }
+      // 期限日が今日の課題
+      const qDue = query(
+        issuesRef,
+        where('dueDate', '>=', Timestamp.fromDate(today)),
+        where('dueDate', '<', Timestamp.fromDate(tomorrow)),
+        where('status', 'in', ['未着手', '進行中', '保留']),
+        where('members', 'array-contains', userId)
+      );
+      const snapshotDue = await getDocs(qDue);
+      for (const docSnap of snapshotDue.docs) {
+        const issue = { id: docSnap.id, ...(docSnap.data() as any), projectId: project.id };
+        allIssues.push(issue);
+        // 期限日が今日の課題の通知作成
+        const notifQDue = query(
+          notificationsRef,
+          where('issueId', '==', issue.id),
+          where('userId', '==', userId),
+          where('type', '==', 'due')
+        );
+        const notifSnapDue = await getDocs(notifQDue);
+        if (notifSnapDue.empty) {
+          await addDoc(notificationsRef, {
+            message: '今日が期限日の課題があります。',
+            issueTitle: issue.issueTitle || '',
+            issueId: issue.id,
+            projectId: project.id,
+            userId: userId,
+            recipients: [userId],
+            createdAt: Timestamp.now(),
+            read: false,
+            type: 'due'
           });
         }
       }
     }
     return allIssues;
+  }
+
+  // 新メンバーを既存課題のmembersに追加するバッチ処理
+  async addMemberToAllIssues(projectId: string, newMemberUid: string): Promise<void> {
+    const issuesRef = collection(this.firestore, 'projects', projectId, 'issues');
+    const issuesSnap = await getDocs(issuesRef);
+    for (const issueDoc of issuesSnap.docs) {
+      const issueData = issueDoc.data();
+      const members: string[] = Array.isArray(issueData['members']) ? issueData['members'] : [];
+      if (!members.includes(newMemberUid)) {
+        const issueRef = doc(this.firestore, 'projects', projectId, 'issues', issueDoc.id);
+        await updateDoc(issueRef, { members: [...members, newMemberUid] });
+      }
+    }
   }
 } 

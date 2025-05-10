@@ -70,9 +70,9 @@ export class IssueDetailComponent implements OnInit {
 
   // 新しいTodo用のプロパティ
   newTodo = {
-    title: '',
+    todoTitle: '',
     assignee: '',
-    dueDate: null as string | null
+    todoDueDate: null as string | null
   };
 
   // テンプレートで使用するためにTimestampを追加
@@ -273,7 +273,7 @@ export class IssueDetailComponent implements OnInit {
 
   // 新しいTodoを追加
   async addTodo() {
-    if (!this.projectId || !this.issueId || !this.issue || !this.project || !this.newTodo.title) return;
+    if (!this.projectId || !this.issueId || !this.issue || !this.project || !this.newTodo.todoTitle) return;
 
     try {
       // issueのcolorを取得
@@ -283,9 +283,9 @@ export class IssueDetailComponent implements OnInit {
 
       const now = Timestamp.now();
       const todoData: Omit<Todo, 'id'> = {
-        title: this.newTodo.title,
+        todoTitle: this.newTodo.todoTitle,
         assignee: this.newTodo.assignee,
-        dueDate: this.newTodo.dueDate ? Timestamp.fromDate(new Date(this.newTodo.dueDate)) : null,
+        todoDueDate: this.newTodo.todoDueDate ? Timestamp.fromDate(new Date(this.newTodo.todoDueDate)) : null,
         completed: false,
         completedAt: null,
         projectId: this.projectId,
@@ -324,15 +324,15 @@ export class IssueDetailComponent implements OnInit {
           createdAt: now,
           read: false,
           recipients: [assignee],
-          message: `課題「${this.issue?.issueTitle || ''}」のToDo「${todo.title}」の担当者に選ばれました。`
+          message: `課題「${this.issue?.issueTitle || ''}」のToDo「${todo.todoTitle}」の担当者に選ばれました。`
         });
       }
 
       // フォームをリセット
       this.newTodo = {
-        title: '',
+        todoTitle: '',
         assignee: '',
-        dueDate: null
+        todoDueDate: null
       };
     } catch (error) {
       this.error = 'Todoの追加に失敗しました。';
@@ -482,5 +482,18 @@ export class IssueDetailComponent implements OnInit {
         this.error = '課題の削除に失敗しました。';
       }
     }
+  }
+
+  isOverdue(date: Timestamp | string | null | undefined): boolean {
+    if (!date) return false;
+    let d: Date;
+    if (typeof date === 'string') {
+      d = new Date(date);
+    } else if (date instanceof Timestamp) {
+      d = date.toDate();
+    } else {
+      return false;
+    }
+    return d.getTime() < Date.now();
   }
 }

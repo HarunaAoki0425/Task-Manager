@@ -641,3 +641,7 @@ textarea.form-input {
   background-color: #e9ecef;
   border-radius: 4px;
 }
+
+.overdue {
+  border: 2px solid #e53935 !important;
+}

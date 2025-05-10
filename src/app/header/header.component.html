@@ -52,8 +52,10 @@
   </div>
 </header>
 
-<app-notification
-  *ngIf="showNotificationPopup"
-  (close)="showNotificationPopup = false"
-  (readChanged)="fetchNotifications()">
-</app-notification> 
+<div *ngIf="showNotificationPopup" class="notification-popup-overlay" (click)="showNotificationPopup = false">
+  <app-notification
+    (close)="showNotificationPopup = false"
+    (readChanged)="fetchNotifications()"
+    (click)="$event.stopPropagation()">
+  </app-notification>
+</div> 

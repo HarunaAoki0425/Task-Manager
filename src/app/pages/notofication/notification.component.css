@@ -53,6 +53,7 @@
   padding: 1em 1.2em 0.8em 1.2em;
   margin-bottom: 1.1em;
   transition: box-shadow 0.2s;
+  position: relative;
 }
 .notification-card:hover {
   box-shadow: 0 4px 16px rgba(0,0,0,0.10);
@@ -71,4 +72,18 @@
   background: #bbdefb;
   transform: scale(0.98);
   transition: background 0.1s, transform 0.1s;
+}
+
+.notification-trash {
+  position: absolute;
+  bottom: 12px;
+  right: 16px;
+  color: #b0b0b0;
+  cursor: pointer;
+  font-size: 20px;
+  z-index: 2;
+  transition: color 0.2s;
+}
+.notification-trash:hover {
+  color: #e53935;
 }

@@ -1,7 +1,7 @@
 import { Component, OnInit, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { collection, getDocs, Firestore, doc, updateDoc } from '@angular/fire/firestore';
+import { collection, getDocs, Firestore, doc, updateDoc, deleteDoc } from '@angular/fire/firestore';
 import { AuthService } from '../../services/auth.service';
 
 @Component({
@@ -52,6 +52,13 @@ export class NotificationComponent implements OnInit {
       notif.read = true;
       this.readChanged.emit();
     }
+  }
+
+  async deleteNotification(notif: any) {
+    if (!notif.id) return;
+    const notifRef = doc(this.firestore, 'notifications', notif.id);
+    await deleteDoc(notifRef);
+    this.notifications = this.notifications.filter(n => n.id !== notif.id);
   }
 
   onClose() {

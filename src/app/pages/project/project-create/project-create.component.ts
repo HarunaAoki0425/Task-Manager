@@ -160,4 +160,14 @@ export class ProjectCreateComponent {
       this.isSubmitting = false;
     }
   }
+
+  goToProjectList() {
+    // いずれかの入力欄が埋まっていたら警告
+    const hasInput = this.projectTitle.trim() || this.description.trim() || this.dueDate || this.selectedMembers.length > 0;
+    if (hasInput) {
+      const confirmed = window.confirm('プロジェクトは保存されませんが、戻りますか？');
+      if (!confirmed) return;
+    }
+    this.router.navigate(['/projects']);
+  }
 } 

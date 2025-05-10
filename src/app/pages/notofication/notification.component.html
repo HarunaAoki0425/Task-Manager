@@ -3,6 +3,7 @@
   <h2>通知一覧</h2>
   <div *ngIf="notifications.length > 0">
     <div *ngFor="let notif of notifications" class="notification-card" [ngClass]="{'unread': notif.read === false, 'read': notif.read === true}" (click)="markAsRead(notif)">
+      <span class="notification-trash" *ngIf="notif.read" (click)="$event.stopPropagation(); deleteNotification(notif)"><span class="material-icons">delete</span></span>
       <div>{{ notif.message }}</div>
       <div>
         <strong>

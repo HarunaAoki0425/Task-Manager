@@ -7,6 +7,7 @@ import { MatListModule } from '@angular/material/list';
 import { MatIconModule } from '@angular/material/icon';
 import { RouterModule } from '@angular/router';
 import { ProjectService } from './services/project.service';
+import { TodoService } from './services/todo.service';
 
 @Component({
   selector: 'app-root',
@@ -26,7 +27,7 @@ export class AppComponent implements OnDestroy {
   private pollIntervalId: any = null;
   private lastUserId: string | null = null;
 
-  constructor(private auth: Auth, private authService: AuthService, private projectService: ProjectService) {
+  constructor(private auth: Auth, private authService: AuthService, private projectService: ProjectService, private todoService: TodoService) {
     this.authService.user$.subscribe(user => {
       if (user) {
         if (this.lastUserId !== user.uid && this.pollIntervalId) {
@@ -36,10 +37,12 @@ export class AppComponent implements OnDestroy {
         this.lastUserId = user.uid;
 
         this.projectService.getTodayIssuesForUser();
+        this.todoService.getTodosAssignedToMe();
 
         if (!this.pollIntervalId) {
           this.pollIntervalId = setInterval(() => {
             this.projectService.getTodayIssuesForUser();
+            this.todoService.getTodosAssignedToMe();
           }, 5 * 60 * 1000);
         }
       } else {

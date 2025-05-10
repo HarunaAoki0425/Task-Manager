@@ -7,6 +7,7 @@
       <div>{{ notif.message }}</div>
       <div>
         <strong>
+          <div>締切 {{ notif.todoDueDate?.toDate() | date:'HH:mm' }}</div>
           <a [routerLink]="['/projects', notif.projectId]" class="project-link" (click)="$event.stopPropagation(); onClose()">{{ notif.title }}</a>
           <a [routerLink]="['/projects', notif.projectId, 'issues', notif.issueId]" class="issue-link" (click)="$event.stopPropagation(); onClose()">{{ notif.issueTitle }}</a>
         </strong>

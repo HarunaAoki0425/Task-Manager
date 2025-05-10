@@ -104,15 +104,11 @@ export class IssueDetailComponent implements OnInit {
   // プロジェクトメンバーを読み込む
   async loadProjectMembers() {
     if (!this.projectId) {
-      console.log('Project ID is missing');
       return;
     }
     try {
-      console.log('Loading members for project:', this.projectId);
       this.memberDetails = await this.projectService.getProjectMembers(this.projectId);
-      console.log('[DEBUG] memberDetails:', this.memberDetails);
     } catch (error) {
-      console.error('Error loading project members:', error);
     }
   }
 
@@ -146,7 +142,6 @@ export class IssueDetailComponent implements OnInit {
       }
       todo.updatedAt = now;
     } catch (error) {
-      console.error('Error toggling todo:', error);
       this.error = 'Todoの状態更新に失敗しました。';
     }
   }
@@ -173,7 +168,6 @@ export class IssueDetailComponent implements OnInit {
           title: projectData['title'] || ''
         };
       } else {
-        console.error('Project not found');
         return;
       }
 
@@ -197,17 +191,14 @@ export class IssueDetailComponent implements OnInit {
         } as Issue;
         await this.loadTodos();
         // デバッグ: assigneesの中身を出力
-        console.log('[DEBUG] issue.assignees:', this.issue.assignees);
         if (this.issue.assignees) {
           for (const uid of this.issue.assignees) {
-            console.log(`[DEBUG] getMemberDisplayName(${uid}):`, this.getMemberDisplayName(uid));
           }
         }
       } else {
         this.error = '課題が見つかりませんでした。';
       }
     } catch (error) {
-      console.error('Error loading issue:', error);
       this.error = '課題の読み込みに失敗しました。';
     } finally {
       this.isLoading = false;
@@ -228,7 +219,6 @@ export class IssueDetailComponent implements OnInit {
         ...doc.data()
       })) as Todo[];
     } catch (error) {
-      console.error('Error loading todos:', error);
       this.error = 'Todoの読み込みに失敗しました。';
     }
   }
@@ -345,7 +335,6 @@ export class IssueDetailComponent implements OnInit {
         dueDate: null
       };
     } catch (error) {
-      console.error('Error adding todo:', error);
       this.error = 'Todoの追加に失敗しました。';
     }
   }
@@ -438,8 +427,11 @@ export class IssueDetailComponent implements OnInit {
           message: `課題「${this.editingIssue.title}」の担当者に追加されました。`
         });
       }
+
+      // 編集ポップアップを閉じ、課題詳細を再取得
+      this.isPopupVisible = false;
+      await this.loadIssue();
     } catch (error) {
-      console.error('Error saving issue:', error);
       this.error = '課題の保存に失敗しました。';
     }
   }
@@ -452,7 +444,6 @@ export class IssueDetailComponent implements OnInit {
       await deleteDoc(todoRef);
       this.todos = this.todos.filter(todo => todo.id !== todoId);
     } catch (error) {
-      console.error('Error deleting todo:', error);
       this.error = 'Todoの削除に失敗しました。';
     }
   }
@@ -466,7 +457,6 @@ export class IssueDetailComponent implements OnInit {
       try {
         await this.deleteTodo(todoId);
       } catch (error) {
-        console.error('ToDo削除中にエラーが発生しました:', error);
       }
     }
   }
@@ -489,7 +479,6 @@ export class IssueDetailComponent implements OnInit {
         // プロジェクト詳細画面に戻る
         this.router.navigate(['/projects', this.projectId]);
       } catch (error) {
-        console.error('Error deleting issue:', error);
         this.error = '課題の削除に失敗しました。';
       }
     }

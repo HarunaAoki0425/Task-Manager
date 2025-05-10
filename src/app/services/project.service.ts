@@ -356,4 +356,56 @@ export class ProjectService {
     // プロジェクト本体削除
     await deleteDoc(doc(this.firestore, 'projects', projectId));
   }
+
+  /**
+   * 指定ユーザーがメンバーの全プロジェクトから、開始日が今日の課題を取得
+   */
+  async getTodayIssuesForUser(): Promise<any[]> {
+    const userId = this.auth.currentUser?.uid;
+    if (!userId) throw new Error('User not authenticated');
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+    const projects = await this.getUserProjects();
+    const allIssues: any[] = [];
+    for (const project of projects) {
+      const issuesRef = collection(this.firestore, 'projects', project.id!, 'issues');
+      const q = query(
+        issuesRef,
+        where('startDate', '>=', Timestamp.fromDate(today)),
+        where('startDate', '<', Timestamp.fromDate(tomorrow)),
+        where('status', '==', '未着手'),
+        where('members', 'array-contains', userId)
+      );
+      const snapshot = await getDocs(q);
+      for (const docSnap of snapshot.docs) {
+        const issue = { id: docSnap.id, ...(docSnap.data() as any), projectId: project.id };
+        allIssues.push(issue);
+        // 通知作成処理
+        const notificationsRef = collection(this.firestore, 'notifications');
+        // 既存通知の重複チェック（同じissueId, user, 今日の日付で）
+        const notifQ = query(
+          notificationsRef,
+          where('issueId', '==', issue.id),
+          where('userId', '==', userId),
+          where('read', '==', false)
+        );
+        const notifSnap = await getDocs(notifQ);
+        if (notifSnap.empty) {
+          await addDoc(notificationsRef, {
+            message: '今日が開始日の課題があります。',
+            title: issue.title || '',
+            issueId: issue.id,
+            userId: userId,
+            recipients: [userId],
+            createdAt: Timestamp.now(),
+            read: false
+          });
+        }
+      }
+    }
+    console.log('[DEBUG] 今日の課題:', allIssues);
+    return allIssues;
+  }
 } 

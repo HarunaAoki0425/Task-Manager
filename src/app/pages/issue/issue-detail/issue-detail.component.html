@@ -195,7 +195,7 @@
       <button 
         class="save-button" 
         (click)="saveIssue()" 
-        [disabled]="!editingIssue.title || !editingIssue.startDate || !editingIssue.dueDate">
+        [disabled]="!editingIssue.title.trim() || !editingIssue.startDate.trim() || !editingIssue.dueDate.trim()">
         保存
       </button>
       <button class="cancel-button" (click)="togglePopup()">閉じる</button>

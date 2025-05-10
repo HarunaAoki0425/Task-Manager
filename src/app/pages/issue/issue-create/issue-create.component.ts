@@ -195,6 +195,10 @@ export class IssueCreateComponent implements OnInit {
       const projectColor = projectSnap.exists() ? projectSnap.data()['color'] : null;
 
       const now = Timestamp.now();
+      let projectMembers: string[] = [];
+      if (projectSnap.exists()) {
+        projectMembers = projectSnap.data()['members'] || [];
+      }
       const issueData = {
         title: this.title,
         startDate: Timestamp.fromDate(new Date(this.startDate)),
@@ -205,7 +209,8 @@ export class IssueCreateComponent implements OnInit {
         status: '未着手',
         createdAt: now,
         updatedAt: now,
-        color: projectColor
+        color: projectColor,
+        members: projectMembers
       };
 
       const issuesRef = collection(this.firestore, `projects/${this.projectId}/issues`);

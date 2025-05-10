@@ -119,12 +119,14 @@ export class ArchiveComponent implements OnInit, OnDestroy {
     try {
       // 元のTodoの場所に復元
       const todoRef = doc(this.firestore, `projects/${todo.projectId}/issues/${todo.issueId}/todos/${todo.id}`);
-      await setDoc(todoRef, {
+      const safeTodo = {
         ...todo,
+        issueTitle: todo.issueTitle || '', // undefinedを防ぐ
         completed: false,
         completedAt: null,
         updatedAt: Timestamp.now()
-      });
+      };
+      await setDoc(todoRef, safeTodo);
 
       // UIを更新
       this.completedTodos = this.completedTodos.filter(t => t.id !== todo.id);

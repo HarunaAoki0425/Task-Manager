@@ -20,7 +20,7 @@
             <li *ngFor="let issue of issues">
               <div class="issue-card" [style.--issue-bg]="issue.projectColor || '#e3f2fd'" (click)="goToIssueDetail(issue)">
                 <div class="issue-card-left">
-                  <div class="issue-title">{{ issue.title }}</div>
+                  <div class="issue-title">{{ issue.issueTitle }}</div>
                   <div class="issue-meta">
                     <!-- ここに優先度や担当者など他の情報があれば追加 -->
                   </div>

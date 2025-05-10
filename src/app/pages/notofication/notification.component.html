@@ -8,7 +8,7 @@
       <div>
         <strong>
           <a [routerLink]="['/projects', notif.projectId]" class="project-link" (click)="$event.stopPropagation(); onClose()">{{ notif.title }}</a>
-          <a [routerLink]="['/projects', notif.projectId, 'issues', notif.issueId]" class="issue-link" (click)="$event.stopPropagation(); onClose()">{{ notif.issuetitle }}</a>
+          <a [routerLink]="['/projects', notif.projectId, 'issues', notif.issueId]" class="issue-link" (click)="$event.stopPropagation(); onClose()">{{ notif.issueTitle }}</a>
         </strong>
       </div>
       <div>{{ notif.createdAt?.toDate() | date:'yyyy/MM/dd HH:mm' }}</div>

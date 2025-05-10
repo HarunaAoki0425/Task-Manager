@@ -155,7 +155,7 @@
           <div class="issues-list">
             <div *ngFor="let issue of issuesNotStarted" class="issue-card">
               <div class="issue-card-header">
-                <div class="issue-title clickable" (click)="goToIssueDetail(issue.id)">{{ issue.title }}</div>
+                <div class="issue-title clickable" (click)="goToIssueDetail(issue.id)">{{ issue.issueTitle }}</div>
                 <span class="priority-icon" [ngClass]="{
                   'priority-high': issue.priority === 'high',
                   'priority-medium': issue.priority === 'medium',
@@ -196,7 +196,7 @@
           <div class="issues-list">
             <div *ngFor="let issue of issuesInProgress" class="issue-card">
               <div class="issue-card-header">
-                <div class="issue-title clickable" (click)="goToIssueDetail(issue.id)">{{ issue.title }}</div>
+                <div class="issue-title clickable" (click)="goToIssueDetail(issue.id)">{{ issue.issueTitle }}</div>
                 <span class="priority-icon" [ngClass]="{
                   'priority-high': issue.priority === 'high',
                   'priority-medium': issue.priority === 'medium',
@@ -238,7 +238,7 @@
           <div class="issues-list">
             <div *ngFor="let issue of issuesOnHold" class="issue-card">
               <div class="issue-card-header">
-                <div class="issue-title clickable" (click)="goToIssueDetail(issue.id)">{{ issue.title }}</div>
+                <div class="issue-title clickable" (click)="goToIssueDetail(issue.id)">{{ issue.issueTitle }}</div>
                 <span class="priority-icon" [ngClass]="{
                   'priority-high': issue.priority === 'high',
                   'priority-medium': issue.priority === 'medium',
@@ -280,7 +280,7 @@
           <div class="issues-list">
             <div *ngFor="let issue of issuesDone" class="issue-card">
               <div class="issue-card-header">
-                <div class="issue-title clickable" (click)="goToIssueDetail(issue.id)">{{ issue.title }}</div>
+                <div class="issue-title clickable" (click)="goToIssueDetail(issue.id)">{{ issue.issueTitle }}</div>
                 <span class="priority-icon" [ngClass]="{
                   'priority-high': issue.priority === 'high',
                   'priority-medium': issue.priority === 'medium',

@@ -388,14 +388,13 @@ export class ProjectService {
         const notifQ = query(
           notificationsRef,
           where('issueId', '==', issue.id),
-          where('userId', '==', userId),
-          where('read', '==', false)
+          where('userId', '==', userId)
         );
         const notifSnap = await getDocs(notifQ);
         if (notifSnap.empty) {
           await addDoc(notificationsRef, {
             message: '今日が開始日の課題があります。',
-            title: issue.title || '',
+            issueTitle: issue.issueTitle || '',
             issueId: issue.id,
             userId: userId,
             recipients: [userId],
@@ -405,7 +404,6 @@ export class ProjectService {
         }
       }
     }
-    console.log('[DEBUG] 今日の課題:', allIssues);
     return allIssues;
   }
 } 

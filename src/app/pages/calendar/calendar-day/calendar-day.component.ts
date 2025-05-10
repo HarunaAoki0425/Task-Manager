@@ -5,7 +5,7 @@ import { Firestore, collection, query, where, getDocs, Timestamp, doc, updateDoc
 
 interface Issue {
   id: string;
-  title: string;
+  issueTitle: string;
   startDate: Timestamp;
   dueDate: Timestamp;
   createdAt: Timestamp;

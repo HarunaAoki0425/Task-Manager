@@ -10,7 +10,7 @@ import { Subscription } from 'rxjs';
 
 interface Issue {
   id: string;
-  title: string;
+  issueTitle: string;
   description: string;
   status: '未着手' | '進行中' | '保留' | '完了';
   priority: 'high' | 'medium' | 'low';

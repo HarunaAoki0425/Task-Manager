@@ -41,9 +41,9 @@
           <div *ngFor="let issue of getIssuesForDate(day.fullDate)" 
                class="calendar-item issue-item"
                [style.background-color]="issue.color || '#e9ecef'"
-               [title]="issue.title"
+               [title]="issue.issueTitle"
                (click)="goToIssueDetail(issue)">
-            <div class="item-title">{{ issue.title }}</div>
+            <div class="item-title">{{ issue.issueTitle }}</div>
           </div>
         </ng-container>
         <!-- Todoの表示 -->

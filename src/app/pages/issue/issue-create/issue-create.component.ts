@@ -5,6 +5,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Todo } from '../../../models/todo.model';
 import { User } from '../../../models/user.model';
+import { Auth } from '@angular/fire/auth';
 
 @Component({
   selector: 'app-issue-create',
@@ -37,7 +38,8 @@ export class IssueCreateComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private firestore: Firestore
+    private firestore: Firestore,
+    private auth: Auth
   ) {
     this.route.paramMap.subscribe(params => {
       this.projectId = params.get('projectId');
@@ -199,38 +201,34 @@ export class IssueCreateComponent implements OnInit {
       if (projectSnap.exists()) {
         projectMembers = projectSnap.data()['members'] || [];
       }
+      const currentUserId = this.auth.currentUser?.uid || '';
       const issueData = {
-        title: this.title,
+        issueTitle: this.title,
         startDate: Timestamp.fromDate(new Date(this.startDate)),
         dueDate: Timestamp.fromDate(new Date(this.dueDate)),
-        assignees: this.assignees.length > 0 ? this.assignees : ['unassigned'],  // 担当者が選択されていない場合は未割り当て
+        assignees: this.assignees.length > 0 ? this.assignees : ['unassigned'],
         priority: this.priority,
         memo: this.memo,
         status: '未着手',
         createdAt: now,
         updatedAt: now,
         color: projectColor,
-        members: projectMembers
+        members: projectMembers,
+        createdBy: currentUserId
       };
 
       const issuesRef = collection(this.firestore, `projects/${this.projectId}/issues`);
       const issueDocRef = await addDoc(issuesRef, issueData);
       this.issueId = issueDocRef.id;
 
-      // 課題担当者への通知を作成
-      // createdByはassigneesに含まれていない場合もあるので、projectのcreatedByを取得する
-      let projectCreatedBy = '';
-      if (projectSnap.exists()) {
-        projectCreatedBy = projectSnap.data()['createdBy'] || '';
-      }
-      // recipients: 担当者から作成者を除外
-      const recipients = this.assignees.filter(uid => uid !== projectCreatedBy);
+      // recipients: 担当者から課題作成者（currentUserId）を除外
+      const recipients = this.assignees.filter(uid => uid !== currentUserId);
       if (recipients.length > 0) {
         const notificationsRef = collection(this.firestore, 'notifications');
         await addDoc(notificationsRef, {
           projectId: this.projectId,
           issueId: issueDocRef.id,
-          issuetitle: this.title,
+          issueTitle: this.title,
           createdAt: now,
           read: false,
           recipients: recipients,
@@ -263,12 +261,12 @@ export class IssueCreateComponent implements OnInit {
         // Todoごとに通知を作成
         for (const todo of this.todos) {
           const assignee = todo.assignee;
-          if (assignee && assignee !== projectCreatedBy && assignee !== 'unassigned') {
+          if (assignee && assignee !== currentUserId && assignee !== 'unassigned') {
             const notificationsRef = collection(this.firestore, 'notifications');
             await addDoc(notificationsRef, {
               projectId: this.projectId,
               issueId: issueDocRef.id,
-              issuetitle: this.title,
+              issueTitle: this.title,
               createdAt: now,
               read: false,
               recipients: [assignee],

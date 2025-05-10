@@ -10,7 +10,7 @@ import { AuthService } from '../../../services/auth.service';
 
 interface Issue {
   id?: string;
-  title: string;
+  issueTitle: string;
   startDate: Timestamp;
   dueDate: Timestamp;
   assignees: string[];
@@ -23,7 +23,7 @@ interface Issue {
 }
 
 interface FirestoreIssueData {
-  title: string;
+  issueTitle: string;
   startDate: Timestamp;
   dueDate: Timestamp;
   assignees: string[];
@@ -53,14 +53,14 @@ export class IssueDetailComponent implements OnInit {
   error: string | null = null;
   isPopupVisible = false;
   editingIssue: {
-    title: string;
+    issueTitle: string;
     startDate: string;
     dueDate: string;
     assignees: string[];
     priority: string;
     memo: string;
   } = {
-    title: '',
+    issueTitle: '',
     startDate: '',
     dueDate: '',
     assignees: [],
@@ -178,7 +178,7 @@ export class IssueDetailComponent implements OnInit {
         const data = issueSnap.data() as FirestoreIssueData;
         this.issue = {
           id: issueSnap.id,
-          title: data.title,
+          issueTitle: data.issueTitle,
           startDate: data.startDate,
           dueDate: data.dueDate,
           assignees: data.assignees,
@@ -291,7 +291,7 @@ export class IssueDetailComponent implements OnInit {
         projectId: this.projectId,
         projectTitle: this.project.title,  // プロジェクトのタイトルを正しく設定
         issueId: this.issueId,
-        issueTitle: this.issue.title,      // 課題のタイトルを設定
+        issueTitle: this.issue.issueTitle,      // 課題のタイトルを設定
         createdAt: now,
         updatedAt: now,
         color: issueColor  // issueのcolorを設定
@@ -320,11 +320,11 @@ export class IssueDetailComponent implements OnInit {
         await addDoc(notificationsRef, {
           projectId: this.projectId,
           issueId: this.issueId,
-          issuetitle: this.issue?.title || '',
+          issueTitle: this.issue?.issueTitle || '',
           createdAt: now,
           read: false,
           recipients: [assignee],
-          message: `課題「${this.issue?.title || ''}」のToDo「${todo.title}」の担当者に選ばれました。`
+          message: `課題「${this.issue?.issueTitle || ''}」のToDo「${todo.title}」の担当者に選ばれました。`
         });
       }
 
@@ -345,7 +345,7 @@ export class IssueDetailComponent implements OnInit {
     if (this.isPopupVisible && this.issue) {
       // ポップアップを開く時に現在の値をフォームに設定
       this.editingIssue = {
-        title: this.issue.title,
+        issueTitle: this.issue.issueTitle,
         startDate: this.formatDateForInput(this.issue.startDate),
         dueDate: this.formatDateForInput(this.issue.dueDate),
         assignees: this.issue.assignees || [],
@@ -399,7 +399,7 @@ export class IssueDetailComponent implements OnInit {
       const assignees = this.editingIssue.assignees.filter(a => a !== 'unassigned');
 
       const updatedIssue = {
-        title: this.editingIssue.title,
+        issueTitle: this.editingIssue.issueTitle,
         startDate: this.convertToTimestamp(this.editingIssue.startDate),
         dueDate: this.convertToTimestamp(this.editingIssue.dueDate),
         assignees, // 空配列もそのまま保存
@@ -420,11 +420,11 @@ export class IssueDetailComponent implements OnInit {
         await addDoc(notificationsRef, {
           projectId: this.projectId,
           issueId: this.issueId,
-          issuetitle: this.editingIssue.title,
+          issueTitle: this.editingIssue.issueTitle,
           createdAt: now,
           read: false,
           recipients: recipients,
-          message: `課題「${this.editingIssue.title}」の担当者に追加されました。`
+          message: `課題「${this.editingIssue.issueTitle}」の担当者に追加されました。`
         });
       }
 

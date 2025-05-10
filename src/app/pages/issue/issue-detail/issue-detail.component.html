@@ -8,7 +8,7 @@
   </div>
 
   <div class="issue-header">
-    <h1>{{ issue.title }}</h1>
+    <h1>{{ issue.issueTitle }}</h1>
     <div class="issue-meta">
       <div class="meta-item">
         <span class="label">ステータス:</span>
@@ -143,7 +143,7 @@
       <div class="popup-form">
         <div class="form-group">
           <label>タイトル<span class="required">※</span></label>
-          <input type="text" class="form-input" placeholder="タイトルを入力" [(ngModel)]="editingIssue.title">
+          <input type="text" class="form-input" placeholder="タイトルを入力" [(ngModel)]="editingIssue.issueTitle">
         </div>
 
         <div class="form-row">
@@ -195,7 +195,7 @@
       <button 
         class="save-button" 
         (click)="saveIssue()" 
-        [disabled]="!editingIssue.title.trim() || !editingIssue.startDate.trim() || !editingIssue.dueDate.trim()">
+        [disabled]="!editingIssue.issueTitle.trim() || !editingIssue.startDate.trim() || !editingIssue.dueDate.trim()">
         保存
       </button>
       <button class="cancel-button" (click)="togglePopup()">閉じる</button>

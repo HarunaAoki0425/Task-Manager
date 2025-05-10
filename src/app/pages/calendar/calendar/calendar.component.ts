@@ -19,7 +19,7 @@ interface Issue {
   id: string;
   projectId: string;
   projectTitle: string;
-  title: string;
+  issueTitle: string;
   startDate: Timestamp;
   dueDate: Timestamp;
   assignees: string[];
@@ -107,12 +107,12 @@ export class CalendarComponent implements OnInit {
               projectId: project.id,
               projectTitle: project.title,
               issueId: issueDoc.id,
-              issueTitle: issueDoc.data()['title'],
+              issueTitle: issueDoc.data()['issueTitle'],
               color: issueDoc.data()['color'] // 課題の色を継承
             };
           }) as Todo[];
 
-          console.log(`Found ${issueTodos.length} todos for issue: ${issueDoc.data()['title']}`);
+          console.log(`Found ${issueTodos.length} todos for issue: ${issueDoc.data()['issueTitle']}`);
           this.userTodos.push(...issueTodos);
         }
       }

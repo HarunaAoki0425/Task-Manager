@@ -1,6 +1,6 @@
 {
   "hosting": {
-    "public": "dist/task-manager-f7b3c",
+    "public": "dist/task-manager-app/browser",
     "ignore": [
       "firebase.json",
       "**/.*",

@@ -1,0 +1,16 @@
+{
+  "hosting": {
+    "public": "dist/task-manager-f7b3c",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  }
+}

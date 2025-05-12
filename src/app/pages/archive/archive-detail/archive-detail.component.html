@@ -15,7 +15,6 @@
           </div>
           <div class="project-meta-row">
             <div class="meta-item"><span class="meta-label">作成日</span><span class="meta-value">{{ formatDate(project?.createdAt) }}</span></div>
-            <div class="meta-item"><span class="meta-label">更新日</span><span class="meta-value">{{ formatDate(project?.updatedAt) }}</span></div>
             <div class="meta-item"><span class="meta-label">締切日</span><span class="meta-value">{{ project?.dueDate ? formatDate(project?.dueDate) : '' }}</span></div>
             <div class="meta-item"><span class="meta-label">作成者</span><span class="meta-value">{{ creatorName || '不明' }}</span></div>
             <div class="meta-item"><span class="meta-label">メンバー</span><span class="meta-value">
@@ -35,7 +34,7 @@
           <div class="issue-card" *ngFor="let issue of archivedIssues">
             <div class="issue-card-header">
               <div class="issue-title clickable">
-                {{ issue.title }}
+                {{ issue.issueTitle || issue.title }}
               </div>
             </div>
             <div class="issue-meta">
@@ -52,7 +51,7 @@
               <span>【ToDo】</span>
               <ul>
                 <li *ngFor="let todo of getTodosForIssue(issue.id);" [ngClass]="{ 'todo-completed': todo.completed }">
-                  <div class="todo-title">{{ todo.title }}</div>
+                  <div class="todo-title">{{ todo.todoTitle || todo.title }}</div>
                   <div class="todo-meta">
                     <span>担当者: {{ getMemberDisplayName(todo.assignee) }}</span>
                     <span>完了日時: {{ todo.completedAt ? formatDateTime(todo.completedAt) : '-' }}</span>

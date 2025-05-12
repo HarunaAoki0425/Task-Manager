@@ -31,6 +31,7 @@ export class ArchiveDetailComponent implements OnInit {
   ) {}
 
   ngOnInit() {
+    window.scrollTo(0, 0);
     const projectId = this.route.snapshot.paramMap.get('id');
     if (projectId) {
       this.loadAllArchiveData(projectId);
@@ -109,14 +110,34 @@ export class ArchiveDetailComponent implements OnInit {
     }
   }
 
-  formatDate(timestamp: Timestamp | undefined): string {
+  formatDate(timestamp: any): string {
     if (!timestamp) return '日付なし';
-    return new DatePipe('ja-JP').transform(timestamp.toDate(), 'yyyy/MM/dd') || '日付なし';
+    let date: Date;
+    if (typeof timestamp.toDate === 'function') {
+      date = timestamp.toDate();
+    } else if (typeof timestamp === 'string') {
+      date = new Date(timestamp);
+    } else if (timestamp instanceof Date) {
+      date = timestamp;
+    } else {
+      return '日付なし';
+    }
+    return new DatePipe('ja-JP').transform(date, 'yyyy/MM/dd') || '日付なし';
   }
 
-  formatDateTime(timestamp: Timestamp | undefined): string {
+  formatDateTime(timestamp: any): string {
     if (!timestamp) return '日付なし';
-    return new DatePipe('ja-JP').transform(timestamp.toDate(), 'yyyy/MM/dd HH:mm') || '日付なし';
+    let date: Date;
+    if (typeof timestamp.toDate === 'function') {
+      date = timestamp.toDate();
+    } else if (typeof timestamp === 'string') {
+      date = new Date(timestamp);
+    } else if (timestamp instanceof Date) {
+      date = timestamp;
+    } else {
+      return '日付なし';
+    }
+    return new DatePipe('ja-JP').transform(date, 'yyyy/MM/dd HH:mm') || '日付なし';
   }
 
   isMemberObject(member: any): boolean {

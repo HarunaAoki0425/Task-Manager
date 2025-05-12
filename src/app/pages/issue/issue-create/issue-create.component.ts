@@ -225,15 +225,17 @@ export class IssueCreateComponent implements OnInit {
       const recipients = this.assignees.filter(uid => uid !== currentUserId);
       if (recipients.length > 0) {
         const notificationsRef = collection(this.firestore, 'notifications');
-        await addDoc(notificationsRef, {
-          projectId: this.projectId,
-          issueId: issueDocRef.id,
-          issueTitle: this.title,
-          createdAt: now,
-          read: false,
-          recipients: recipients,
-          message: `課題「${this.title}」の担当者に選ばれました。`
-        });
+        for (const recipient of recipients) {
+          await addDoc(notificationsRef, {
+            projectId: this.projectId,
+            issueId: issueDocRef.id,
+            issueTitle: this.title,
+            createdAt: now,
+            read: false,
+            recipients: [recipient],
+            message: `課題「${this.title}」の担当者に選ばれました。`
+          });
+        }
       }
 
       // 一時的なTodoリストをFirestoreに保存

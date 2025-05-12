@@ -332,9 +332,20 @@ export class ProjectDetailComponent implements OnInit, OnDestroy {
     }
   }
 
-  formatDateForInput(ts: Timestamp): string {
-    const date = ts.toDate();
-    return date.toISOString().slice(0, 16);
+  formatDateForInput(ts: any): string {
+    let date: Date;
+    if (!ts) return '';
+    if (typeof ts.toDate === 'function') {
+      date = ts.toDate();
+    } else if (typeof ts === 'string') {
+      date = new Date(ts);
+    } else if (ts instanceof Date) {
+      date = ts;
+    } else {
+      return '';
+    }
+    // input[type=date]用に 'YYYY-MM-DD' 形式で返す
+    return date.toISOString().split('T')[0];
   }
 
   cancelEdit() {

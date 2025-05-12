@@ -8,6 +8,17 @@ import { Project } from '../models/project.model';
 import { Firestore, collection, getDocs, onSnapshot, QuerySnapshot, DocumentData } from '@angular/fire/firestore';
 import { NotificationComponent } from '../pages/notofication/notification.component';
 
+// Utility functions for normalization (outside the class)
+function toHalfWidth(str: string): string {
+  return str.replace(/[Ａ-Ｚａ-ｚ０-９]/g, s =>
+    String.fromCharCode(s.charCodeAt(0) - 0xFEE0)
+  );
+}
+function normalize(str: string): string {
+  if (!str) return '';
+  return toHalfWidth(str).toLowerCase();
+}
+
 @Component({
   selector: 'app-header',
   standalone: true,
@@ -21,6 +32,7 @@ export class HeaderComponent implements OnDestroy {
   filteredIssues: any[] = [];
   filteredTodos: any[] = [];
   showNotificationPopup = false;
+  searchExecuted: boolean = false;
 
   notifications: any[] = [];
   unreadCount: number = 0;
@@ -77,9 +89,16 @@ export class HeaderComponent implements OnDestroy {
   }
 
   async onSearch() {
+    this.searchExecuted = true;
+    if (!this.searchText.trim()) {
+      this.filteredProjects = [];
+      this.filteredIssues = [];
+      this.filteredTodos = [];
+      return;
+    }
     const allProjects = await this.projectService.getUserProjects();
     this.filteredProjects = allProjects.filter(p =>
-      p.title && p.title.toLowerCase().includes(this.searchText.toLowerCase())
+      p.title && normalize(p.title).includes(normalize(this.searchText))
     );
     // 課題も検索
     let allIssues: any[] = [];
@@ -106,18 +125,22 @@ export class HeaderComponent implements OnDestroy {
         allTodos.push(...todosSnap.docs.map(doc => ({ id: doc.id, ...doc.data(), projectId: project.id, issueId: issue.id, isArchived: project.isArchived })));
       }
     }
-    this.filteredIssues = allIssues.filter(issue =>
-      issue.title && issue.title.toLowerCase().includes(this.searchText.toLowerCase())
-    );
-    this.filteredTodos = allTodos.filter(todo =>
-      todo.title && todo.title.toLowerCase().includes(this.searchText.toLowerCase())
-    );
+    this.filteredIssues = allIssues.filter(issue => {
+      const t = issue.title || issue.issueTitle;
+      return t && normalize(t).includes(normalize(this.searchText));
+    });
+    this.filteredTodos = allTodos.filter(todo => {
+      const t = todo.title || todo.todoTitle;
+      return t && normalize(t).includes(normalize(this.searchText));
+    });
   }
 
   closeSearchPopup() {
     this.filteredProjects = [];
     this.filteredIssues = [];
     this.filteredTodos = [];
+    this.searchExecuted = false;
+    this.searchText = '';
   }
 
   goToProjectDetail(project: Project) {

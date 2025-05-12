@@ -144,14 +144,16 @@ export class ProjectCreateComponent {
       const allMembers = [...this.selectedMembers.map(member => member.uid), this.currentUser!.uid];
       const recipients = allMembers.filter(uid => uid !== this.currentUser!.uid);
       if (recipients.length > 0) {
-        await addDoc(notificationsRef, {
-          createdAt: serverTimestamp(),
-          recipients: recipients,
-          projectId: docRef.id,
-          title: this.projectTitle,
-          message: '新しいプロジェクトのメンバーに追加されました。',
-          read: false
-        });
+        for (const recipient of recipients) {
+          await addDoc(notificationsRef, {
+            createdAt: serverTimestamp(),
+            recipients: [recipient],
+            projectId: docRef.id,
+            title: this.projectTitle,
+            message: '新しいプロジェクトのメンバーに追加されました。',
+            read: false
+          });
+        }
       }
 
       this.router.navigate(['/projects']);

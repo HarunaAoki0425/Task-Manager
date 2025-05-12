@@ -100,12 +100,10 @@ export class ProjectListComponent {
     } else {
       date = new Date(ts);
     }
-    // YYYY/MM/DD HH:mm 形式で返す
+    // YYYY/MM/DD 形式で返す（時間は表示しない）
     const y = date.getFullYear();
     const m = (date.getMonth() + 1).toString().padStart(2, '0');
     const d = date.getDate().toString().padStart(2, '0');
-    const h = date.getHours().toString().padStart(2, '0');
-    const min = date.getMinutes().toString().padStart(2, '0');
-    return `${y}/${m}/${d} ${h}:${min}`;
+    return `${y}/${m}/${d}`;
   }
 } 

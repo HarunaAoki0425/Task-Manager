@@ -9,7 +9,7 @@
       <tr>
         <th>プロジェクト名</th>
         <th>
-          <span>作成日時</span>
+          <span>作成日</span>
           <button class="sort-arrow" (click)="setSort('createdAt')">
             <span [class.active]="(sortField$ | async) === 'createdAt' && (sortOrder$ | async) === 'asc'">▲</span>
             <span [class.active]="(sortField$ | async) === 'createdAt' && (sortOrder$ | async) === 'desc'">▼</span>

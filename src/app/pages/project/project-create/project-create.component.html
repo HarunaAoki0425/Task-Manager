@@ -75,11 +75,11 @@
       </div>
     </div>
     <div class="form-group">
-      <label for="dueDate">締切日時 <span class="required" *ngIf="!noDueDate">*</span></label>
+      <label for="dueDate">締切日<span class="required" *ngIf="!noDueDate">*</span></label>
       <input
         id="dueDate"
         name="dueDate"
-        type="datetime-local"
+        type="date"
         class="form-control"
         [required]="!noDueDate"
         [(ngModel)]="dueDate"
@@ -93,7 +93,7 @@
           type="checkbox"
           [(ngModel)]="noDueDate"
         />
-        <label for="noDueDate">締切日時を設定しない</label>
+        <label for="noDueDate">締切日を設定しない</label>
       </div>
       <div class="error" *ngIf="dueDateCtrl.invalid && (dueDateCtrl.dirty || dueDateCtrl.touched) && !noDueDate">
         締切日時は必須です。
@@ -108,7 +108,7 @@
           name="members"
           class="form-control"
           [(ngModel)]="searchTerm"
-          placeholder="ユーザー名またはメールアドレスで検索"
+          placeholder="メールアドレスで検索"
           [disabled]="isSearching"
           (keyup.enter)="searchUsers()"
         />

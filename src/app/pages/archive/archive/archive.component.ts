@@ -169,7 +169,7 @@ export class ArchiveComponent implements OnInit, OnDestroy {
         return;
       }
       const projectData = archiveProjectSnap.data();
-      await setDoc(doc(this.firestore, 'projects', projectId), projectData);
+      await setDoc(doc(this.firestore, 'projects', projectId), { ...projectData, isArchived: false });
 
       // 2. commentsとrepliesを復元
       const commentsRef = collection(this.firestore, 'archives', projectId, 'comments');
@@ -202,7 +202,7 @@ export class ArchiveComponent implements OnInit, OnDestroy {
         const issueData = issueDoc.data();
         const issueId = issueDoc.id;
         const restoreIssueRef = doc(this.firestore, 'projects', projectId, 'issues', issueId);
-        batch.set(restoreIssueRef, issueData);
+        batch.set(restoreIssueRef, { ...issueData, isArchived: false });
 
         // todos取得
         const todosRef = collection(this.firestore, 'archives', projectId, 'issues', issueId, 'todos');
@@ -211,7 +211,7 @@ export class ArchiveComponent implements OnInit, OnDestroy {
           const todoData = todoDoc.data();
           const todoId = todoDoc.id;
           const restoreTodoRef = doc(this.firestore, 'projects', projectId, 'issues', issueId, 'todos', todoId);
-          batch.set(restoreTodoRef, todoData);
+          batch.set(restoreTodoRef, { ...todoData, isArchived: false });
           batch.delete(todoDoc.ref);
         }
         batch.delete(issueDoc.ref);

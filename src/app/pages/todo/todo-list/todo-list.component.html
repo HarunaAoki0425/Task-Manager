@@ -1,4 +1,5 @@
 <div class="todo-list-container">
+  <button class="back-home-btn" routerLink="/home">←ホームへ戻る</button>
   <!-- ヘッダー部分 -->
   <div class="header">
     <h1>ToDo一覧</h1>
@@ -14,7 +15,7 @@
 
       <div class="sort-group">
         <select class="filter-select" [(ngModel)]="selectedSort" (ngModelChange)="onFilterChange()">
-          <option value="dueDate">期限日順</option>
+          <option value="dueDate">締切日順</option>
           <option value="createdAt">作成日順</option>
           <option value="updatedAt">更新日順</option>
         </select>

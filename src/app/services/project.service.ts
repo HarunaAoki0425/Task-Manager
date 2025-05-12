@@ -380,34 +380,37 @@ export class ProjectService {
         issuesRef,
         where('startDate', '>=', Timestamp.fromDate(today)),
         where('startDate', '<', Timestamp.fromDate(tomorrow)),
-        where('status', '==', '未着手'),
-        where('members', 'array-contains', userId)
+        where('status', '==', '未着手')
       );
       const snapshotStart = await getDocs(qStart);
       for (const docSnap of snapshotStart.docs) {
         const issue = { id: docSnap.id, ...(docSnap.data() as any), projectId: project.id };
         allIssues.push(issue);
         // 通知作成処理
-        // 開始日が今日の課題の通知作成
-        const notifQStart = query(
-          notificationsRef,
-          where('issueId', '==', issue.id),
-          where('userId', '==', userId),
-          where('type', '==', 'start')
-        );
-        const notifSnapStart = await getDocs(notifQStart);
-        if (notifSnapStart.empty) {
-          await addDoc(notificationsRef, {
-            message: '今日が開始日の課題があります。',
-            issueTitle: issue.issueTitle || '',
-            issueId: issue.id,
-            projectId: project.id,
-            userId: userId,
-            recipients: [userId],
-            createdAt: Timestamp.now(),
-            read: false,
-            type: 'start'
-          });
+        // 課題のメンバー全員分通知を作成
+        const members: string[] = Array.isArray(issue.members) ? issue.members : [];
+        for (const memberId of members) {
+          const notifQStart = query(
+            notificationsRef,
+            where('issueId', '==', issue.id),
+            where('userId', '==', memberId),
+            where('type', '==', 'start')
+          );
+          const notifSnapStart = await getDocs(notifQStart);
+          if (notifSnapStart.empty) {
+            await addDoc(notificationsRef, {
+              message: '今日が開始日の課題があります。',
+              issueTitle: issue.issueTitle || '',
+              issueId: issue.id,
+              projectId: project.id,
+              userId: memberId,
+              recipients: [memberId],
+              createdAt: Timestamp.now(),
+              read: false,
+              hidden: false,
+              type: 'start'
+            });
+          }
         }
       }
       // 期限日が今日の課題
@@ -415,33 +418,36 @@ export class ProjectService {
         issuesRef,
         where('dueDate', '>=', Timestamp.fromDate(today)),
         where('dueDate', '<', Timestamp.fromDate(tomorrow)),
-        where('status', 'in', ['未着手', '進行中', '保留']),
-        where('members', 'array-contains', userId)
+        where('status', 'in', ['未着手', '進行中', '保留'])
       );
       const snapshotDue = await getDocs(qDue);
       for (const docSnap of snapshotDue.docs) {
         const issue = { id: docSnap.id, ...(docSnap.data() as any), projectId: project.id };
         allIssues.push(issue);
-        // 期限日が今日の課題の通知作成
-        const notifQDue = query(
-          notificationsRef,
-          where('issueId', '==', issue.id),
-          where('userId', '==', userId),
-          where('type', '==', 'due')
-        );
-        const notifSnapDue = await getDocs(notifQDue);
-        if (notifSnapDue.empty) {
-          await addDoc(notificationsRef, {
-            message: '今日が期限日の課題があります。',
-            issueTitle: issue.issueTitle || '',
-            issueId: issue.id,
-            projectId: project.id,
-            userId: userId,
-            recipients: [userId],
-            createdAt: Timestamp.now(),
-            read: false,
-            type: 'due'
-          });
+        // 課題のメンバー全員分通知を作成
+        const members: string[] = Array.isArray(issue.members) ? issue.members : [];
+        for (const memberId of members) {
+          const notifQDue = query(
+            notificationsRef,
+            where('issueId', '==', issue.id),
+            where('userId', '==', memberId),
+            where('type', '==', 'due')
+          );
+          const notifSnapDue = await getDocs(notifQDue);
+          if (notifSnapDue.empty) {
+            await addDoc(notificationsRef, {
+              message: '今日が期限日の課題があります。',
+              issueTitle: issue.issueTitle || '',
+              issueId: issue.id,
+              projectId: project.id,
+              userId: memberId,
+              recipients: [memberId],
+              createdAt: Timestamp.now(),
+              read: false,
+              hidden: false,
+              type: 'due'
+            });
+          }
         }
       }
     }

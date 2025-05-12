@@ -1,6 +1,7 @@
-<div class="calendar">
+<div class="calendar">  
   <div class="calendar-header">
-    <div class="header-filters">
+    <a class="back-home-btn" routerLink="/home">←ホームへ戻る</a>
+    <div class="header-filters vertical-filters">
       <select [(ngModel)]="selectedProjectId" class="project-filter">
         <option [ngValue]="null">すべてのプロジェクト</option>
         <option *ngFor="let project of getFilteredProjects()" [ngValue]="project.id">{{ project.title }}</option>

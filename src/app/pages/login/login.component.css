@@ -47,6 +47,12 @@
   border-radius: 4px;
   font-size: 1rem;
   transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+
+/* Ensure right margin for email input matches password input */
+.form-field .form-input {
+  margin-right: 0.5em;
 }
 
 .form-input:focus {
@@ -140,13 +146,13 @@
 .register-email-input,
 .register-password-input {
   width: 100%;
-  max-width: 320px;
   font-size: 1rem;
   border: 1.5px solid #1976d2;
   border-radius: 4px;
   padding: 0.5rem 0.8rem;
   background: #f8faff;
   margin-bottom: 1.2em;
+  box-sizing: border-box;
 }
 .register-popup-actions {
   display: flex;
@@ -203,8 +209,6 @@
   display: flex;
   align-items: center;
   width: 100%;
-  max-width: 320px;
-  margin-bottom: 0.2em;
 }
 .eye-btn {
   background: none;
@@ -234,4 +238,9 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* Ensure right margin for email input matches password input */
+.password-input-row .form-input {
+  margin-right: 0;
 }

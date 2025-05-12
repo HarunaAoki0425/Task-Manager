@@ -5,6 +5,7 @@ import { Auth, User } from '@angular/fire/auth';
 import { addDays, startOfWeek } from 'date-fns';
 import { Firestore, collection, query, where, getDocs, doc, getDoc, Timestamp, updateDoc, serverTimestamp } from '@angular/fire/firestore';
 import { FormsModule } from '@angular/forms';
+import { RouterModule } from '@angular/router';
 
 interface Project {
   id: string;
@@ -51,7 +52,7 @@ interface Todo {
 @Component({
   selector: 'app-calendar',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './calendar.component.html',
   styleUrls: ['./calendar.component.css']
 })

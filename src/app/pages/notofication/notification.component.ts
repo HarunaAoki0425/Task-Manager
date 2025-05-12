@@ -1,7 +1,7 @@
-import { Component, OnInit, Output, EventEmitter } from '@angular/core';
+import { Component, OnInit, Output, EventEmitter, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { collection, getDocs, Firestore, doc, updateDoc, deleteDoc, getDoc } from '@angular/fire/firestore';
+import { collection, getDocs, Firestore, doc, updateDoc, deleteDoc, getDoc, onSnapshot, QuerySnapshot, DocumentData } from '@angular/fire/firestore';
 import { AuthService } from '../../services/auth.service';
 
 @Component({
@@ -11,11 +11,12 @@ import { AuthService } from '../../services/auth.service';
   standalone: true,
   imports: [CommonModule, RouterModule]
 })
-export class NotificationComponent implements OnInit {
+export class NotificationComponent implements OnInit, OnDestroy {
   @Output() close = new EventEmitter<void>();
   @Output() readChanged = new EventEmitter<void>();
   user: any = null;
   notifications: any[] = [];
+  private notifUnsubscribe: (() => void) | null = null;
 
   get unreadCount(): number {
     return this.notifications.filter(n => n.read === false).length;
@@ -24,31 +25,37 @@ export class NotificationComponent implements OnInit {
   constructor(private authService: AuthService, private firestore: Firestore) {}
 
   async ngOnInit() {
-    let batchFixed = false;
-    this.authService.user$.subscribe(async user => {
+    this.authService.user$.subscribe(user => {
       this.user = user;
+      if (this.notifUnsubscribe) {
+        this.notifUnsubscribe();
+        this.notifUnsubscribe = null;
+      }
       if (user) {
         const userId = user?.uid ?? '';
-        // トップレベルのnotificationsコレクションを取得
+        // 通知コレクションをリアルタイム購読
         const notifCol = collection(this.firestore, 'notifications');
-        const notifSnap = await getDocs(notifCol);
-        this.notifications = notifSnap.docs
-          .map(doc => ({ id: doc.id, ...(doc.data() as any) }))
-          .filter(notif => Array.isArray(notif.recipients) && notif.recipients.includes(userId))
-          .sort((a, b) => {
-            const aTime = a.createdAt && a.createdAt.toDate ? a.createdAt.toDate().getTime() : 0;
-            const bTime = b.createdAt && b.createdAt.toDate ? b.createdAt.toDate().getTime() : 0;
-            return bTime - aTime;
-          });
-        // 一度だけバッチ処理を実行
-        if (!batchFixed) {
-          batchFixed = true;
-          await this.batchFixProjectIdForNotifications();
-        }
+        this.notifUnsubscribe = onSnapshot(notifCol, (notifSnap: QuerySnapshot<DocumentData>) => {
+          this.notifications = notifSnap.docs
+            .map(doc => ({ id: doc.id, ...(doc.data() as any) }))
+            .filter(notif => Array.isArray(notif.recipients) && notif.recipients.includes(userId))
+            .filter(notif => !notif.hidden)
+            .sort((a, b) => {
+              const aTime = a.createdAt && a.createdAt.toDate ? a.createdAt.toDate().getTime() : 0;
+              const bTime = b.createdAt && b.createdAt.toDate ? b.createdAt.toDate().getTime() : 0;
+              return bTime - aTime;
+            });
+        });
       } else {
         this.notifications = [];
       }
     });
+  }
+
+  ngOnDestroy() {
+    if (this.notifUnsubscribe) {
+      this.notifUnsubscribe();
+    }
   }
 
   async markAsRead(notif: any) {
@@ -62,8 +69,7 @@ export class NotificationComponent implements OnInit {
 
   async deleteNotification(notif: any) {
     if (!notif.id) return;
-    const notifRef = doc(this.firestore, 'notifications', notif.id);
-    await deleteDoc(notifRef);
+    // Firestoreからは削除せず、画面上から非表示にするだけ
     this.notifications = this.notifications.filter(n => n.id !== notif.id);
   }
 
@@ -98,5 +104,12 @@ export class NotificationComponent implements OnInit {
         }
       }
     }
+  }
+
+  async hideNotification(notif: any) {
+    if (!notif.id) return;
+    const notifRef = doc(this.firestore, 'notifications', notif.id);
+    await updateDoc(notifRef, { hidden: true });
+    notif.hidden = true;
   }
 }

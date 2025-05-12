@@ -172,7 +172,8 @@ export class TodoService {
             const todosQuery = query(todosRef,
               where('assignee', '==', uid),
               where('todoDueDate', '>=', today),
-              where('todoDueDate', '<', tomorrow)
+              where('todoDueDate', '<', tomorrow),
+              where('completed', '==', false)
             );
             const todosSnapshot = await getDocs(todosQuery);
 
@@ -208,7 +209,8 @@ export class TodoService {
                   todoId: todo.id,
                   todoTitle: todo.todoTitle || '',
                   read: false,
-                  message: `ToDo「${todo.todoTitle || ''}」は今日が締切です。`,
+                  hidden: false,
+                  message: `「${todo.todoTitle || ''}」は今日が締切です。締切は「${todo.todoDueDate && todo.todoDueDate.toDate ? todo.todoDueDate.toDate().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }) : ''}」です。`,
                   completed: todo.completed,
                   recipients: [uid],
                   createdAt: new Date(),

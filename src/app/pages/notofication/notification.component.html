@@ -3,11 +3,10 @@
   <h2>通知一覧</h2>
   <div *ngIf="notifications.length > 0">
     <div *ngFor="let notif of notifications" class="notification-card" [ngClass]="{'unread': notif.read === false, 'read': notif.read === true}" (click)="markAsRead(notif)">
-      <span class="notification-trash" *ngIf="notif.read" (click)="$event.stopPropagation(); deleteNotification(notif)"><span class="material-icons">delete</span></span>
+      <span class="notification-trash" *ngIf="notif.read" (click)="$event.stopPropagation(); hideNotification(notif)"><span class="material-icons">delete</span></span>
       <div>{{ notif.message }}</div>
       <div>
         <strong>
-          <div>締切 {{ notif.todoDueDate?.toDate() | date:'HH:mm' }}</div>
           <a [routerLink]="['/projects', notif.projectId]" class="project-link" (click)="$event.stopPropagation(); onClose()">{{ notif.title }}</a>
           <a [routerLink]="['/projects', notif.projectId, 'issues', notif.issueId]" class="issue-link" (click)="$event.stopPropagation(); onClose()">{{ notif.issueTitle }}</a>
         </strong>

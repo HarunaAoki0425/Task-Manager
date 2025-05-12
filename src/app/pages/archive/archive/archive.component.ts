@@ -28,6 +28,7 @@ interface ProjectData {
   createdBy: string;
   members: string[];
   isArchived?: boolean;
+  archivedAt?: Timestamp | null;
   [key: string]: any;
 }
 
@@ -90,7 +91,13 @@ export class ArchiveComponent implements OnInit, OnDestroy {
         where('members', 'array-contains', currentUser.uid)
       );
       const snapshot = await getDocs(q);
-      this.archives = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      this.archives = snapshot.docs.map(doc => ({ ...(doc.data() as ProjectData), id: doc.id }))
+        .filter(archive => archive.createdBy === currentUser.uid)
+        .sort((a, b) => {
+          const aTime = a.archivedAt && a.archivedAt.toDate ? a.archivedAt.toDate().getTime() : 0;
+          const bTime = b.archivedAt && b.archivedAt.toDate ? b.archivedAt.toDate().getTime() : 0;
+          return bTime - aTime;
+        });
       this.error = null;
     } catch (e) {
       console.error('Error loading archives:', e);
@@ -103,7 +110,12 @@ export class ArchiveComponent implements OnInit, OnDestroy {
 
   async loadCompletedTodos(): Promise<void> {
     try {
-      this.completedTodos = await this.todoService.getCompletedTodos();
+      this.completedTodos = (await this.todoService.getCompletedTodos())
+        .sort((a, b) => {
+          const aTime = a.completedAt && a.completedAt.toDate ? a.completedAt.toDate().getTime() : 0;
+          const bTime = b.completedAt && b.completedAt.toDate ? b.completedAt.toDate().getTime() : 0;
+          return bTime - aTime;
+        });
     } catch (error) {
       console.error('Error loading completed todos:', error);
     }

@@ -6,11 +6,12 @@ import { Firestore } from '@angular/fire/firestore';
 import { doc, getDoc, setDoc } from '@angular/fire/firestore';
 import { filter, take } from 'rxjs';
 import { updatePassword, EmailAuthProvider, reauthenticateWithCredential } from '@angular/fire/auth';
+import { RouterModule } from '@angular/router';
 
 @Component({
   selector: 'app-setting',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './setting.component.html',
   styleUrls: ['./setting.component.css']
 })

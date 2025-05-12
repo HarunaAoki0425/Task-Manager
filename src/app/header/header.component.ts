@@ -1,11 +1,11 @@
-import { Component } from '@angular/core';
+import { Component, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 import { FormsModule } from '@angular/forms';
 import { ProjectService } from '../services/project.service';
 import { Project } from '../models/project.model';
-import { Firestore, collection, getDocs } from '@angular/fire/firestore';
+import { Firestore, collection, getDocs, onSnapshot, QuerySnapshot, DocumentData } from '@angular/fire/firestore';
 import { NotificationComponent } from '../pages/notofication/notification.component';
 
 @Component({
@@ -15,7 +15,7 @@ import { NotificationComponent } from '../pages/notofication/notification.compon
   templateUrl: './header.component.html',
   styleUrls: ['./header.component.css']
 })
-export class HeaderComponent {
+export class HeaderComponent implements OnDestroy {
   searchText: string = '';
   filteredProjects: Project[] = [];
   filteredIssues: any[] = [];
@@ -25,30 +25,43 @@ export class HeaderComponent {
   notifications: any[] = [];
   unreadCount: number = 0;
 
+  private notifUnsubscribe: (() => void) | null = null;
+
   constructor(
     private authService: AuthService,
     private router: Router,
     private projectService: ProjectService,
     private firestore: Firestore
   ) {
-    this.fetchNotifications();
+    this.subscribeToNotifications();
   }
 
-  async fetchNotifications() {
-    this.authService.user$.subscribe(async user => {
+  subscribeToNotifications() {
+    this.authService.user$.subscribe(user => {
+      if (this.notifUnsubscribe) {
+        this.notifUnsubscribe();
+        this.notifUnsubscribe = null;
+      }
       if (user) {
         const userId = user.uid;
         const notifCol = collection(this.firestore, 'notifications');
-        const notifSnap = await getDocs(notifCol);
-        this.notifications = notifSnap.docs
-          .map(doc => ({ id: doc.id, ...(doc.data() as any) }))
-          .filter(notif => Array.isArray(notif.recipients) && notif.recipients.includes(userId));
-        this.unreadCount = this.notifications.filter(n => n.read === false).length;
+        this.notifUnsubscribe = onSnapshot(notifCol, (notifSnap: QuerySnapshot<DocumentData>) => {
+          this.notifications = notifSnap.docs
+            .map(doc => ({ id: doc.id, ...(doc.data() as any) }))
+            .filter(notif => Array.isArray(notif.recipients) && notif.recipients.includes(userId));
+          this.unreadCount = this.notifications.filter(n => n.read === false).length;
+        });
       } else {
         this.notifications = [];
         this.unreadCount = 0;
       }
     });
+  }
+
+  ngOnDestroy() {
+    if (this.notifUnsubscribe) {
+      this.notifUnsubscribe();
+    }
   }
 
   async logout() {

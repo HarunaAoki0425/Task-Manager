@@ -1,4 +1,5 @@
 <div class="setting-container">
+  <a class="back-home-btn" routerLink="/home">←ホームへ戻る</a>
   <h2>設定</h2>
   <div *ngIf="isLoading" class="loading">読み込み中・・・</div>
   <div *ngIf="!isLoading" class="setting-info">
@@ -21,8 +22,8 @@
         <div class="password-input-row">
           <input [type]="currentPasswordVisible ? 'text' : 'password'" [(ngModel)]="currentPassword" class="password-input" placeholder="現在のパスワード" />
           <button type="button" class="eye-btn" (click)="toggleCurrentPasswordVisible()">
-            <svg *ngIf="!currentPasswordVisible" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="12" rx="8" ry="5"/><circle cx="12" cy="12" r="2.5"/></svg>
-            <svg *ngIf="currentPasswordVisible" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="12" rx="8" ry="5"/><line x1="2" y1="22" x2="22" y2="2"/></svg>
+            <svg *ngIf="currentPasswordVisible" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="12" rx="8" ry="5"/><circle cx="12" cy="12" r="2.5"/></svg>
+            <svg *ngIf="!currentPasswordVisible" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="12" rx="8" ry="5"/><line x1="2" y1="22" x2="22" y2="2"/></svg>
           </button>
         </div>
         <button (click)="reauthenticate()" [disabled]="isReauthenticating || !currentPassword" class="save-btn">認証</button>
@@ -32,15 +33,15 @@
         <div class="password-input-row">
           <input [type]="newPasswordVisible ? 'text' : 'password'" [(ngModel)]="newPassword" class="password-input" placeholder="新しいパスワード（6文字以上）" />
           <button type="button" class="eye-btn" (click)="toggleNewPasswordVisible()">
-            <svg *ngIf="!newPasswordVisible" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="12" rx="8" ry="5"/><circle cx="12" cy="12" r="2.5"/></svg>
-            <svg *ngIf="newPasswordVisible" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="12" rx="8" ry="5"/><line x1="2" y1="22" x2="22" y2="2"/></svg>
+            <svg *ngIf="newPasswordVisible" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="12" rx="8" ry="5"/><circle cx="12" cy="12" r="2.5"/></svg>
+            <svg *ngIf="!newPasswordVisible" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="12" rx="8" ry="5"/><line x1="2" y1="22" x2="22" y2="2"/></svg>
           </button>
         </div>
         <div class="password-input-row">
           <input [type]="newPasswordConfirmVisible ? 'text' : 'password'" [(ngModel)]="newPasswordConfirm" class="password-input" placeholder="新しいパスワード（確認）" />
           <button type="button" class="eye-btn" (click)="toggleNewPasswordConfirmVisible()">
-            <svg *ngIf="!newPasswordConfirmVisible" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="12" rx="8" ry="5"/><circle cx="12" cy="12" r="2.5"/></svg>
-            <svg *ngIf="newPasswordConfirmVisible" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="12" rx="8" ry="5"/><line x1="2" y1="22" x2="22" y2="2"/></svg>
+            <svg *ngIf="newPasswordConfirmVisible" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="12" rx="8" ry="5"/><circle cx="12" cy="12" r="2.5"/></svg>
+            <svg *ngIf="!newPasswordConfirmVisible" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="12" rx="8" ry="5"/><line x1="2" y1="22" x2="22" y2="2"/></svg>
           </button>
         </div>
         <div class="password-btn-row">

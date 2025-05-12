@@ -74,7 +74,23 @@ export class LoginComponent {
       this.registerPasswordConfirm = '';
       this.registerSuccessMessage = '登録が成功しました。ログインしてください。';
     } catch (e: any) {
-      this.registerErrorMessage = e.message || '登録に失敗しました。';
+      // Firebaseエラーコードを日本語に変換
+      switch (e.code) {
+        case 'auth/email-already-in-use':
+          this.registerErrorMessage = 'このメールアドレスは既に使用されています。';
+          break;
+        case 'auth/invalid-email':
+          this.registerErrorMessage = 'メールアドレスの形式が正しくありません。';
+          break;
+        case 'auth/operation-not-allowed':
+          this.registerErrorMessage = 'この操作は許可されていません。';
+          break;
+        case 'auth/weak-password':
+          this.registerErrorMessage = 'パスワードは6文字以上にしてください。';
+          break;
+        default:
+          this.registerErrorMessage = '登録に失敗しました。';
+      }
     } finally {
       this.registerSending = false;
     }

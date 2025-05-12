@@ -216,6 +216,19 @@ export class ProjectDetailComponent implements OnInit, OnDestroy {
             break;
         }
       });
+      // すべての分類で期限日順にソート
+      const sortByDueDate = (a: Issue, b: Issue) => {
+        if (!a.dueDate && !b.dueDate) return 0;
+        if (!a.dueDate) return 1;
+        if (!b.dueDate) return -1;
+        const aDate = a.dueDate.toDate ? a.dueDate.toDate() : new Date(a.dueDate);
+        const bDate = b.dueDate.toDate ? b.dueDate.toDate() : new Date(b.dueDate);
+        return aDate.getTime() - bDate.getTime();
+      };
+      this.issuesNotStarted.sort(sortByDueDate);
+      this.issuesInProgress.sort(sortByDueDate);
+      this.issuesOnHold.sort(sortByDueDate);
+      this.issuesDone.sort(sortByDueDate);
     } catch (error) {
       console.error('Error loading issues:', error);
     }
@@ -223,7 +236,8 @@ export class ProjectDetailComponent implements OnInit, OnDestroy {
 
   // ユーザーIDからdisplayNameを取得するメソッド
   getMemberDisplayName(uid: string | undefined): string {
-    if (!uid) return ''; // undefinedの場合は空文字を返す
+    if (!uid) return '';
+    if (uid === 'unassigned') return '';
     const member = this.projectMembers.find(m => m.uid === uid);
     return member ? member.displayName : 'Unknown';
   }
@@ -380,7 +394,9 @@ export class ProjectDetailComponent implements OnInit, OnDestroy {
 
   goToIssueCreate() {
     if (this.project) {
-      this.router.navigate(['projects', this.project.id, 'issues', 'create']);
+      this.router.navigate(['projects', this.project.id, 'issues', 'create']).then(() => {
+        setTimeout(() => window.scrollTo(0, 0), 0);
+      });
     }
   }
 

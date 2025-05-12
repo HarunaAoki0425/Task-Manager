@@ -1,6 +1,7 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
+import { RouterModule } from '@angular/router';
 import { Project } from '../../../models/project.model';
 import { ProjectService } from '../../../services/project.service';
 import { Timestamp, Firestore, doc, getDoc, collection, getDocs, writeBatch, setDoc } from '@angular/fire/firestore';
@@ -8,7 +9,7 @@ import { Timestamp, Firestore, doc, getDoc, collection, getDocs, writeBatch, set
 @Component({
   selector: 'app-archive-detail',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterModule],
   templateUrl: './archive-detail.component.html',
   styleUrls: ['./archive-detail.component.css']
 })

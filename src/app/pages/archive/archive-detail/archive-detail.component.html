@@ -3,7 +3,7 @@
     <ng-container>
       <div class="project-title-row">
         <div class="title-section">
-          <button class="back-btn" (click)="goToArchiveList()">← アーカイブ一覧へ</button>
+          <button class="back-to-list-btn" (click)="goToArchiveList()">← アーカイブ一覧へ戻る</button>
           <h2 class="project-name">{{ project?.title }}</h2>
         </div>
       </div>
@@ -18,17 +18,11 @@
             <div class="meta-item"><span class="meta-label">更新日</span><span class="meta-value">{{ formatDate(project?.updatedAt) }}</span></div>
             <div class="meta-item"><span class="meta-label">締切日</span><span class="meta-value">{{ project?.dueDate ? formatDate(project?.dueDate) : '' }}</span></div>
             <div class="meta-item"><span class="meta-label">作成者</span><span class="meta-value">{{ creatorName || '不明' }}</span></div>
-          </div>
-          <div class="project-member-row">
-            <span class="info-label">メンバー</span>
-            <div class="member-list">
-              <div class="member-item" *ngFor="let member of nonCreatorArchiveMembers">
-                <div class="member-info">
-                  <span class="member-name">{{ member.displayName }}</span>
-                  <button class="remove-member-btn">✕</button>
-                </div>
-              </div>
-            </div>
+            <div class="meta-item"><span class="meta-label">メンバー</span><span class="meta-value">
+              <ng-container *ngFor="let member of nonCreatorArchiveMembers; let last = last">
+                {{ member.displayName }}<span *ngIf="!last">, </span>
+              </ng-container>
+            </span></div>
           </div>
         </div>
       </ng-container>
@@ -42,11 +36,11 @@
             <div class="issue-card-header">
               <div class="issue-title clickable">
                 {{ issue.title }}
-                <span class="priority-icon" [ngClass]="getPriorityClass(issue.priority)">{{ getPriorityLabel(issue.priority) }}</span>
               </div>
             </div>
             <div class="issue-meta">
               <span>ステータス: {{ issue.status }}</span>
+              <span>優先度: {{ getPriorityLabel(issue.priority) }}</span>
               <span>開始日: {{ formatDate(issue.startDate) }}</span>
               <span>期限日: {{ formatDate(issue.dueDate) }}</span>
               <span>担当者: {{ getMemberDisplayName(issue.assignee) }}</span>

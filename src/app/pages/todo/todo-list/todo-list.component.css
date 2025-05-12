@@ -387,3 +387,19 @@
 .archive-badge i {
   font-size: 0.8rem;
 }
+
+.back-home-btn {
+  display: inline-block;
+  margin-bottom: 1.5rem;
+  padding: 0.5rem 1.2rem;
+  font-size: 1rem;
+  color: #212529;
+  background:  #f8f9fa;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+.back-home-btn:hover {
+  background: #e9ecef;
+}

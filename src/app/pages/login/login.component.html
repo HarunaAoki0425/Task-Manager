@@ -73,7 +73,7 @@
     <div class="input-error-message" *ngIf="registerErrorMessage">{{ registerErrorMessage }}</div>
     <div class="register-popup-actions">
       <button class="register-send-btn" type="button" (click)="onRegister()" [disabled]="!registerEmail || !registerPassword || !registerPasswordConfirm || registerPassword !== registerPasswordConfirm || registerSending">登録</button>
-      <button class="register-cancel-btn" type="button" (click)="showRegisterPopup = false" [disabled]="registerSending">キャンセル</button>
+      <button class="register-cancel-btn" type="button" (click)="showRegisterPopup = false; resetRegisterForm()" [disabled]="registerSending">キャンセル</button>
     </div>
   </div>
 </div>

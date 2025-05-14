@@ -685,15 +685,17 @@ export class ProjectDetailComponent implements OnInit, OnDestroy {
         if (contentWithoutMentions.length > 10) {
           contentPreview += '・・・';
         }
-        await addDoc(notificationsRef, {
-          createdAt: Timestamp.now(),
-          title: this.projectTitle,
-          message: `コメントでメンションされました。「${contentPreview}」`,
-          recipients: mentions,
-          read: false,
-          projectId: this.project?.id,
-          content: this.commentText.trim()
-        });
+        for (const uid of mentions) {
+          await addDoc(notificationsRef, {
+            createdAt: Timestamp.now(),
+            title: this.projectTitle,
+            message: `コメントでメンションされました。「${contentPreview}」`,
+            recipients: [uid],
+            read: false,
+            projectId: this.project?.id,
+            content: this.commentText.trim()
+          });
+        }
       }
 
       this.commentText = '';

@@ -389,11 +389,11 @@ export class ProjectService {
         // 通知作成処理
         // 課題のメンバー全員分通知を作成
         const members: string[] = Array.isArray(issue.members) ? issue.members : [];
-        for (const memberId of members) {
+        if (members.includes(userId)) {
           const notifQStart = query(
             notificationsRef,
             where('issueId', '==', issue.id),
-            where('userId', '==', memberId),
+            where('userId', '==', userId),
             where('type', '==', 'start')
           );
           const notifSnapStart = await getDocs(notifQStart);
@@ -403,8 +403,8 @@ export class ProjectService {
               issueTitle: issue.issueTitle || '',
               issueId: issue.id,
               projectId: project.id,
-              userId: memberId,
-              recipients: [memberId],
+              userId: userId,
+              recipients: [userId],
               createdAt: Timestamp.now(),
               read: false,
               hidden: false,
@@ -426,11 +426,11 @@ export class ProjectService {
         allIssues.push(issue);
         // 課題のメンバー全員分通知を作成
         const members: string[] = Array.isArray(issue.members) ? issue.members : [];
-        for (const memberId of members) {
+        if (members.includes(userId)) {
           const notifQDue = query(
             notificationsRef,
             where('issueId', '==', issue.id),
-            where('userId', '==', memberId),
+            where('userId', '==', userId),
             where('type', '==', 'due')
           );
           const notifSnapDue = await getDocs(notifQDue);
@@ -440,8 +440,8 @@ export class ProjectService {
               issueTitle: issue.issueTitle || '',
               issueId: issue.id,
               projectId: project.id,
-              userId: memberId,
-              recipients: [memberId],
+              userId: userId,
+              recipients: [userId],
               createdAt: Timestamp.now(),
               read: false,
               hidden: false,

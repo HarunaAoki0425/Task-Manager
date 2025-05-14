@@ -93,8 +93,6 @@ export class CalendarComponent implements OnInit {
         const issuesRef = collection(this.firestore, `projects/${project.id}/issues`);
         const issuesSnapshot = await getDocs(issuesRef);
 
-        console.log(`Fetching todos for project: ${project.title}`);
-
         // 各課題のTodoを取得
         for (const issueDoc of issuesSnapshot.docs) {
           const todosRef = collection(this.firestore, `projects/${project.id}/issues/${issueDoc.id}/todos`);
@@ -117,13 +115,10 @@ export class CalendarComponent implements OnInit {
             };
           }) as Todo[];
 
-          console.log(`Found ${issueTodos.length} todos for issue: ${issueDoc.data()['issueTitle']}`);
           this.userTodos.push(...issueTodos);
         }
       }
 
-      console.log('Total todos fetched:', this.userTodos.length);
-      console.log('Sample todo:', this.userTodos[0]);
     } catch (error) {
       console.error('Error fetching todos:', error);
     }
@@ -344,7 +339,6 @@ export class CalendarComponent implements OnInit {
   getTodosForDate(date: Date): Todo[] {
     const todos = this.getFilteredTodos().filter(todo => {
       if (!todo.todoDueDate) {
-        console.log('Todo without dueDate:', todo);
         return false;
       }
       if (todo.completed) return false;
@@ -354,7 +348,7 @@ export class CalendarComponent implements OnInit {
       const compareDueDate = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate());
       const matches = compareDate.getTime() === compareDueDate.getTime();
       if (matches) {
-        console.log('Found todo for date:', date, todo);
+        
       }
       return matches;
     });

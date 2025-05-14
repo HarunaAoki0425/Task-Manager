@@ -1,7 +1,8 @@
 <div class="notification-list-page">
   <button class="close-popup-btn" (click)="onClose()">×</button>
   <h2>通知一覧</h2>
-  <div *ngIf="notifications.length > 0">
+  <div *ngIf="loading">読み込み中...</div>
+  <div *ngIf="!loading && notifications.length > 0">
     <div *ngFor="let notif of notifications" class="notification-card" [ngClass]="{'unread': notif.read === false, 'read': notif.read === true}" (click)="markAsRead(notif)">
       <span class="notification-trash" *ngIf="notif.read" (click)="$event.stopPropagation(); hideNotification(notif)"><span class="material-icons">delete</span></span>
       <div>{{ notif.message }}</div>
@@ -14,5 +15,5 @@
       <div>{{ notif.createdAt?.toDate() | date:'yyyy/MM/dd HH:mm' }}</div>
     </div>
   </div>
-  <div *ngIf="notifications.length === 0">通知はありません</div>
+  <div *ngIf="!loading && notifications.length === 0">通知はありません</div>
 </div>

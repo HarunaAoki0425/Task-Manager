@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { Auth, createUserWithEmailAndPassword } from '@angular/fire/auth';
+import { doc, getDoc } from '@angular/fire/firestore';
 
 @Component({
   selector: 'app-login',
@@ -32,14 +33,33 @@ export class LoginComponent {
     private authService: AuthService,
     private router: Router,
     private auth: Auth
-  ) {}
+  ) {
+    // ログイン後リロードの無限ループ防止
+    if (localStorage.getItem('reloadedAfterLogin')) {
+      localStorage.removeItem('reloadedAfterLogin');
+    }
+  }
 
   async onSubmit(): Promise<void> {
     try {
       this.errorMessage = '';
       await this.authService.login(this.email, this.password);
-      console.log('Login successful');
+      // Firestoreのユーザードキュメントを取得し、displayNameがnullならアラート
+      const user = this.auth.currentUser;
+      if (user) {
+        const userRef = doc(this.authService['firestore'], 'users', user.uid);
+        const userSnap = await getDoc(userRef);
+        if (userSnap.exists() && (userSnap.data()['displayName'] === null || userSnap.data()['displayName'] === undefined)) {
+          alert('⚙からユーザー名を設定してください。');
+        }
+      }
       await this.router.navigate(['/home']);
+      if (!localStorage.getItem('reloadedAfterLogin')) {
+        localStorage.setItem('reloadedAfterLogin', 'true');
+        setTimeout(() => {
+          window.location.reload();
+        }, 100);
+      }
     } catch (error: any) {
       console.error('Login error:', error);
       // エラーメッセージを日本語で表示
@@ -73,6 +93,10 @@ export class LoginComponent {
       this.registerPassword = '';
       this.registerPasswordConfirm = '';
       this.registerSuccessMessage = '登録が成功しました。ログインしてください。';
+      // ログイン画面の入力とエラーメッセージもリセット
+      this.email = '';
+      this.password = '';
+      this.errorMessage = '';
     } catch (e: any) {
       // Firebaseエラーコードを日本語に変換
       switch (e.code) {
@@ -94,5 +118,15 @@ export class LoginComponent {
     } finally {
       this.registerSending = false;
     }
+  }
+
+  resetRegisterForm() {
+    this.registerEmail = '';
+    this.registerPassword = '';
+    this.registerPasswordConfirm = '';
+    this.registerErrorMessage = '';
+    this.registerSending = false;
+    this.showRegisterPassword = false;
+    this.showRegisterPasswordConfirm = false;
   }
 }

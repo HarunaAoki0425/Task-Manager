@@ -174,7 +174,7 @@ export class HeaderComponent implements OnDestroy {
   }
 
   toggleNotificationPopup() {
-    this.showNotificationPopup = !this.showNotificationPopup;
+    this.showNotificationPopup = true;
   }
 
 } 

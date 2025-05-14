@@ -226,7 +226,6 @@ export class TodoService {
         }
       }
 
-      console.log('[DEBUG] 担当のTodo:', allTodos);
       return allTodos;
     } catch (error) {
       console.error('Error getting assigned todos:', error);

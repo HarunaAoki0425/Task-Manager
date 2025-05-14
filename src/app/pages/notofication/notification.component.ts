@@ -17,6 +17,7 @@ export class NotificationComponent implements OnInit, OnDestroy {
   user: any = null;
   notifications: any[] = [];
   private notifUnsubscribe: (() => void) | null = null;
+  loading = true;
 
   get unreadCount(): number {
     return this.notifications.filter(n => n.read === false).length;
@@ -25,6 +26,7 @@ export class NotificationComponent implements OnInit, OnDestroy {
   constructor(private authService: AuthService, private firestore: Firestore) {}
 
   async ngOnInit() {
+    this.loading = true;
     this.authService.user$.subscribe(user => {
       this.user = user;
       if (this.notifUnsubscribe) {
@@ -45,9 +47,11 @@ export class NotificationComponent implements OnInit, OnDestroy {
               const bTime = b.createdAt && b.createdAt.toDate ? b.createdAt.toDate().getTime() : 0;
               return bTime - aTime;
             });
+          this.loading = false;
         });
       } else {
         this.notifications = [];
+        this.loading = false;
       }
     });
   }

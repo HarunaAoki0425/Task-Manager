@@ -35,7 +35,7 @@
         </td>
         <td>{{ formatDate(project.createdAt) }}</td>
         <td>{{ project.dueDate ? formatDate(project.dueDate) : '' }}</td>
-        <td>{{ project.creatorName }}</td>
+        <td>{{ project.creatorName || 'Unknown-user' }}</td>
       </tr>
     </tbody>
   </table>

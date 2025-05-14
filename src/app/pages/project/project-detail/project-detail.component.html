@@ -330,7 +330,7 @@
           <div class="comment-item">
             <div class="comment-content">{{ comment.content }}</div>
             <div class="comment-meta">
-              <span class="comment-author">{{ commentAuthors[comment.author?.uid] || '不明' }}</span>
+              <span class="comment-author">{{ commentAuthors[comment.author?.uid] || 'Unknown-User' }}</span>
               <span class="comment-date">{{ formatDateTime(comment.createdAt) }}</span>
               <span class="comment-meta-spacer"></span>
               <button class="comment-like-btn" (click)="hasLiked(comment) ? unlikeComment(comment) : likeComment(comment)">

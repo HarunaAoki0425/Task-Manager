@@ -44,15 +44,6 @@ export class LoginComponent {
     try {
       this.errorMessage = '';
       await this.authService.login(this.email, this.password);
-      // Firestoreのユーザードキュメントを取得し、displayNameがnullならアラート
-      const user = this.auth.currentUser;
-      if (user) {
-        const userRef = doc(this.authService['firestore'], 'users', user.uid);
-        const userSnap = await getDoc(userRef);
-        if (userSnap.exists() && (userSnap.data()['displayName'] === null || userSnap.data()['displayName'] === undefined)) {
-          alert('⚙からユーザー名を設定してください。');
-        }
-      }
       await this.router.navigate(['/home']);
       if (!localStorage.getItem('reloadedAfterLogin')) {
         localStorage.setItem('reloadedAfterLogin', 'true');
